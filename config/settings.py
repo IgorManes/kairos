@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "axes",
     "tarefas",
 ]
 
@@ -75,8 +76,12 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Toda tela exige login, exceto as marcadas como públicas (ex.: login).
+    "django.contrib.auth.middleware.LoginRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # O axes precisa ser o último.
+    "axes.middleware.AxesMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -84,7 +89,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -118,6 +123,28 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+
+
+# --- Login e sessão --------------------------------------------------------
+
+# O axes confere primeiro se o IP está bloqueado; depois, a senha normal.
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "hoje"
+LOGOUT_REDIRECT_URL = "login"
+
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 dias, para não pedir login toda hora
+
+# Proteção contra força bruta: 5 erros bloqueiam o IP por 1 hora.
+# Bloqueia por IP (não por usuário) para ninguém conseguir te trancar fora.
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1  # horas
+AXES_RESET_ON_SUCCESS = True
+AXES_LOCKOUT_PARAMETERS = ["ip_address"]
 
 
 # --- Idioma e fuso ---------------------------------------------------------

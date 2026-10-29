@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hoje · Kairos</title>
+</head>
+<body>
+  <!-- Provisório: a tela Hoje de verdade vem na etapa 3. -->
+  <main>
+    <h1>Olá, {{ user.get_username }}</h1>
+    <p>Login funcionando.</p>
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit">Sair</button>
+    </form>
+  </main>
+</body>
+</html>
