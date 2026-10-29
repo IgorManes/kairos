@@ -1,0 +1,159 @@
+# Especificação
+
+## 1. Objetivo
+Um lugar só para controlar demandas do trabalho (com quem pediu), reuniões aceitas no Google Agenda, atividades da faculdade vindas do Google Classroom e projetos pessoais. Uso diário, então precisa ser rápido de usar e agradável de olhar.
+
+## 2. Configuração geral do Django
+- Python 3.13 nas duas máquinas (registre a versão no README). Dependências fixadas em `requirements.txt`.
+- `LANGUAGE_CODE = "pt-br"`, `TIME_ZONE = "America/Sao_Paulo"`, `USE_TZ = True`.
+- Configurações sensíveis via `.env` (sugestão: `django-environ` ou `python-dotenv`).
+- Dados FORA da pasta do código: banco, token do Google e backups em `%LOCALAPPDATA%\Kairos\`. Isso evita commit acidental e separa código de dados. Em desenvolvimento pode usar um banco separado (`dev.sqlite3`) para não misturar dados de teste com as tarefas reais.
+- Login obrigatório em todas as telas (`LoginRequiredMixin` / middleware). Sem tela de cadastro; usuário criado com `createsuperuser`. Sessão longa (ex.: 30 dias) para não pedir login toda hora.
+
+## 3. Modelo de dados
+
+### Pessoa (quem pede demandas no trabalho; ~10 pessoas)
+| campo | tipo | regra |
+|---|---|---|
+| nome | texto (100) | obrigatório, único |
+| ativo | booleano | padrão True. Inativos somem dos seletores, mas o histórico continua |
+| cor | texto (7) | opcional, para o avatar/bolinha na interface |
+
+Não pode ser apagada se tiver tarefas (`on_delete=PROTECT`); desativa em vez disso.
+
+### Projeto (agrupa tarefas, principalmente pessoais)
+| campo | tipo | regra |
+|---|---|---|
+| nome | texto (100) | obrigatório |
+| categoria | escolha | mesma lista da Tarefa (exceto Reunião) |
+| ativo | booleano | padrão True |
+
+### Disciplina (criada automaticamente pela sincronização do Classroom)
+| campo | tipo | regra |
+|---|---|---|
+| nome | texto (200) | nome da turma no Classroom |
+| classroom_id | texto | único |
+| ativo | booleano | turma arquivada no Classroom → False |
+
+### Tarefa
+| campo | tipo | regra |
+|---|---|---|
+| titulo | texto (200) | obrigatório |
+| observacoes | texto longo | opcional. **Só local, nunca é sobrescrito pela sincronização** |
+| categoria | escolha | trabalho / faculdade / pessoal / reuniao |
+| status | escolha | a_fazer (padrão) / em_andamento / aguardando / concluida / cancelada |
+| prioridade | escolha | baixa / media (padrão) / alta / urgente |
+| prazo | data | opcional |
+| prazo_hora | hora | opcional (Classroom às vezes tem hora) |
+| inicio, fim | data e hora | só para reuniões |
+| link_reuniao | URL | opcional (Meet) |
+| solicitante | FK Pessoa | **obrigatório se categoria = trabalho; proibido nas outras** |
+| projeto | FK Projeto | opcional, `SET_NULL` |
+| disciplina | FK Disciplina | opcional, só para faculdade |
+| origem | escolha | manual (padrão) / google_agenda / google_classroom |
+| id_externo | texto | opcional. Único junto com `origem` (impede duplicatas na sincronização) |
+| link_externo | URL | link para o item no Google |
+| descricao_externa | texto longo | o que veio do Google; sobrescrito a cada sync |
+| sincronizado_em | data e hora | último sync deste item |
+| criado_em, atualizado_em | data e hora | automáticos |
+| concluida_em | data e hora | preenchido sozinho quando status vira concluida; limpo se sair de concluida |
+
+Regras (implementar em `clean()` e cobrir com testes):
+- Trabalho exige solicitante; outras categorias não podem ter solicitante.
+- Reunião exige `inicio`; `fim` não pode ser antes de `inicio`.
+- Disciplina só em faculdade.
+- "Atrasada" é calculado (prazo < hoje e status não é concluida/cancelada), não um campo salvo.
+- "Aguardando" serve para demandas paradas esperando outra pessoa; mostrar claramente na interface.
+
+## 4. Telas
+1. **Login**: simples, com a identidade visual do app.
+2. **Hoje** (tela inicial): atrasadas no topo (destaque), tarefas de hoje, reuniões do dia em linha do tempo, próximos 7 dias. Contadores por categoria.
+3. **Tarefas**: lista com filtros combináveis (categoria, status, prioridade, solicitante, projeto, disciplina, busca por texto) e ordenação (prazo, prioridade, criação). Filtros refletidos na URL.
+4. **Quadro**: kanban por status (arrastar pode vir depois; começar com botões de mudar status).
+5. **Criar/editar tarefa**: painel lateral ou modal (HTMX). O seletor de solicitante só aparece quando a categoria é Trabalho. Itens vindos do Google mostram os campos do Google como somente leitura + link para abrir no Google.
+6. **Pessoas e Projetos**: telas próprias simples (o admin do Django fica como reserva, não como interface principal).
+7. **Configurações**: conectar/desconectar conta Google, horário do último sync, botão "Sincronizar agora", erros recentes de sync.
+
+Interações importantes:
+- Criação rápida: campo no topo + atalho de teclado (`N`) para nova tarefa só com título e categoria.
+- Concluir com um clique (checkbox), com desfazer.
+- Mensagens de sucesso/erro discretas (toast).
+- Estados vazios bem desenhados ("Nada atrasado 🎉"), não telas em branco.
+
+## 5. Direção visual ("bem bonito, estilizado")
+- **Antes de construir as telas**, gere uma página HTML estática de referência (`docs/prototipo.html`) com paleta, tipografia, um card de tarefa, a tela Hoje e o modo claro/escuro. O dono aprova ou pede ajustes; só depois aplicar nos templates.
+- Estilo: moderno, limpo, foco no conteúdo, com espaço em branco generoso, cantos arredondados, sombras sutis, microanimações curtas (hover, concluir tarefa). Evitar visual genérico de "template Bootstrap".
+- **Modo escuro como padrão**, com alternância para claro (preferência salva).
+- Cor própria por categoria (trabalho, faculdade, pessoal, reunião), usada com consistência em bolinhas, bordas e filtros. Prioridade urgente/alta e atrasada precisam saltar aos olhos sem poluir.
+- Tipografia: uma fonte sans moderna (ex.: Inter ou Geist), **arquivos da fonte dentro do projeto** (funciona offline).
+- Tailwind CSS via CLI standalone (sem Node; ex.: pacote `django-tailwind-cli`, confirme a versão atual). HTMX para interações sem recarregar a página; Alpine.js só se precisar de estado pequeno na tela.
+- Ícone do app (`.ico`) e logo simples coerentes com o nome escolhido.
+- Responsivo de verdade (ver seção 11): o alvo principal é desktop, mas tudo precisa funcionar bem no celular.
+
+## 6. Integrações Google (conta pessoal)
+- Projeto no Google Cloud com cliente OAuth do tipo **"App para computador" (Desktop)**. Guiar o dono passo a passo na criação.
+- Tela de consentimento **publicada como "Em produção"** (em "Teste", o token expira a cada 7 dias). Sem verificação aparece um aviso no login; é aceitável para uso próprio.
+- Escopos mínimos, somente leitura: `calendar.events.readonly`, `classroom.courses.readonly`, `classroom.coursework.me.readonly`. Confirme os nomes na documentação atual.
+- `credentials.json` e `token.json` ficam em `%LOCALAPPDATA%\Kairos\`, nunca no repositório.
+- Bibliotecas: `google-api-python-client`, `google-auth-oauthlib`.
+- Sincronização **somente leitura (Google → app)**. O app nunca altera nada no Google.
+- Execução: comando `python manage.py sincronizar` + sync automático a cada 15 min enquanto o app está aberto + botão "Sincronizar agora". Registrar data/hora e erros do último sync.
+
+### Google Agenda
+- Calendário principal, janela de 7 dias para trás até 60 dias para frente.
+- Importar como categoria Reunião eventos em que o dono **aceitou** (responseStatus `accepted` do próprio participante) ou é o organizador.
+- Se depois recusar ou o evento for cancelado → status cancelada (não apagar).
+- Título, horário, link do Meet e descrição vêm do Google e são atualizados; `status`, `observacoes`, `prioridade` e `projeto` são do dono e nunca são sobrescritos.
+
+### Google Classroom
+- Turmas ativas em que o dono é aluno → Disciplina.
+- Atividades (courseWork) → Tarefa categoria faculdade, com prazo/hora e link.
+- Se a entrega do aluno estiver como entregue/devolvida → marcar concluída automaticamente (configurável).
+- Atividade removida no Classroom → cancelada, não apagada.
+- Mesmas regras de campos do Google x campos do dono.
+
+## 7. Abrir como aplicativo no Windows
+- Script `iniciar.pyw` (sem janela de console): sobe o Django com `waitress` (servidor de produção que funciona no Windows; não usar `runserver`) em `127.0.0.1` numa porta fixa, com `DEBUG=False` e estáticos servidos (ex.: `whitenoise`), e abre uma janela `pywebview` com o nome e ícone do app. Ao fechar a janela, encerra o servidor.
+- Se o app já estiver aberto, não abrir uma segunda instância.
+- Script (PowerShell) que cria o atalho na área de trabalho com o ícone.
+- Ao iniciar: rodar migrations pendentes **somente após backup** do banco.
+- Backup automático diário do `.sqlite3` em `%LOCALAPPDATA%\Kairos\backups\`, mantendo os últimos 14.
+- Empacotar em `.exe` (PyInstaller) é opcional, fica para o fim.
+
+## 7.1 Notificações do Windows
+- O app precisa continuar rodando com a janela fechada: ícone na **bandeja do sistema** (ex.: `pystray`) com opções Abrir / Sincronizar / Sair. Fechar a janela minimiza para a bandeja.
+- Opção "Iniciar com o Windows" (atalho na pasta Inicializar), ligada/desligada nas Configurações.
+- Notificações nativas (toast) do Windows (ex.: `windows-toasts` ou `win11toast`; confirme qual está mantida). Clicar na notificação abre a tarefa.
+- Disparos (configuráveis nas Configurações):
+  - Reunião: X minutos antes do início (padrão 10).
+  - Prazo: no dia, num horário fixo (padrão 9h), e quando ficar atrasada.
+  - Nova atividade importada do Classroom.
+  - Resumo ao ligar o PC: "3 atrasadas, 5 para hoje, 2 reuniões".
+- Guardar o que já foi notificado para não repetir o mesmo aviso.
+
+## 8. Etapas (uma por vez, cada uma termina com commit(s) aprovados)
+0. Preparação: venv, Django, estrutura, `.gitignore`, `.env.example`, README inicial, primeiro commit.
+1. Modelos + regras + testes + admin + login.
+2. Protótipo visual (`docs/prototipo.html`) → aprovação → base de templates, Tailwind, modo escuro.
+3. Telas: Hoje, Tarefas (filtros), criar/editar, Pessoas/Projetos, Quadro.
+4. Google Agenda (OAuth + sync + testes com respostas simuladas).
+5. Google Classroom.
+6. Janela pywebview, atalho, backup.
+6.1. Bandeja do sistema, iniciar com o Windows e notificações.
+7. Acabamento: README completo com prints, `docs/DECISOES.md` revisado, limpeza.
+
+## 9. Testes
+- Testes do Django (`python manage.py test`) para as regras de validação e para a sincronização (respostas do Google simuladas; nunca chamar a API real nos testes).
+- Rodar os testes antes de propor cada commit.
+
+## 10. Fora do escopo (por enquanto)
+Multiusuário, cadastro público, escrever no Google.
+
+## 11. Futuro: acesso pelo celular (NÃO implementar agora, mas não bloquear)
+Plano previsto: transformar o app web em **PWA** (instalável na tela inicial do celular) acessado pelo **Tailscale**, com o PC de casa como servidor. Sem app nativo e sem segunda linguagem.
+Decisões que já devem ser respeitadas desde o início para isso ser possível depois:
+- Todas as telas **responsivas de verdade** (funcionar bem com 380px de largura), não só "mínimo responsivo".
+- Nenhuma funcionalidade pode depender do pywebview; ele é só uma janela em volta do site.
+- Login e sessão feitos direito (senha forte, proteção contra força bruta como `django-axes`, CSRF), porque no futuro o app ficará acessível pela rede.
+- Host/porta configuráveis no `.env` (hoje `127.0.0.1`; no futuro o IP do Tailscale).
+Limitações conhecidas desse plano: só funciona com o PC ligado; notificação push no celular exige HTTPS (Tailscale Serve resolve) e, no iPhone, o PWA instalado na tela inicial.
