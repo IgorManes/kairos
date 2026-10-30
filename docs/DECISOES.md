@@ -54,3 +54,11 @@ Formato: contexto → escolha → motivo.
 - **HTMX** → **arquivo local em `static/js/` (2.0.11)** → funciona offline.
 - **Menu com telas futuras** → **itens esmaecidos com "Em breve"** em vez de links quebrados.
 - **Página de bloqueio do axes** → **template próprio** (o padrão é texto puro) e explica como liberar.
+
+## Agenda da empresa (planejada para a etapa 4)
+
+- **Reuniões da agenda da empresa (Invoga)** → **agendas fixas no `.env` (`GOOGLE_AGENDAS_EXTRAS=Invoga=email`)** em vez de escolher na tela → simples; trocar ou adicionar empresa é editar uma linha. O ID da agenda principal de uma conta é o próprio e-mail, então a mesma informação identifica a agenda e "quem sou eu" nos convidados.
+- **Filtro da agenda da empresa** → **tudo, menos recusados** → atende "tudo que for marcado" sem mostrar reuniões já recusadas. A regra "aceito por mim" da agenda pessoal não serve aqui: os convidados são o e-mail da empresa, não a conta pessoal.
+- **Novo campo `agenda_id` na Tarefa** → guarda de qual agenda veio → etiqueta "Invoga" e o sync só cancela eventos das agendas que acompanha.
+- **Duplicatas entre agendas** → **`id_externo` = `iCalUID`** (igual em todas as agendas) → a mesma reunião nas duas agendas vira uma tarefa só.
+- **Agenda removida do `.env`** → **eventos ficam como histórico** → o Kairos parou de acompanhar a agenda; as reuniões não deixaram de existir.

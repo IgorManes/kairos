@@ -51,7 +51,8 @@ Não pode ser apagada se tiver tarefas (`on_delete=PROTECT`); desativa em vez di
 | projeto | FK Projeto | opcional, `SET_NULL` |
 | disciplina | FK Disciplina | opcional, só para faculdade |
 | origem | escolha | manual (padrão) / google_agenda / google_classroom |
-| id_externo | texto | opcional. Único junto com `origem` (impede duplicatas na sincronização) |
+| id_externo | texto | opcional. Único junto com `origem` (impede duplicatas na sincronização). Na Agenda, usar o `iCalUID` do evento (+ início original em eventos recorrentes): é o mesmo em todas as agendas, então uma reunião presente em duas agendas não duplica |
+| agenda_id | texto | opcional, só `google_agenda`: de qual agenda o evento veio (ID da agenda, que é o e-mail da conta). Usado para a etiqueta e para saber quais eventos o sync pode cancelar |
 | link_externo | URL | link para o item no Google |
 | descricao_externa | texto longo | o que veio do Google; sobrescrito a cada sync |
 | sincronizado_em | data e hora | último sync deste item |
@@ -108,9 +109,13 @@ Interações importantes:
 - Execução: comando `python manage.py sincronizar` + sync automático a cada 15 min enquanto o app está aberto + botão "Sincronizar agora". Registrar data/hora e erros do último sync.
 
 ### Google Agenda
-- Calendário principal, janela de 7 dias para trás até 60 dias para frente.
-- Importar como categoria Reunião eventos em que o dono **aceitou** (responseStatus `accepted` do próprio participante) ou é o organizador.
+- Agendas sincronizadas (fixas, configuradas no `.env`), janela de 7 dias para trás até 60 dias para frente:
+  - **Principal** (conta pessoal): importar como Reunião eventos em que o dono **aceitou** (responseStatus `accepted` do próprio participante) ou é o organizador.
+  - **Agendas de empresa** em `GOOGLE_AGENDAS_EXTRAS` (formato `Nome=email, Outra=email2`; o ID da agenda é o e-mail da conta). Hoje: **Invoga**. Importar **todos os eventos, exceto os recusados** pelo e-mail daquela agenda. Exibir com etiqueta do nome (ex.: "Invoga") no card e na linha do tempo.
+  - A agenda da empresa precisa estar compartilhada com a conta pessoal como "Ver todos os detalhes do evento" (com "livre/ocupado" o Google não envia título nem link).
 - Se depois recusar ou o evento for cancelado → status cancelada (não apagar).
+- Agenda removida do `.env` → os eventos já importados ficam como histórico (não são cancelados nem atualizados).
+- Mesmo evento em duas agendas → uma tarefa só (dedupe pelo `iCalUID`).
 - Título, horário, link do Meet e descrição vêm do Google e são atualizados; `status`, `observacoes`, `prioridade` e `projeto` são do dono e nunca são sobrescritos.
 
 ### Google Classroom
