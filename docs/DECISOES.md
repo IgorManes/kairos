@@ -209,3 +209,5 @@ Formato: contexto → escolha → motivo.
 - **Iniciar com o Windows** (especificação: atalho na pasta Inicializar) → **valor no Registro `HKCU\...\Run`** com `pythonw iniciar.pyw --bandeja` → padrão dos apps, sem COM, aparece no Gerenciador de Tarefas → Aplicativos de inicialização; abre direto na bandeja.
 - **Clique no aviso** → abre `/?abrir=<id>`: o JS abre o painel daquela tarefa.
 - **Teste que enganou** → um Kairos antigo (versão sem bandeja) estava aberto; a instância única desviou o teste para ele. Lição: confirmar qual versão está rodando antes de concluir algo de um teste de integração.
+- **Botões do Quadro vazando do card** (o texto "← A fazer / Aguardando →" não cabe numa coluna) → **só a seta**, com o destino no "passar o mouse" e para leitor de tela → arrastar é o caminho principal no computador; os botões ficam compactos.
+- **Títulos quebrando no meio da palavra** ("indicador/es") → `overflow-wrap: break-word` em vez de `anywhere` (só corta palavra que não cabe sozinha na linha); no Quadro, bandeira e ⋯ flutuam no canto em vez de ocupar uma coluna ao lado do título.

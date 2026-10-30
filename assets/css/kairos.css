@@ -389,7 +389,7 @@
                 0 14px 34px -16px color-mix(in srgb, var(--c) var(--glow-a), transparent);
   }
   .task-body { flex: 1; min-width: 0; }
-  .task-title { font-weight: 500; line-height: 1.35; overflow-wrap: anywhere; transition: color .3s; }
+  .task-title { font-weight: 500; line-height: 1.35; overflow-wrap: break-word; transition: color .3s; }  /* só corta palavra que não cabe sozinha */
   .task-title s { text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 55% / 0 1.5px no-repeat;
                   transition: background-size .35s ease; }
   .task-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 6px; font-size: 13px; color: var(--text-3); }
@@ -646,11 +646,19 @@
   .coluna > *, .coluna .list > * { min-width: 0; }  /* sem isso o card não encolhe e vaza da coluna */
   .coluna .list { grid-template-columns: minmax(0, 1fr); }
   .coluna .task-meta { gap: 4px 10px; }
+  /* Em coluna estreita, bandeira e menu flutuam no canto sem roubar largura do título */
+  .coluna .task-side { position: absolute; top: 12px; right: 8px; }
+  .coluna .task-side .prio { padding: 0; }
+  .coluna .task-body { padding-right: 16px; }
+  /* O ⋯ fica por cima da bandeira e só aparece ao passar o mouse (não empurra nada) */
+  .coluna .task-menu { position: absolute; top: -6px; right: -4px; margin: 0; background: var(--surface-solid); }
   .main:has(.quadro) { max-width: none; }  /* kanban precisa da largura toda */
   .coluna .prio-texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }  /* só a bandeira; texto fica para leitor de tela */
   .mover { display: flex; align-items: center; gap: 4px; margin: 8px -8px -6px; }
   /* Botões de mudar de coluna: visíveis como botões, com a cor da coluna de destino no hover */
-  .mover .btn { height: 26px; padding: 0 8px; font-size: 12px; white-space: nowrap; color: var(--text-2);
+  /* Botões de mudar de coluna: só a seta (o destino aparece ao passar o mouse), cabem em coluna estreita */
+  .mover { margin: 8px 0 -4px; }
+  .mover .btn { width: 28px; height: 28px; padding: 0; border-radius: 8px; color: var(--text-2);
                 background: var(--surface-2); border: 1px solid var(--border); }
   .mover .btn:hover { color: var(--text); border-color: var(--border-strong); background: var(--surface-hover); }
   /* Arrastar */

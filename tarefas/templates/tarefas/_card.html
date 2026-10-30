@@ -30,13 +30,13 @@
     {% if no_quadro %}
       <div class="mover">
         {% if t.anterior %}
-          <button class="btn btn-ghost btn-sm" hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{{ t.anterior }}"}' hx-swap="none"
-                  title="Mover para {{ t.anterior.label }}"><svg class="icon icon-sm"><use href="#i-seta-esq"/></svg>{{ t.anterior.label }}</button>
+          <button class="btn btn-ghost" hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{{ t.anterior }}"}' hx-swap="none"
+                  title="Mover para {{ t.anterior.label }}" aria-label="Mover para {{ t.anterior.label }}"><svg class="icon icon-sm"><use href="#i-seta-esq"/></svg></button>
         {% endif %}
         <span class="flex-1"></span>
         {% if t.proximo %}
-          <button class="btn btn-ghost btn-sm" hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{{ t.proximo }}"}' hx-swap="none"
-                  title="Mover para {{ t.proximo.label }}">{{ t.proximo.label }}<svg class="icon icon-sm"><use href="#i-seta-dir"/></svg></button>
+          <button class="btn btn-ghost" hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{{ t.proximo }}"}' hx-swap="none"
+                  title="Mover para {{ t.proximo.label }}" aria-label="Mover para {{ t.proximo.label }}"><svg class="icon icon-sm"><use href="#i-seta-dir"/></svg></button>
         {% endif %}
       </div>
     {% endif %}
