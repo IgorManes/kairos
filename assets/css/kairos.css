@@ -247,7 +247,7 @@
   /* --- Circuito animado (hero e login) --- */
   .circuit .trace { fill: none; stroke: url(#g-circ); stroke-width: 1.3; opacity: .5; }
   .circuit .pulse { fill: none; stroke: url(#g-circ); stroke-width: 2.2; stroke-linecap: round;
-                    stroke-dasharray: 14 420; animation: pulse 3.8s linear infinite; }
+                    stroke-dasharray: 14 420; animation: circuito-pulso 3.8s linear infinite; }
   .circuit .node { fill: url(#g-circ); }
   .circuit .chip-c { fill: var(--surface-solid); stroke: url(#g-circ); stroke-width: 1.6; }
   .hero-circuito {
@@ -334,7 +334,7 @@
 
 /* ===================================================================== */
 @keyframes blink { 50% { opacity: .35; } }
-@keyframes pulse { to { stroke-dashoffset: -434; } }
+@keyframes circuito-pulso { to { stroke-dashoffset: -434; } }  /* "pulse" colide com animação embutida do Tailwind */
 @keyframes toast-in { from { opacity: 0; transform: translateY(10px) scale(.97); } }
 @keyframes toast-out { to { opacity: 0; transform: translateY(6px); } }
 @keyframes pop { 50% { transform: scale(1.22); } }
