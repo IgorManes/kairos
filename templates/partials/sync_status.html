@@ -1,0 +1,4 @@
+{# Situação do sync do Google. Na barra lateral tem id "sync-status" (o relógio atualiza esse); em outros lugares, passe id_status. #}
+<a id="{{ id_status|default:'sync-status' }}" class="sync-status sync-{{ sync.estado }}" href="{% url 'configuracoes' %}" title="Ver nas Configurações">
+  <i></i>{{ sync.texto }}
+</a>

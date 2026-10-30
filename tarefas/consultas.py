@@ -72,6 +72,10 @@ def listar_tarefas(filtros):
     status = filtros.get("status", "")
     if status == "":  # padrão: só as abertas
         qs = qs.exclude(status__in=ENCERRADAS)
+        # Reunião que já terminou não é "aberta" (sem mudar o status, que é do dono);
+        # continua aparecendo em "Todas".
+        agora = timezone.now()
+        qs = qs.exclude(Q(categoria=Categoria.REUNIAO) & (Q(fim__lt=agora) | Q(fim__isnull=True, inicio__lt=agora)))
     elif status != "todas":
         qs = qs.filter(status=status)
 

@@ -72,6 +72,7 @@ Regras (implementar em `clean()` e cobrir com testes):
 - Reunião exige `inicio`; `fim` não pode ser antes de `inicio`.
 - Disciplina só em faculdade.
 - "Atrasada" é calculado (prazo < hoje e status não é concluida/cancelada), não um campo salvo.
+- Reunião que já terminou não aparece entre as "abertas" (é só exibição; o status não muda) e continua visível com "Todas".
 - "Aguardando" serve para demandas paradas esperando outra pessoa; mostrar claramente na interface.
 
 ### RelatorioSemanal (foto congelada de uma semana; ver seção 6.1)

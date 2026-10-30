@@ -6,11 +6,9 @@ Sincroniza o Google (somente leitura) com o Kairos.
     python manage.py sincronizar --completo   # força sync completo
 """
 
-from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from tarefas.google import agenda as sync_agenda
-from tarefas.google.credenciais import SemConexaoGoogle, obter_credenciais, servico_agenda
+from tarefas.google.servico import sincronizar_tudo
 
 
 class Command(BaseCommand):
@@ -21,25 +19,15 @@ class Command(BaseCommand):
         parser.add_argument("--completo", action="store_true", help="Força sincronização completa.")
 
     def handle(self, *args, **opcoes):
-        try:
-            credenciais = obter_credenciais(interativo=opcoes["conectar"])
-        except SemConexaoGoogle as erro:
-            raise CommandError(str(erro)) from None
-
-        servico = servico_agenda(credenciais)
-        falhas = 0
-        for agenda in settings.GOOGLE_AGENDAS:
-            nome = agenda["nome"] or "Agenda principal"
-            try:
-                r = sync_agenda.sincronizar_agenda(servico, agenda, forcar_completo=opcoes["completo"])
-            except Exception as erro:  # uma agenda com erro não impede as outras
-                falhas += 1
-                sync_agenda.registrar_erro(agenda, erro)
-                self.stderr.write(self.style.ERROR(f"{nome}: erro: {erro}"))
-                continue
-            tipo = "completo" if r["completo"] else "incremental"
+        r = sincronizar_tudo(motivo="botao", forcar_completo=opcoes["completo"], interativo=opcoes["conectar"])
+        if r.situacao == "desconectado":
+            raise CommandError(r.erro)
+        if r.situacao == "ocupado":
+            raise CommandError("Já existe uma sincronização em andamento.")
+        for nome, d in r.detalhes:
+            tipo = "completo" if d["completo"] else "incremental"
             self.stdout.write(self.style.SUCCESS(
-                f"{nome} ({tipo}): {r['criadas']} novas, {r['atualizadas']} atualizadas, {r['canceladas']} canceladas"
+                f"{nome} ({tipo}): {d['criadas']} novas, {d['atualizadas']} atualizadas, {d['canceladas']} canceladas"
             ))
-        if falhas:
-            raise CommandError(f"{falhas} agenda(s) com erro; detalhes salvos para a tela de Configurações.")
+        if r.situacao == "erro":
+            raise CommandError(f"Com erro: {r.erro} (detalhes salvos para a tela de Configurações).")

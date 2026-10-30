@@ -141,3 +141,13 @@ Formato: contexto → escolha → motivo.
 - **Decisões como funções puras** (`deve_importar`, `campos_do_evento`) e um "Google de mentira" nos testes → cada regra testada sem rede nem credenciais.
 - **Login** → **só com `sincronizar --conectar`**; o sync automático nunca abre o navegador por conta própria (se a autorização cair, avisa).
 - **Reuniões no mesmo horário se sobrepunham na linha do tempo** (apareceu com os dados reais) → **algoritmo guloso de colunas**: ordena por início, agrupa em blocos de sobreposição, cada reunião vai para a 1ª coluna livre e o bloco divide a largura → mesma ideia de "quantas salas preciso?"; calculado no servidor junto com a posição vertical. Reuniões estreitas viram compactas (ícone do Meet no canto).
+
+## Etapa 4: sync automático e Configurações (2026-10-30)
+
+- **Quem dispara o sync automático** → **a própria página aberta (HTMX: 3 s após abrir, a cada 60 s e ao voltar para o app)**, com intervalo mínimo no servidor (auto 50 s, foco 15 s, botão sempre) e uma trava para um sync por vez → atende "enquanto o app está aberto" sem processo extra; na etapa 6.1 (bandeja) o mesmo `sincronizar_tudo()` será chamado por um relógio do app.
+- **Relógio separado do indicador** → o elemento que dispara não é o que a resposta substitui; senão o "load" do elemento novo dispararia de novo em laço.
+- **Tela só pisca quando há novidade** → o servidor só manda `dadosMudaram` se algo foi criado, atualizado ou cancelado.
+- **Lógica de "sincronizar tudo" num lugar só** (`google/servico.py`) → comando, botão, relógio e (depois) bandeja chamam a mesma função.
+- **Conectar pela tela** → abre o navegador **deste PC** numa thread; limitação conhecida: acessando pelo celular (futuro), o navegador abriria no PC de casa.
+- **Desconectar** → revoga no Google, apaga o `token.json` e zera os tokens de sync (ao reconectar, começa completo); reuniões importadas continuam.
+- **Reuniões que já terminaram** (dados reais mostraram acumulando como "A fazer") → **saem da lista de abertas, sem mudar o status**; aparecem em "Todas" → "concluída" significa "eu fiz", o que o sync não tem como saber; marcar sozinho poluiria os relatórios semanais e quebraria a regra "status é do dono".

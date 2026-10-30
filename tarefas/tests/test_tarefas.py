@@ -85,3 +85,13 @@ class TelaTarefasTests(TestCase):
         for url in ("/", "/tarefas/"):
             with self.subTest(url=url):
                 self.assertIn("dadosMudaram from:body", self.client.get(url).content.decode())
+
+
+class ReunioesPassadasTests(TestCase):
+    def test_reuniao_que_ja_terminou_sai_das_abertas_mas_aparece_em_todas(self):
+        agora = timezone.now()
+        nova("Passada", Categoria.REUNIAO, inicio=agora - timedelta(hours=3), fim=agora - timedelta(hours=2))
+        nova("Futura", Categoria.REUNIAO, inicio=agora + timedelta(hours=2), fim=agora + timedelta(hours=3))
+        self.assertEqual(titulos({"categoria": "reuniao"}), ["Futura"])
+        self.assertEqual(sorted(titulos({"categoria": "reuniao", "status": "todas"})), ["Futura", "Passada"])
+        self.assertEqual(Tarefa.objects.get(titulo="Passada").status, Status.A_FAZER)  # status intocado

@@ -15,8 +15,9 @@
       <a class="nav-item" href="{% url 'projetos' %}" {% if atual == 'projetos' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-folder"/></svg>Projetos</a>
       <span class="nav-item" aria-disabled="true" title="Em breve (etapa 5.1)"><svg class="icon"><use href="#i-report"/></svg>Relatórios</span>
       <div class="flex-1"></div>
-      <span class="nav-item" aria-disabled="true" title="Em breve"><svg class="icon"><use href="#i-sliders"/></svg>Configurações</span>
+      <a class="nav-item" href="{% url 'configuracoes' %}" {% if atual == 'configuracoes' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-sliders"/></svg>Configurações</a>
       <button class="nav-item" data-action="tema"><svg class="icon"><use href="#i-sun"/></svg><span>Modo claro</span></button>
+      {% include "partials/sync_status.html" %}
       <div class="mt-1.5 flex items-center gap-2.5 border-t border-border px-2.5 pt-3 text-[13px] text-text-2">
         <span class="avatar" style="--p:#a3e635">{{ user.get_username|slice:":2"|upper }}</span>
         <span class="truncate">{{ user.get_username }}</span>
@@ -50,6 +51,15 @@
     </nav>
   </div>
 </div>
+
+{# Relógio do sync automático: 3 s após abrir, a cada 60 s e ao voltar para o app.
+   Fica separado do indicador (#sync-status) para a resposta não recriar o relógio. #}
+{% if sync.conectado %}
+<div hidden hx-post="{% url 'sincronizar' %}" hx-target="#sync-status" hx-swap="outerHTML"
+     hx-trigger="load delay:3s, every 60s" hx-vals='{"motivo": "auto"}'></div>
+<div hidden hx-post="{% url 'sincronizar' %}" hx-target="#sync-status" hx-swap="outerHTML"
+     hx-trigger="visibilitychange[document.visibilityState === 'visible'] from:document" hx-vals='{"motivo": "foco"}'></div>
+{% endif %}
 
 {# Painel lateral de criar/editar (conteúdo carregado pelo HTMX) #}
 <dialog class="drawer" id="drawer" aria-labelledby="drawer-titulo">

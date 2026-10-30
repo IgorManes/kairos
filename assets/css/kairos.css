@@ -668,6 +668,26 @@
   .chip-filtro[aria-current] { color: var(--text); border-color: var(--c, var(--g2));
                                background: color-mix(in srgb, var(--c, var(--g2)) var(--tint), transparent); }
 
+  /* Situação do sync (barra lateral e Configurações) */
+  .sync-status { display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: 12px; color: var(--text-3);
+                 text-decoration: none; border-radius: 8px; width: fit-content; }
+  .sync-status:hover { color: var(--text); background: var(--surface-hover); }
+  .sync-status i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); flex: none; }
+  .sync-ok i { background: var(--c-pessoal); box-shadow: 0 0 8px var(--c-pessoal); }
+  .sync-erro { color: var(--danger); } .sync-erro i { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+  .sync-desconectado i { background: var(--warn); }
+  .htmx-request.sync-status i, .sync-status.htmx-request i { animation: blink .8s ease-in-out infinite; }
+
+  /* Configurações */
+  .config-secao { display: grid; gap: 18px; padding: 20px; border-radius: 16px; background: var(--surface);
+                  backdrop-filter: blur(10px); border: 1px solid var(--border); max-width: 760px; }
+  .config-topo { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .config-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .config-tabela { display: grid; border-top: 1px solid var(--border); }
+  .config-linha { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .config-linha small { display: block; color: var(--text-3); font-size: 12.5px; }
+  .config-erro { grid-column: 1 / -1; font-size: 12.5px; color: var(--danger); overflow-wrap: anywhere; }
+
   /* Tela Tarefas: filtros e paginação */
   .input-sm { height: 34px; font-size: 13.5px; padding: 0 10px; }
   .filtros { display: grid; gap: 12px; margin-bottom: 24px; }

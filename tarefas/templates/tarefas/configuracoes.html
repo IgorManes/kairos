@@ -1,0 +1,53 @@
+{% extends "base_app.html" %}
+{% block titulo %}Configurações{% endblock %}
+{% block conteudo %}
+<header class="mb-6">
+  <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Configurações</h1>
+</header>
+
+<section id="config-google" class="config-secao" hx-get="{% url 'configuracoes' %}" hx-trigger="dadosMudaram from:body delay:300ms"
+         hx-select="#config-google" hx-swap="outerHTML" hx-disinherit="*">
+  <div class="config-topo">
+    <div>
+      <h2 class="text-lg font-semibold">Google</h2>
+      <p class="text-sm text-text-3">Somente leitura: o Kairos nunca altera nada no Google. Sincroniza a cada minuto enquanto está aberto.</p>
+    </div>
+    {% include "partials/sync_status.html" with id_status="sync-status-config" %}
+  </div>
+
+  <div class="config-acoes">
+    {% if sync.conectado %}
+      <button class="btn btn-primary" hx-post="{% url 'sincronizar' %}" hx-vals='{"motivo": "botao"}' hx-target="#sync-status" hx-swap="outerHTML">
+        <svg class="icon icon-sm"><use href="#i-refresh"/></svg>Sincronizar agora
+      </button>
+      <button class="btn btn-danger" hx-post="{% url 'desconectar_google' %}" hx-swap="none"
+              hx-confirm="Desconectar a conta Google? As reuniões já importadas continuam no Kairos.">Desconectar conta</button>
+    {% elif not tem_credenciais %}
+      <p class="chip chip-late h-auto py-2">Falta o arquivo credentials.json na pasta de dados (%LOCALAPPDATA%\Kairos\).</p>
+    {% elif conectando %}
+      <p class="text-sm text-text-2">Aguardando a autorização no navegador…</p>
+    {% else %}
+      <button class="btn btn-primary" hx-post="{% url 'conectar_google' %}" hx-swap="none">Conectar conta Google</button>
+      <p class="text-[13px] text-text-3">Abre o navegador deste computador para você autorizar.</p>
+    {% endif %}
+  </div>
+
+  <div class="config-tabela">
+    {% for a in agendas %}
+      <div class="config-linha">
+        <div>
+          <b>{{ a.nome }}</b>
+          <small>{% if a.regra == 'aceitos' %}reuniões que você aceitou ou organizou{% else %}tudo, menos as recusadas{% endif %}</small>
+        </div>
+        <div class="text-[13px] text-text-2">
+          {% if a.estado.ultimo_sync_em %}Último sync: há {{ a.estado.ultimo_sync_em|timesince }}{% else %}Nunca sincronizada{% endif %}
+          {% if a.estado.ultimo_completo_em %}<br><small class="text-text-3">Último completo: {{ a.estado.ultimo_completo_em|date:"d/m H:i" }}</small>{% endif %}
+        </div>
+        {% if a.estado.ultimo_erro %}
+          <p class="config-erro">⚠ {{ a.estado.ultimo_erro_em|date:"d/m H:i" }} — {{ a.estado.ultimo_erro|truncatechars:300 }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
