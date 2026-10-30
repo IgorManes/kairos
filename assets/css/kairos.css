@@ -334,6 +334,8 @@
 @keyframes toast-in { from { opacity: 0; transform: translateY(10px) scale(.97); } }
 @keyframes toast-out { to { opacity: 0; transform: translateY(6px); } }
 @keyframes pop { 50% { transform: scale(1.22); } }
+@keyframes shrink { from { width: 100%; } to { width: 0; } }
+@keyframes menu-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
 @keyframes ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 70%, transparent); } 100% { box-shadow: 0 0 0 10px transparent; } }
 
 /* ===================================================================== */
@@ -462,6 +464,42 @@
   .event.is-short b { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .event.is-short small { display: none; }
   .event .btn { flex: none; height: 24px; padding: 0 8px; font-size: 12px; }
+
+  /* Menu ⋯ do card: popover nativo, grudado no botão (anchor positioning) */
+  .task-side { display: flex; align-items: center; gap: 2px; flex: none; }
+  .task-menu {
+    display: grid; place-items: center; width: 28px; height: 28px; margin-top: -3px; border: 0; border-radius: 8px;
+    background: transparent; color: var(--text-3); opacity: 0; transition: opacity .15s, background .15s, color .15s;
+  }
+  .task:hover .task-menu, .task:focus-within .task-menu { opacity: 1; }
+  .task-menu:hover { background: var(--surface-hover); color: var(--text); }
+  @media (hover: none) { .task-menu { opacity: 1; } }
+  .menu {
+    min-width: 220px; padding: 6px; border-radius: 12px; color: var(--text);
+    background: var(--surface-solid); border: 1px solid var(--border-strong); box-shadow: var(--shadow-md);
+  }
+  .menu[popover] {
+    margin: 6px 0 0; inset: auto;
+    position-area: bottom span-left; position-try-fallbacks: flip-block;
+  }
+  .menu[popover]:popover-open { animation: menu-in .14s ease-out; }
+  .menu button {
+    display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px;
+    background: transparent; font-size: 13.5px; text-align: left; color: var(--text-2);
+  }
+  .menu button:hover, .menu button:focus-visible { background: var(--surface-hover); color: var(--text); outline: 0; }
+  .menu button small { display: block; font-size: 11.5px; color: var(--text-3); }
+  .menu .danger, .menu .danger:hover { color: var(--danger); }
+  .menu .danger:hover { background: color-mix(in srgb, var(--danger) var(--tint), transparent); }
+  .menu hr { border: 0; border-top: 1px solid var(--border); margin: 6px 4px; }
+
+  /* Faíscas ao concluir e toast com barra de tempo para desfazer */
+  .spark { position: fixed; z-index: 60; width: 5px; height: 5px; border-radius: 50%; pointer-events: none; }
+  .toast .bar { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--grad); opacity: .7;
+                animation: shrink var(--duracao, 6s) linear forwards; }
+  .toast button { display: inline-flex; align-items: center; gap: 8px; border: 0; background: var(--surface-2);
+                  color: var(--text); font-weight: 600; font-size: 13px; padding: 4px 6px 4px 10px; border-radius: 7px; }
+  .toast button:hover { background: var(--surface-hover); }
 
   @container app (min-width: 560px) { .counters { grid-template-columns: repeat(4, 1fr); } }
   @container app (min-width: 920px) {

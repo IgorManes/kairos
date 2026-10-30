@@ -1,12 +1,26 @@
+import json
 from datetime import timedelta
 
-from django.shortcuts import render
+from django.core import serializers, signing
+from django.http import HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from . import consultas
-from .models import Categoria, Status
+from .models import Categoria, Origem, Status, Tarefa
 
 CATEGORIAS_FILTRAVEIS = {c.value for c in consultas.CATEGORIAS_DE_TAREFA}
+SAL_RESTAURAR = "kairos.restaurar-tarefa"
+VALIDADE_DESFAZER = 10 * 60  # segundos
+
+# Opções de status do menu ⋯ (ícone de cada uma)
+STATUS_MENU = [
+    (Status.EM_ANDAMENTO, "Em andamento", "play"),
+    (Status.AGUARDANDO, "Aguardando", "hourglass"),
+    (Status.A_FAZER, "A fazer", "circle"),
+]
 
 
 def saudacao(hora):
@@ -18,31 +32,101 @@ def saudacao(hora):
     return "Boa noite"
 
 
-def hoje(request):
+def ler_categoria(valor):
+    """Só aceita categorias conhecidas; qualquer outra coisa vira 'sem filtro'."""
+    return valor if valor in CATEGORIAS_FILTRAVEIS else None
+
+
+def contexto_hoje(categoria):
+    """Tudo que a tela Hoje precisa. Usado pela página e pelas ações (HTMX)."""
     agora = timezone.localtime()
     dia = agora.date()
-
-    # Filtro vem da URL (?categoria=trabalho); valores desconhecidos são ignorados.
-    categoria = request.GET.get("categoria")
-    if categoria not in CATEGORIAS_FILTRAVEIS:
-        categoria = None
-
-    secoes = consultas.secoes_hoje(dia, categoria)
     contadores = consultas.contadores(dia)
-    linha = consultas.linha_do_tempo(consultas.reunioes_do_dia(dia), agora)
-
-    # Resumo do topo: sempre sem filtro (é o panorama do dia).
-    pendentes_hoje = consultas.tarefas_visiveis().filter(prazo=dia).exclude(status=Status.CONCLUIDA).count()
-
-    return render(request, "tarefas/hoje.html", {
+    return {
         "hoje": dia,
         "amanha": dia + timedelta(days=1),
         "saudacao": saudacao(agora.hour),
         "categoria": categoria,
         "categoria_rotulo": Categoria(categoria).label if categoria else "",
-        "secoes": secoes,
+        "secoes": consultas.secoes_hoje(dia, categoria),
         "contadores": contadores,
         "total_atrasadas": sum(c["atrasadas"] for c in contadores),
-        "pendentes_hoje": pendentes_hoje,
-        "linha": linha,
-    })
+        # Resumo do topo: sempre sem filtro (é o panorama do dia).
+        "pendentes_hoje": consultas.tarefas_visiveis().filter(prazo=dia).exclude(status=Status.CONCLUIDA).count(),
+        "linha": consultas.linha_do_tempo(consultas.reunioes_do_dia(dia), agora),
+        "status_menu": STATUS_MENU,
+    }
+
+
+def hoje(request):
+    return render(request, "tarefas/hoje.html", contexto_hoje(ler_categoria(request.GET.get("categoria"))))
+
+
+# ===== Ações (chamadas pelo HTMX; respondem com o painel atualizado + toast) =====
+
+def responder_acao(request, mensagem, desfazer=None):
+    """
+    Devolve o painel do dia redesenhado e um toast. `desfazer` é (url, dados)
+    para o botão "Desfazer" do toast.
+    """
+    if not request.headers.get("HX-Request"):
+        return redirect("hoje")  # sem JS: volta para a página
+    categoria = ler_categoria(request.POST.get("categoria"))
+    contexto = contexto_hoje(categoria)
+    contexto["toast"] = {"mensagem": mensagem}
+    if desfazer:
+        url, dados = desfazer
+        contexto["toast"]["desfazer_url"] = url
+        contexto["toast"]["desfazer_vals"] = json.dumps({**dados, "categoria": categoria or ""})
+    return render(request, "tarefas/_resposta_acao.html", contexto)
+
+
+@require_POST
+def mudar_status(request, pk):
+    tarefa = get_object_or_404(Tarefa, pk=pk)
+    novo = request.POST.get("status")
+    if novo not in Status.values:
+        return HttpResponseBadRequest("Status inválido.")
+
+    anterior = tarefa.status
+    tarefa.status = novo
+    tarefa.save(update_fields=["status", "atualizado_em"])  # save() também grava concluida_em
+
+    if novo == Status.CONCLUIDA:
+        mensagem = "Tarefa concluída"
+    elif novo == Status.CANCELADA:
+        mensagem = "Tarefa cancelada" + (" (continua no Google)" if tarefa.origem != Origem.MANUAL else "")
+    elif anterior == Status.CONCLUIDA:
+        mensagem = "Tarefa reaberta"
+    else:
+        mensagem = f'Marcada como "{Status(novo).label}"'
+    return responder_acao(request, mensagem, (reverse("mudar_status", args=[pk]), {"status": anterior}))
+
+
+@require_POST
+def excluir(request, pk):
+    tarefa = get_object_or_404(Tarefa, pk=pk)
+    if tarefa.origem != Origem.MANUAL:
+        # Apagar faria o sync trazer de volta; itens do Google são cancelados.
+        return HttpResponseBadRequest("Itens do Google são cancelados, não excluídos.")
+
+    # Antes de apagar, guarda uma cópia completa, assinada, para o "Desfazer".
+    # Datas em ISO completo (o serializador "json" do Django corta em milissegundos).
+    campos = json.dumps(serializers.serialize("python", [tarefa]), default=lambda valor: valor.isoformat())
+    copia = signing.dumps(campos, salt=SAL_RESTAURAR, compress=True)
+    tarefa.delete()
+    return responder_acao(request, "Tarefa excluída", (reverse("restaurar"), {"copia": copia}))
+
+
+@require_POST
+def restaurar(request):
+    try:
+        dados = signing.loads(request.POST.get("copia", ""), salt=SAL_RESTAURAR, max_age=VALIDADE_DESFAZER)
+    except signing.BadSignature:  # inclui "expirado"
+        return HttpResponseBadRequest("Não foi possível desfazer (expirou ou é inválido).")
+
+    for objeto in serializers.deserialize("python", json.loads(dados)):
+        if Tarefa.objects.filter(pk=objeto.object.pk).exists():
+            return HttpResponseBadRequest("Essa tarefa já existe.")
+        objeto.save()  # grava exatamente como era (mesmo id e mesmas datas)
+    return responder_acao(request, "Desfeito")

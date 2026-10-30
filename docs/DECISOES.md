@@ -71,3 +71,13 @@ Formato: contexto → escolha → motivo.
 - **Filtro por categoria** → **link com `?categoria=` na URL**; valor desconhecido é ignorado → dá para favoritar/compartilhar o filtro e não quebra com entrada inválida.
 - **Números no CSS da linha do tempo** → **formatados em Python com ponto** → o template em pt-BR escreveria "1,5", que o CSS não entende.
 - **Dados de exemplo** → **comando `dados_exemplo` que só roda no `dev.sqlite3`** e não roda duas vezes → dá para ver as telas no notebook sem risco de sujar o banco real.
+
+## Etapa 3, bloco 2: Concluir, desfazer e menu (2026-10-30)
+
+- **Atualizar a tela após uma ação** → **o servidor devolve o painel do dia inteiro já redesenhado (HTMX troca o `#painel`)** em vez de mexer em cards com JS → a lógica fica toda no Python; o card muda de seção e contadores/resumo se atualizam juntos, sem duplicar regras no JS.
+- **Resposta imediata ao concluir** → **o JS marca o card na hora e o HTMX troca o painel 450 ms depois** (`swap:450ms`) → a animação termina antes do card mudar de lugar; se o servidor der erro, a marcação é desfeita e aparece um toast.
+- **Desfazer exclusão** → **antes de apagar, a tarefa vira um texto assinado com a `SECRET_KEY` (vale 10 min) que vai no botão "Desfazer"**; ao clicar, ela é recriada idêntica (mesmo id, mesmas datas) → sem "exclusão lógica" no modelo e sem processo em segundo plano; a assinatura impede forjar tarefas. O SQLite do Django nunca reaproveita ids, então o id original está livre.
+- **Datas na cópia** → **ISO completo** → o serializador JSON do Django corta em milissegundos (o teste pegou).
+- **Toast fora do painel** → **`hx-swap-oob`** → uma resposta atualiza dois lugares da página.
+- **Menu ⋯** → **popover nativo + anchor positioning em CSS** → abrir, fechar ao clicar fora e Esc sem JS; o menu vira para cima se não couber.
+- **Ações só por POST** → GET devolve 405; sem HTMX, redireciona para a página → nenhum link pode alterar dados por acidente.

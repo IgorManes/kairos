@@ -5,7 +5,9 @@
 {# ===== Card de tarefa (reutilizado nas seções; o HTMX vai pedir só este pedaço) ===== #}
 {% partialdef card %}
 <article class="task{% if t.atrasada %} is-late{% endif %}{% if t.status == 'concluida' %} is-done{% endif %}" data-cat="{{ t.categoria }}" id="tarefa-{{ t.pk }}">
-  <button class="check" aria-label="{% if t.status == 'concluida' %}Reabrir{% else %}Concluir{% endif %}"><svg class="icon"><use href="#i-check"/></svg></button>
+  <button class="check" aria-label="{% if t.status == 'concluida' %}Reabrir{% else %}Concluir{% endif %}"
+          hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{% if t.status == 'concluida' %}a_fazer{% else %}concluida{% endif %}"}'
+          hx-target="#painel" hx-swap="outerHTML swap:450ms"><svg class="icon"><use href="#i-check"/></svg></button>
   <div class="task-body">
     <p class="task-title"><s>{{ t.titulo }}</s></p>
     <div class="task-meta">
@@ -22,13 +24,31 @@
       {% endif %}
     </div>
   </div>
-  {% if t.prioridade == 'urgente' or t.prioridade == 'alta' %}
-    <span class="prio prio-{{ t.prioridade }}" title="Prioridade {{ t.get_prioridade_display }}"><svg class="icon icon-sm"><use href="#i-flag"/></svg>{{ t.get_prioridade_display }}</span>
-  {% endif %}
+  <div class="task-side">
+    {% if t.prioridade == 'urgente' or t.prioridade == 'alta' %}
+      <span class="prio prio-{{ t.prioridade }}" title="Prioridade {{ t.get_prioridade_display }}"><svg class="icon icon-sm"><use href="#i-flag"/></svg>{{ t.get_prioridade_display }}</span>
+    {% endif %}
+    <button class="task-menu" popovertarget="menu-{{ t.pk }}" style="anchor-name: --menu-{{ t.pk }}" aria-label="Mais ações"><svg class="icon"><use href="#i-more"/></svg></button>
+  </div>
+  <div class="menu" id="menu-{{ t.pk }}" popover style="position-anchor: --menu-{{ t.pk }}" hx-target="#painel" hx-swap="outerHTML">
+    {% for valor, rotulo, icone in status_menu %}{% if valor != t.status %}
+      <button hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{{ valor }}"}'><svg class="icon"><use href="#i-{{ icone }}"/></svg>{{ rotulo }}</button>
+    {% endif %}{% endfor %}
+    <hr>
+    {% if t.origem == 'manual' %}
+      <button class="danger" hx-post="{% url 'excluir' t.pk %}"><svg class="icon"><use href="#i-trash"/></svg>Excluir</button>
+    {% else %}
+      <button class="danger" hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "cancelada"}'><svg class="icon"><use href="#i-ban"/></svg><span>Cancelar tarefa<small>Vem do Google: não é apagada</small></span></button>
+    {% endif %}
+  </div>
 </article>
 {% endpartialdef %}
 
-{% block conteudo %}
+{% block conteudo %}{% partial painel %}{% endblock %}
+
+{# ===== Painel do dia: o que as ações (HTMX) redesenham ===== #}
+{% partialdef painel %}
+<div id="painel" hx-vals='{"categoria": "{{ categoria|default:'' }}"}'>
 {# ===== Topo ===== #}
 <section class="hero borda-gradiente relative mb-4 min-h-[148px] rounded-[20px] border border-border p-5 sm:px-7 sm:py-6">
   <p class="grad-text text-[11.5px] font-semibold uppercase tracking-[.09em]">Hoje · {{ hoje|date:"l, j \d\e F" }}</p>
@@ -122,4 +142,5 @@
     {% endif %}
   </aside>
 </div>
-{% endblock %}
+</div>
+{% endpartialdef %}

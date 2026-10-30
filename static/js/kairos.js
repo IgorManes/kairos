@@ -40,16 +40,75 @@ document.addEventListener("click", evento => {
 
 /* ===== Toasts ===== */
 function fecharToast(toast) {
+  if (!toast.isConnected || toast.classList.contains("is-leaving")) return;
   toast.classList.add("is-leaving");
   setTimeout(() => toast.remove(), 200);
 }
 
-function agendarToasts(raiz = document) {
-  raiz.querySelectorAll(".toast[data-auto]").forEach(toast => {
+function agendarToasts() {
+  document.querySelectorAll(".toast[data-auto]").forEach(toast => {
+    const duracao = Number(toast.dataset.auto) || 4000;  // data-auto="6000" = 6 s
     toast.removeAttribute("data-auto");
-    setTimeout(() => fecharToast(toast), 4000);
+    toast.style.setProperty("--duracao", duracao + "ms");
+    setTimeout(() => fecharToast(toast), duracao);
   });
+  // No máximo 3 toasts na tela.
+  const todos = document.querySelectorAll("#toasts .toast:not(.is-leaving)");
+  [...todos].slice(0, Math.max(0, todos.length - 3)).forEach(fecharToast);
 }
+
+function toastErro(mensagem) {
+  const toast = document.createElement("div");
+  toast.className = "toast is-erro";
+  toast.dataset.auto = "5000";
+  toast.textContent = mensagem;
+  document.getElementById("toasts")?.append(toast);
+  agendarToasts();
+}
+
+/* ===== Concluir: marca na hora (o servidor confirma em seguida) ===== */
+function faiscas(botao) {
+  if (reduzMovimento) return;
+  const r = botao.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const cor = getComputedStyle(botao).getPropertyValue("--c").trim() || "#8b5cf6";
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement("i");
+    s.className = "spark";
+    Object.assign(s.style, { left: cx + "px", top: cy + "px", background: cor, boxShadow: `0 0 8px ${cor}` });
+    document.body.append(s);
+    const angulo = (i / 14) * Math.PI * 2 + Math.random() * 0.5, distancia = 16 + Math.random() * 18;
+    s.animate([
+      { transform: "translate(-50%, -50%) scale(1)", opacity: 1 },
+      { transform: `translate(calc(-50% + ${Math.cos(angulo) * distancia}px), calc(-50% + ${Math.sin(angulo) * distancia}px)) scale(.2)`, opacity: 0 },
+    ], { duration: 500 + Math.random() * 250, easing: "cubic-bezier(.2,.7,.3,1)" }).onfinish = () => s.remove();
+  }
+}
+
+document.addEventListener("click", evento => {
+  const check = evento.target.closest(".task .check");
+  if (check) {
+    const concluindo = check.closest(".task").classList.toggle("is-done");
+    if (concluindo) faiscas(check);
+  }
+  const desfazer = evento.target.closest("[data-desfazer]");
+  if (desfazer) fecharToast(desfazer.closest(".toast"));
+});
+
+/* ===== Atalhos: Ctrl+Z desfaz a última ação ===== */
+document.addEventListener("keydown", evento => {
+  const digitando = evento.target.closest?.("input, textarea, select, [contenteditable]");
+  if ((evento.ctrlKey || evento.metaKey) && evento.key.toLowerCase() === "z" && !digitando) {
+    const botoes = document.querySelectorAll("#toasts .toast:not(.is-leaving) [data-desfazer]");
+    if (botoes.length) { evento.preventDefault(); botoes[botoes.length - 1].click(); }
+  }
+});
+
+/* ===== Erros do servidor: desfaz a marcação visual e avisa ===== */
+document.addEventListener("htmx:responseError", evento => {
+  if (evento.detail.elt.matches?.(".check")) evento.detail.elt.closest(".task").classList.toggle("is-done");
+  toastErro(evento.detail.xhr.responseText || "Algo deu errado. Tente de novo.");
+});
+document.addEventListener("htmx:sendError", () => toastErro("Sem conexão com o Kairos."));
 
 /* ===== Início ===== */
 document.addEventListener("DOMContentLoaded", () => {
@@ -57,4 +116,4 @@ document.addEventListener("DOMContentLoaded", () => {
   agendarToasts();
 });
 // Toasts que chegarem em respostas do HTMX também somem sozinhos.
-document.addEventListener("htmx:afterSettle", evento => agendarToasts(evento.target));
+document.addEventListener("htmx:afterSettle", agendarToasts);
