@@ -65,6 +65,13 @@ Regras (implementar em `clean()` e cobrir com testes):
 - "Atrasada" é calculado (prazo < hoje e status não é concluida/cancelada), não um campo salvo.
 - "Aguardando" serve para demandas paradas esperando outra pessoa; mostrar claramente na interface.
 
+### RelatorioSemanal (foto congelada de uma semana; ver seção 6.1)
+| campo | tipo | regra |
+|---|---|---|
+| semana_inicio | data | segunda-feira da semana; único |
+| gerado_em | data e hora | automático |
+| dados | JSON | cópia dos dados da semana no momento da geração (nunca recalculado) |
+
 ## 4. Telas
 1. **Login**: simples, com a identidade visual do app.
 2. **Hoje** (tela inicial): atrasadas no topo (destaque), tarefas de hoje, reuniões do dia em linha do tempo, próximos 7 dias. Contadores por categoria.
@@ -72,7 +79,8 @@ Regras (implementar em `clean()` e cobrir com testes):
 4. **Quadro**: kanban por status (arrastar pode vir depois; começar com botões de mudar status).
 5. **Criar/editar tarefa**: painel lateral ou modal (HTMX). O seletor de solicitante só aparece quando a categoria é Trabalho. Itens vindos do Google mostram os campos do Google como somente leitura + link para abrir no Google.
 6. **Pessoas e Projetos**: telas próprias simples (o admin do Django fica como reserva, não como interface principal).
-7. **Configurações**: conectar/desconectar conta Google, horário do último sync, botão "Sincronizar agora", erros recentes de sync.
+7. **Relatórios** (item próprio na barra lateral): lista das semanas salvas + semana atual (parcial); escolher recorte e exportar PDF. Ver seção 6.1.
+8. **Configurações**: conectar/desconectar conta Google, horário do último sync, botão "Sincronizar agora", erros recentes de sync.
 
 Interações importantes:
 - Criação rápida: campo no topo + atalho de teclado (`N`) para nova tarefa só com título e categoria.
@@ -112,6 +120,16 @@ Interações importantes:
 - Atividade removida no Classroom → cancelada, não apagada.
 - Mesmas regras de campos do Google x campos do dono.
 
+## 6.1 Relatórios semanais (PDF)
+- Semana = **segunda a domingo**.
+- **Foto congelada:** toda segunda, o app salva um `RelatorioSemanal` da semana anterior com uma cópia dos dados (textos, nomes e status como estavam). Editar ou excluir tarefas depois **não altera** relatórios já salvos. Se o PC estiver desligado, as semanas que faltam são geradas ao abrir o app.
+- **Semana atual:** pode ser exportada a qualquer momento como **"parcial"**, montada na hora a partir do banco; só congela na segunda seguinte.
+- O que a foto guarda: tarefas concluídas na semana, criadas na semana, abertas ao fim da semana (com destaque para atrasadas e aguardando) e reuniões da semana. Por tarefa: título, categoria, status, prioridade, prazo, datas de criação/conclusão, solicitante, projeto, disciplina, origem e observações.
+- **Recortes na exportação** (filtros aplicados sobre a foto, sem fotos extras): Geral; por categoria (Trabalho, Faculdade, Pessoal); por solicitante (Trabalho); por projeto; por disciplina (Faculdade).
+- **Observações** só entram no PDF se marcar "incluir observações" na exportação (desmarcado por padrão), para não mandar anotação privada ao gestor sem querer.
+- O PDF é gerado na hora a partir da foto (melhorias no visual valem também para semanas antigas). Biblioteca a definir na etapa: preferir solução só em Python que use templates do Django (WeasyPrint exige GTK no Windows).
+- Testes: geração da foto, imutabilidade após editar/excluir tarefa, recortes e geração de semanas que faltam.
+
 ## 7. Abrir como aplicativo no Windows
 - Script `iniciar.pyw` (sem janela de console): sobe o Django com `waitress` (servidor de produção que funciona no Windows; não usar `runserver`) em `127.0.0.1` numa porta fixa, com `DEBUG=False` e estáticos servidos (ex.: `whitenoise`), e abre uma janela `pywebview` com o nome e ícone do app. Ao fechar a janela, encerra o servidor.
 - Se o app já estiver aberto, não abrir uma segunda instância.
@@ -138,6 +156,7 @@ Interações importantes:
 3. Telas: Hoje, Tarefas (filtros), criar/editar, Pessoas/Projetos, Quadro.
 4. Google Agenda (OAuth + sync + testes com respostas simuladas).
 5. Google Classroom.
+5.1. Relatórios semanais: foto congelada + tela Relatórios + exportação em PDF.
 6. Janela pywebview, atalho, backup.
 6.1. Bandeja do sistema, iniciar com o Windows e notificações.
 7. Acabamento: README completo com prints, `docs/DECISOES.md` revisado, limpeza.

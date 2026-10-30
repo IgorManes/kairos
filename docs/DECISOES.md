@@ -34,3 +34,12 @@ Formato: contexto → escolha → motivo.
 - **Excluir tarefa** (não previsto na especificação) → **menu ⋯ no card + Desfazer no toast, sem caixa "tem certeza?"** → desfazer é tão seguro quanto confirmar e mais rápido. **Itens do Google são cancelados, não excluídos**: apagar faria o sync trazê-los de volta.
 - **Responsivo** → **container queries** (o layout reage à largura da área do app, não da janela) → o mesmo CSS serve para desktop, celular e a simulação de 390px do protótipo.
 - **JS do protótipo** → **estado → render** (os dados numa lista; a tela é sempre redesenhada a partir dela) → mesmo raciocínio do app, onde o banco é o estado e o Django/HTMX redesenha.
+
+## Funcionalidade nova: Relatórios semanais (planejada para a etapa 5.1)
+
+- **Relatório semanal salvo** → **foto congelada** (`RelatorioSemanal` com uma cópia dos dados em JSON, gerada toda segunda) em vez de recalcular do banco → o que foi enviado ao gestor continua igual mesmo se eu editar ou excluir tarefas depois.
+- **Uma foto por semana, recortes como filtro** → os recortes (categoria, solicitante, projeto, disciplina) são aplicados na exportação → não precisa de uma foto por combinação de filtro.
+- **PDF montado na hora a partir da foto** → melhorias no visual valem também para semanas antigas; a foto guarda dados, não o arquivo.
+- **Semana atual exportável como "parcial"** → dá para mandar o relatório na sexta, antes de a semana congelar.
+- **Observações no PDF** → **só se marcar na exportação** (desmarcado por padrão) → evita mandar anotação privada sem querer.
+- **Semana** → **segunda a domingo** → padrão de trabalho (ISO).
