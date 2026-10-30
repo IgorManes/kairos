@@ -1,0 +1,77 @@
+from django import forms
+from django.db.models import Q
+
+from .models import Categoria, Disciplina, Origem, Pessoa, Projeto, Status, Tarefa
+
+FORMATO_DATA_HORA = "%Y-%m-%dT%H:%M"  # formato do <input type="datetime-local">
+
+# Campos que vêm do Google: somente leitura nos itens sincronizados.
+CAMPOS_DO_GOOGLE = ["titulo", "categoria", "prazo", "prazo_hora", "disciplina", "inicio", "fim", "link_reuniao"]
+
+
+def pessoa_eu():
+    """A Pessoa que representa o dono (decisão: "Eu" como solicitante das próprias demandas)."""
+    return Pessoa.objects.filter(nome__iexact="Eu").first()
+
+
+class TarefaForm(forms.ModelForm):
+    class Meta:
+        model = Tarefa
+        fields = [
+            "titulo", "categoria", "solicitante", "disciplina", "projeto", "status", "prioridade",
+            "prazo", "prazo_hora", "inicio", "fim", "link_reuniao", "observacoes",
+        ]
+        labels = {
+            "titulo": "Título", "solicitante": "Solicitante", "disciplina": "Disciplina", "projeto": "Projeto",
+            "status": "Status", "prioridade": "Prioridade", "prazo": "Prazo", "prazo_hora": "Hora",
+            "inicio": "Início", "fim": "Fim", "link_reuniao": "Link da reunião", "observacoes": "Observações",
+        }
+        widgets = {
+            "categoria": forms.RadioSelect,
+            "prazo": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "prazo_hora": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
+            "inicio": forms.DateTimeInput(attrs={"type": "datetime-local"}, format=FORMATO_DATA_HORA),
+            "fim": forms.DateTimeInput(attrs={"type": "datetime-local"}, format=FORMATO_DATA_HORA),
+            "observacoes": forms.Textarea(attrs={"rows": 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        t = self.instance
+        self.fields["categoria"].choices = Categoria.choices  # sem a opção vazia "-----"
+
+        # Seletores mostram só ativos (mais o atual, se tiver sido desativado depois).
+        self.fields["solicitante"].queryset = Pessoa.objects.filter(Q(ativo=True) | Q(pk=t.solicitante_id))
+        self.fields["disciplina"].queryset = Disciplina.objects.filter(Q(ativo=True) | Q(pk=t.disciplina_id))
+        self.fields["projeto"].queryset = Projeto.objects.filter(Q(ativo=True) | Q(pk=t.projeto_id))
+        self.fields["projeto"].empty_label = "Nenhum"
+        self.fields["disciplina"].empty_label = "Nenhuma"
+
+        # "Cancelada" só aparece se a tarefa já estiver cancelada (cancelar é pelo menu).
+        self.fields["status"].choices = [
+            (v, r) for v, r in Status.choices if v != Status.CANCELADA or t.status == Status.CANCELADA
+        ]
+        for nome in ("inicio", "fim"):
+            self.fields[nome].input_formats = [FORMATO_DATA_HORA]
+
+        for campo in self.fields.values():
+            if not isinstance(campo.widget, forms.RadioSelect):
+                campo.widget.attrs.setdefault("class", "input")
+
+        # Itens do Google: o Django ignora o que vier do navegador nesses campos.
+        if t.pk and t.origem != Origem.MANUAL:
+            for nome in CAMPOS_DO_GOOGLE:
+                self.fields[nome].disabled = True
+
+    def clean(self):
+        dados = super().clean()
+        categoria = dados.get("categoria")
+        # Campos escondidos continuam sendo enviados; limpa os que não valem para a categoria.
+        if categoria != Categoria.TRABALHO:
+            dados["solicitante"] = None
+        if categoria != Categoria.FACULDADE:
+            dados["disciplina"] = None
+        if categoria != Categoria.REUNIAO:
+            dados["inicio"] = dados["fim"] = None
+            dados["link_reuniao"] = ""
+        return dados

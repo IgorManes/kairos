@@ -1,0 +1,6 @@
+{# Um campo de formulário: rótulo, campo e erros. Uso: {% include "partials/campo.html" with campo=form.titulo dica="..." %} #}
+<label class="field{% if campo.errors %} has-erro{% endif %}">
+  <span>{{ campo.label }}{% if dica %}<small>{{ dica }}</small>{% endif %}</span>
+  {{ campo }}
+  {% for erro in campo.errors %}<small class="erro">{{ erro }}</small>{% endfor %}
+</label>

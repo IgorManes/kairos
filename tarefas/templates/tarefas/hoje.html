@@ -9,7 +9,7 @@
           hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{% if t.status == 'concluida' %}a_fazer{% else %}concluida{% endif %}"}'
           hx-target="#painel" hx-swap="outerHTML swap:450ms"><svg class="icon"><use href="#i-check"/></svg></button>
   <div class="task-body">
-    <p class="task-title"><s>{{ t.titulo }}</s></p>
+    <button class="task-title" hx-get="{% url 'editar_tarefa' t.pk %}" hx-target="#drawer-conteudo"><s>{{ t.titulo }}</s></button>
     <div class="task-meta">
       <span class="cat"><i class="dot"></i>{% if t.disciplina %}{{ t.disciplina.nome }}{% elif t.projeto %}{{ t.projeto.nome }}{% else %}{{ t.get_categoria_display }}{% endif %}</span>
       {% if t.solicitante %}
@@ -31,6 +31,7 @@
     <button class="task-menu" popovertarget="menu-{{ t.pk }}" style="anchor-name: --menu-{{ t.pk }}" aria-label="Mais ações"><svg class="icon"><use href="#i-more"/></svg></button>
   </div>
   <div class="menu" id="menu-{{ t.pk }}" popover style="position-anchor: --menu-{{ t.pk }}" hx-target="#painel" hx-swap="outerHTML">
+    <button hx-get="{% url 'editar_tarefa' t.pk %}" hx-target="#drawer-conteudo"><svg class="icon"><use href="#i-pencil"/></svg>Editar</button>
     {% for valor, rotulo, icone in status_menu %}{% if valor != t.status %}
       <button hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{{ valor }}"}'><svg class="icon"><use href="#i-{{ icone }}"/></svg>{{ rotulo }}</button>
     {% endif %}{% endfor %}
@@ -48,7 +49,7 @@
 
 {# ===== Painel do dia: o que as ações (HTMX) redesenham ===== #}
 {% partialdef painel %}
-<div id="painel" hx-vals='{"categoria": "{{ categoria|default:'' }}"}'>
+<div id="painel" hx-vals='{"filtro": "{{ categoria|default:'' }}"}'>
 {# ===== Topo ===== #}
 <section class="hero borda-gradiente relative mb-4 min-h-[148px] rounded-[20px] border border-border p-5 sm:px-7 sm:py-6">
   <p class="grad-text text-[11.5px] font-semibold uppercase tracking-[.09em]">Hoje · {{ hoje|date:"l, j \d\e F" }}</p>
@@ -61,6 +62,19 @@
   </p>
   {% include "partials/circuito.html" with classe="hero-circuito" %}
 </section>
+
+{# ===== Criação rápida (tecla N foca o campo) ===== #}
+<form class="quick" hx-post="{% url 'criar_rapida' %}" hx-target="#painel" hx-swap="outerHTML">
+  <svg class="icon"><use href="#i-plus"/></svg>
+  <label class="sr-only" for="quick-input">Nova tarefa para hoje</label>
+  <input id="quick-input" name="titulo" placeholder="Adicionar tarefa para hoje…" autocomplete="off" maxlength="200" required{% if focar_rapida %} data-focar{% endif %}>
+  <div class="cats" role="radiogroup" aria-label="Categoria">
+    {% for valor, rotulo in categorias_rapidas %}
+      <label data-cat="{{ valor }}"><input type="radio" name="cat_rapida" value="{{ valor }}" class="sr-only"{% if valor == cat_rapida %} checked{% endif %}><i class="dot"></i><span class="label">{{ rotulo }}</span></label>
+    {% endfor %}
+  </div>
+  <kbd title="Atalho: tecla N">N</kbd>
+</form>
 
 {# ===== Contadores (clicar filtra; o filtro fica na URL) ===== #}
 <div class="counters">

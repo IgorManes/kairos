@@ -53,7 +53,7 @@ class AcoesTests(TestCase):
         self.assertEqual(resposta.status_code, 405)
 
     def test_filtro_ativo_continua_depois_da_acao(self):
-        resposta = self.post(f"/tarefas/{self.tarefa.pk}/status/", {"status": "concluida", "categoria": "pessoal"})
+        resposta = self.post(f"/tarefas/{self.tarefa.pk}/status/", {"status": "concluida", "filtro": "pessoal"})
         self.assertIn("Mostrando só", resposta.content.decode())
 
     def test_sem_htmx_volta_para_a_pagina(self):

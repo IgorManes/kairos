@@ -94,12 +94,46 @@ document.addEventListener("click", evento => {
   if (desfazer) fecharToast(desfazer.closest(".toast"));
 });
 
-/* ===== Atalhos: Ctrl+Z desfaz a última ação ===== */
+/* ===== Painel lateral de criar/editar ===== */
+const painelLateral = () => document.getElementById("drawer");
+
+// Abre quando o HTMX coloca o formulário dentro dele.
+document.addEventListener("htmx:afterSwap", evento => {
+  if (evento.detail.target.id !== "drawer-conteudo") return;
+  const dialogo = painelLateral();
+  if (!dialogo.open) dialogo.showModal();
+  const titulo = dialogo.querySelector('input[name="titulo"]:not(:disabled)');
+  if (titulo && !dialogo.querySelector(".erro")) titulo.focus();
+  else dialogo.querySelector(".has-erro .input")?.focus();
+});
+// O servidor avisa "fecharPainel" quando salvou com sucesso.
+document.body.addEventListener("fecharPainel", () => painelLateral()?.close());
+document.addEventListener("click", evento => {
+  if (evento.target.closest("[data-fechar-painel]")) painelLateral()?.close();
+  if (evento.target === painelLateral()) painelLateral().close();  // clique fora (no fundo escuro)
+  // Escolheu uma opção no menu ⋯: fecha o menu.
+  const opcao = evento.target.closest("[popover] button");
+  if (opcao) opcao.closest("[popover]").hidePopover();
+});
+
+// Depois de criar pela criação rápida, o campo volta focado para a próxima.
+document.addEventListener("htmx:afterSettle", () => {
+  const focar = document.querySelector("[data-focar]");
+  if (focar) { focar.removeAttribute("data-focar"); focar.focus(); }
+});
+
+/* ===== Atalhos: N = nova tarefa rápida, Ctrl+Z = desfazer ===== */
 document.addEventListener("keydown", evento => {
   const digitando = evento.target.closest?.("input, textarea, select, [contenteditable]");
   if ((evento.ctrlKey || evento.metaKey) && evento.key.toLowerCase() === "z" && !digitando) {
     const botoes = document.querySelectorAll("#toasts .toast:not(.is-leaving) [data-desfazer]");
     if (botoes.length) { evento.preventDefault(); botoes[botoes.length - 1].click(); }
+    return;
+  }
+  if (digitando || evento.ctrlKey || evento.metaKey || evento.altKey || painelLateral()?.open) return;
+  if (evento.key.toLowerCase() === "n") {
+    const campo = document.getElementById("quick-input");
+    if (campo) { evento.preventDefault(); campo.focus(); }
   }
 });
 

@@ -1,0 +1,73 @@
+{# Painel lateral de criar/editar tarefa (carregado pelo HTMX dentro do <dialog id="drawer">). #}
+<form class="drawer-form" hx-post="{% if tarefa.pk %}{% url 'editar_tarefa' tarefa.pk %}{% else %}{% url 'nova_tarefa' %}{% endif %}"
+      hx-target="#painel" hx-swap="outerHTML" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="filtro" value="{{ filtro|default:'' }}">
+
+  <header>
+    <h2 id="drawer-titulo">{% if tarefa.pk %}Editar tarefa{% else %}Nova tarefa{% endif %}</h2>
+    <button type="button" class="btn btn-ghost btn-icon" data-fechar-painel aria-label="Fechar"><svg class="icon"><use href="#i-x"/></svg></button>
+  </header>
+
+  <div class="drawer-body">
+    {% if google %}
+      <div class="google-box">
+        <div class="flex items-center justify-between gap-2">
+          <span>Vem do <b>{{ tarefa.get_origem_display }}</b>{% if tarefa.sincronizado_em %} · sincronizado {{ tarefa.sincronizado_em|timesince }} atrás{% endif %}</span>
+          {% if tarefa.link_externo %}<a class="btn btn-secondary btn-sm" href="{{ tarefa.link_externo }}" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-external"/></svg>Abrir</a>{% endif %}
+        </div>
+        {% if tarefa.descricao_externa %}<p>{{ tarefa.descricao_externa|linebreaksbr }}</p>{% endif %}
+        <small>Título, prazo e categoria vêm do Google (somente leitura). Status, prioridade, projeto e observações são seus.</small>
+      </div>
+    {% endif %}
+
+    {% for erro in form.non_field_errors %}<p class="chip chip-late h-auto py-2">{{ erro }}</p>{% endfor %}
+
+    {% include "partials/campo.html" with campo=form.titulo %}
+
+    <div class="field">
+      <span>Categoria</span>
+      <div class="seg seg-radio" role="radiogroup" aria-label="Categoria">
+        {% for opcao in form.categoria %}
+          <label data-cat="{{ opcao.data.value }}">{{ opcao.tag }}<i class="dot"></i>{{ opcao.choice_label }}</label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div data-so="trabalho">{% include "partials/campo.html" with campo=form.solicitante dica="quem pediu" %}</div>
+    <div data-so="faculdade">{% include "partials/campo.html" with campo=form.disciplina %}</div>
+    <div data-so="reuniao">
+      <div class="field-row">
+        {% include "partials/campo.html" with campo=form.inicio %}
+        {% include "partials/campo.html" with campo=form.fim %}
+      </div>
+      {% include "partials/campo.html" with campo=form.link_reuniao %}
+    </div>
+
+    {% include "partials/campo.html" with campo=form.projeto %}
+    <div class="field-row">
+      {% include "partials/campo.html" with campo=form.status %}
+      {% include "partials/campo.html" with campo=form.prioridade %}
+    </div>
+    <div class="field-row" data-nao="reuniao">
+      {% include "partials/campo.html" with campo=form.prazo %}
+      {% include "partials/campo.html" with campo=form.prazo_hora dica="opcional" %}
+    </div>
+    {% include "partials/campo.html" with campo=form.observacoes dica="só no Kairos, o sync nunca mexe" %}
+  </div>
+
+  <footer>
+    {% if tarefa.pk %}
+      {% if google %}
+        <button type="button" class="btn btn-danger" data-fechar-painel hx-post="{% url 'mudar_status' tarefa.pk %}"
+                hx-vals='{"status": "cancelada", "filtro": "{{ filtro|default:'' }}"}'><svg class="icon icon-sm"><use href="#i-ban"/></svg>Cancelar tarefa</button>
+      {% else %}
+        <button type="button" class="btn btn-danger" data-fechar-painel hx-post="{% url 'excluir' tarefa.pk %}"
+                hx-vals='{"filtro": "{{ filtro|default:'' }}"}'><svg class="icon icon-sm"><use href="#i-trash"/></svg>Excluir</button>
+      {% endif %}
+    {% endif %}
+    <span class="flex-1"></span>
+    <button type="button" class="btn btn-secondary" data-fechar-painel>Cancelar</button>
+    <button type="submit" class="btn btn-primary">Salvar</button>
+  </footer>
+</form>

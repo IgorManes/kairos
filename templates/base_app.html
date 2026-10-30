@@ -7,6 +7,7 @@
 
     <nav class="sidebar" aria-label="Principal">
       <a class="logo px-2.5 pt-1 pb-4" href="{% url 'hoje' %}"><svg><use href="#i-logo"/></svg>Kairos</a>
+      <button class="btn btn-primary mb-3.5" hx-get="{% url 'nova_tarefa' %}" hx-target="#drawer-conteudo"><svg class="icon icon-sm"><use href="#i-plus"/></svg>Nova tarefa</button>
       <a class="nav-item" href="{% url 'hoje' %}" {% if atual == 'hoje' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-sun"/></svg>Hoje</a>
       <span class="nav-item" aria-disabled="true" title="Em breve (etapa 3)"><svg class="icon"><use href="#i-list"/></svg>Tarefas</span>
       <span class="nav-item" aria-disabled="true" title="Em breve (etapa 3)"><svg class="icon"><use href="#i-board"/></svg>Quadro</span>
@@ -30,6 +31,7 @@
       <a class="logo" href="{% url 'hoje' %}"><svg><use href="#i-logo"/></svg>Kairos</a>
       <span class="flex-1"></span>
       <button class="btn btn-ghost btn-icon" data-action="tema" aria-label="Alternar tema"><svg class="icon"><use href="#i-sun"/></svg></button>
+      <button class="btn btn-primary btn-icon" hx-get="{% url 'nova_tarefa' %}" hx-target="#drawer-conteudo" aria-label="Nova tarefa"><svg class="icon"><use href="#i-plus"/></svg></button>
       <form method="post" action="{% url 'logout' %}">
         {% csrf_token %}
         <button class="btn btn-ghost btn-icon" aria-label="Sair"><svg class="icon"><use href="#i-logout"/></svg></button>
@@ -48,5 +50,10 @@
     </nav>
   </div>
 </div>
+
+{# Painel lateral de criar/editar (conteúdo carregado pelo HTMX) #}
+<dialog class="drawer" id="drawer" aria-labelledby="drawer-titulo">
+  <div id="drawer-conteudo"></div>
+</dialog>
 {% endwith %}
 {% endblock %}

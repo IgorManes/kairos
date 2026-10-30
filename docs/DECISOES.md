@@ -81,3 +81,13 @@ Formato: contexto → escolha → motivo.
 - **Toast fora do painel** → **`hx-swap-oob`** → uma resposta atualiza dois lugares da página.
 - **Menu ⋯** → **popover nativo + anchor positioning em CSS** → abrir, fechar ao clicar fora e Esc sem JS; o menu vira para cima se não couber.
 - **Ações só por POST** → GET devolve 405; sem HTMX, redireciona para a página → nenhum link pode alterar dados por acidente.
+
+## Etapa 3, bloco 3: Criar e editar (2026-10-30)
+
+- **Formulário** → **`ModelForm`** → ao salvar ele roda o `clean()` do modelo, então as regras da etapa 1 valem aqui sem reescrever; os erros aparecem no campo certo.
+- **Campos que só valem para uma categoria** → **aparecem/somem só com CSS (`:has()`)** e **o servidor limpa os que não valem** → campo escondido continua sendo enviado (trocar de Trabalho para Pessoal ainda mandaria a Ana); sem a limpeza o modelo recusaria.
+- **Campos do Google no formulário** → **`disabled` no form do Django** → o Django ignora o que o navegador mandar e usa o valor do banco; esconder só na tela não impediria um envio forjado (há teste para isso).
+- **"Eu" como solicitante** → **identificado pelo nome "Eu"**; a criação rápida o cria na primeira vez; o painel já vem com ele selecionado → segue a decisão da etapa 1 sem campo novo no modelo.
+- **Erro de validação no painel** → **o servidor responde com `HX-Retarget`** para redesenhar o formulário no painel em vez de trocar o `#painel` → o mesmo formulário serve para sucesso e erro sem JS extra.
+- **Filtro nas ações renomeado para `filtro`** → evitava conflito com o campo `categoria` da tarefa.
+- **Classes utilitárias x componentes (de novo)** → utilitárias de display (`grid`) vencem regras de componente; em elementos que o CSS precisa esconder, só classes de componente → o print pegou o bug.

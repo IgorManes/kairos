@@ -335,6 +335,8 @@
 @keyframes toast-out { to { opacity: 0; transform: translateY(6px); } }
 @keyframes pop { 50% { transform: scale(1.22); } }
 @keyframes shrink { from { width: 100%; } to { width: 0; } }
+@keyframes drawer-in { from { transform: translateX(40px); opacity: 0; } }
+@keyframes sheet-in { from { transform: translateY(40px); opacity: 0; } }
 @keyframes menu-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
 @keyframes ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 70%, transparent); } 100% { box-shadow: 0 0 0 10px transparent; } }
 
@@ -501,7 +503,88 @@
                   color: var(--text); font-weight: 600; font-size: 13px; padding: 4px 6px 4px 10px; border-radius: 7px; }
   .toast button:hover { background: var(--surface-hover); }
 
-  @container app (min-width: 560px) { .counters { grid-template-columns: repeat(4, 1fr); } }
+  /* Título do card é um botão (abre a edição) */
+  .task-title { display: block; width: 100%; padding: 0; border: 0; background: none; color: inherit; text-align: left; }
+  .task-title:hover s { color: var(--text); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+
+  /* Criação rápida */
+  .quick {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; margin-bottom: 16px;
+    border-radius: 14px; background: var(--surface); backdrop-filter: blur(10px);
+    border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .2s;
+  }
+  .quick:focus-within {
+    border-color: color-mix(in srgb, var(--g2) 65%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--g2) 16%, transparent),
+                0 12px 32px -14px color-mix(in srgb, var(--g2) var(--glow-a), transparent);
+  }
+  .quick > .icon { color: var(--text-3); }
+  .quick input[name="titulo"] { flex: 1 1 140px; min-width: 0; height: 36px; border: 0; outline: 0; background: transparent; color: var(--text); }
+  .quick input[name="titulo"]::placeholder { color: var(--text-3); }
+  .quick .cats { display: flex; gap: 2px; }
+  .quick .cats label {
+    display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 9px; cursor: pointer;
+    border: 1px solid transparent; border-radius: 8px; font-size: 12.5px; color: var(--text-3);
+  }
+  .quick .cats label:has(:checked) { color: var(--text); background: color-mix(in srgb, var(--c) var(--tint), transparent);
+                                     border-color: color-mix(in srgb, var(--c) 40%, transparent); }
+  .quick .cats label:has(:focus-visible) { outline: 2px solid color-mix(in srgb, var(--g2) 80%, transparent); }
+  .quick .cats .label { display: none; }
+  .quick kbd { margin-right: 6px; }
+
+  /* Painel lateral (no celular vira folha de baixo) */
+  .drawer {
+    width: min(460px, 100vw); max-width: 100vw; height: 100dvh; max-height: 100dvh;
+    margin: 0 0 0 auto; padding: 0; border: 0; border-left: 1px solid var(--border-strong);
+    background: var(--surface-solid); color: var(--text); box-shadow: -30px 0 60px -24px rgb(0 0 0 / .6);
+  }
+  .drawer[open] { animation: drawer-in .32s cubic-bezier(.2, .8, .2, 1); }
+  .drawer::backdrop { background: rgb(4 5 14 / .55); backdrop-filter: blur(4px); }
+  @media (max-width: 560px) {
+    .drawer { margin: auto 0 0; width: 100vw; height: 90dvh; border: 1px solid var(--border-strong); border-radius: 22px 22px 0 0; }
+    .drawer[open] { animation-name: sheet-in; }
+  }
+  .drawer-form { display: flex; flex-direction: column; height: 100%; }
+  .drawer-form header { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 16px 22px; }
+  .drawer-form header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--grad); opacity: .5; }
+  .drawer-form h2 { font-size: 17px; font-weight: 650; }
+  .drawer-body { flex: 1; overflow: auto; padding: 20px 22px; display: grid; gap: 16px; align-content: start; }
+  .drawer-form footer { display: flex; gap: 8px; padding: 14px 22px; border-top: 1px solid var(--border); }
+  .field > span small { color: var(--text-3); font-weight: 400; margin-left: 6px; }
+  .field .erro { color: var(--danger); font-size: 12.5px; }
+  .field.has-erro .input { border-color: color-mix(in srgb, var(--danger) 70%, transparent); }
+  textarea.input { height: auto; padding: 10px 12px; resize: vertical; }
+  .input:disabled { opacity: .7; cursor: not-allowed; border-style: dashed; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .google-box {
+    display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px; font-size: 13px; color: var(--text-2);
+    border: 1px solid color-mix(in srgb, var(--g1) 32%, var(--border)); background: color-mix(in srgb, var(--g1) 8%, transparent);
+  }
+  .google-box b { color: var(--text); }
+  .google-box small { color: var(--text-3); }
+
+  /* Categoria em botões segmentados (rádios) */
+  .seg { display: flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); }
+  .seg-radio label {
+    flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 8px;
+    border-radius: 7px; font-size: 13px; color: var(--text-2); cursor: pointer; transition: background .15s, color .15s;
+  }
+  .seg-radio input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg-radio label:has(:checked) { background: var(--surface-solid); color: var(--text); box-shadow: var(--shadow-sm); }
+  .seg-radio label:has(:focus-visible) { outline: 2px solid color-mix(in srgb, var(--g2) 80%, transparent); }
+  .seg-radio label:has(:disabled) { cursor: not-allowed; opacity: .6; }
+
+  /* Campos que só valem para uma categoria: aparecem só com ela marcada (sem JS) */
+  .drawer-form [data-so] { display: none; gap: 16px; }
+  .drawer-form:has(input[name="categoria"][value="trabalho"]:checked) [data-so="trabalho"],
+  .drawer-form:has(input[name="categoria"][value="faculdade"]:checked) [data-so="faculdade"],
+  .drawer-form:has(input[name="categoria"][value="reuniao"]:checked) [data-so="reuniao"] { display: grid; }
+  .drawer-form:has(input[name="categoria"][value="reuniao"]:checked) [data-nao="reuniao"] { display: none; }
+
+  @container app (min-width: 560px) {
+    .counters { grid-template-columns: repeat(4, 1fr); }
+    .quick .cats .label { display: inline; }
+  }
   @container app (min-width: 920px) {
     .content { grid-template-columns: minmax(0, 1fr) 330px; gap: 32px; }
     .content aside { position: sticky; top: 24px; }
