@@ -1,6 +1,56 @@
 # Registro de decisões
 
-Formato: contexto → escolha → motivo.
+Formato de cada item: **contexto → escolha → motivo**. As seções abaixo estão em ordem cronológica, etapa por etapa; este topo é o resumo para quem está chegando.
+
+## Comece por aqui
+
+As decisões que mais explicam o projeto:
+
+1. **Django + HTMX, servidor como fonte da verdade:** o HTMX troca pedaços de HTML gerados pelo Django; nenhuma regra de negócio duplicada em JavaScript.
+2. **Ações desacopladas das telas:** cada ação só dispara o aviso `dadosMudaram`; cada tela escuta e se recarrega com os próprios filtros (o Quadro funcionou sem mudar nenhuma ação).
+3. **Regras num lugar só:** `clean()` do modelo (usado por formulários, admin e sync) e consultas em `consultas.py`, testáveis isoladamente.
+4. **Sync com o Google só leitura, incremental e idempotente:** `syncToken` na Agenda, "só grava o que mudou" no Classroom, diferença de conjuntos para apagados, campos do dono nunca sobrescritos.
+5. **Reagir à mudança, não ao estado:** o sync só mexe no status quando algo muda no Google, para nunca brigar com uma decisão do dono.
+6. **Relatório como foto congelada (JSON):** o que foi enviado ao gestor nunca muda.
+7. **Desfazer sem lixo no banco:** cópia assinada com a `SECRET_KEY` dentro do botão "Desfazer".
+8. **Nada a instalar quando o Windows já tem:** PDF e ícone pelo Edge; bandeja e notificações pelo `NotifyIcon`; "iniciar com o Windows" pelo Registro.
+9. **A janela é só uma moldura:** o app é um site Django; o pywebview só o envolve (abre caminho para o celular via Tailscale).
+10. **Custo zero e privacidade:** Google sem faturamento (sem cartão, sem cobrança possível), dados só no PC, segredos fora do Git.
+
+## Lições aprendidas
+
+Problemas que só apareceram com testes, prints ou dados reais — e o que cada um ensinou:
+
+- **Conferir o visual com prints** pegou cards vazando de colunas, títulos cortados no meio da palavra, campos escondidos que apareciam e reuniões sobrepostas. Testes automáticos não veem layout.
+- **Dados reais revelam regras que faltavam:** reuniões passadas acumulando, reuniões no mesmo horário, 23 "atividades" antigas do Classroom que não eram pendências.
+- **Testar sync em sequência, não uma vez só:** a regra do "marco zero" funcionava no 1º sync e falhava no 2º (ignorar = não salvar, e no sync seguinte a atividade parecia nova).
+- **Ler a documentação antes de codar:** evento apagado chega sem `iCalUID` (mudou o identificador); prazos do Classroom vêm em UTC; a mesma permissão tem dois nomes.
+- **Nunca engolir erro em silêncio:** um `except: pass` escondeu por que o login do Google falhava.
+- **Nomes colidem:** a animação `pulse` foi sobrescrita pela do Tailwind; o filtro `categoria` colidia com o campo da tarefa.
+- **Windows tem suas regras:** PowerShell 5.1 lê `.ps1` sem BOM no padrão antigo; o Windows não apaga arquivo aberto; WinForms só aceita a própria thread; handles de 64 bits no `ctypes`.
+- **Banco tem suas regras:** erro de chave duplicada "envenena" a transação (ponto de salvamento resolve); o JSON do Django corta datas em milissegundos; o SQLite não ignora acentos.
+- **Confirmar o que está rodando:** um teste de integração "falhou" porque uma versão antiga do app ainda estava aberta.
+
+## Índice
+
+- [Etapa 0: Preparação (2026-10-29)](#etapa-0-preparação-2026-10-29)
+- [Etapa 1: Modelos, regras e login (2026-10-29)](#etapa-1-modelos-regras-e-login-2026-10-29)
+- [Etapa 2: Protótipo visual (2026-10-29)](#etapa-2-protótipo-visual-2026-10-29)
+- [Funcionalidade nova: Relatórios semanais (planejada para a etapa 5.1)](#funcionalidade-nova-relatórios-semanais-planejada-para-a-etapa-51)
+- [Etapa 2: Visual aplicado ao app (2026-10-29)](#etapa-2-visual-aplicado-ao-app-2026-10-29)
+- [Agenda da empresa (planejada para a etapa 4)](#agenda-da-empresa-planejada-para-a-etapa-4)
+- [Etapa 3, bloco 1: Tela Hoje (2026-10-30)](#etapa-3-bloco-1-tela-hoje-2026-10-30)
+- [Etapa 3, bloco 2: Concluir, desfazer e menu (2026-10-30)](#etapa-3-bloco-2-concluir-desfazer-e-menu-2026-10-30)
+- [Etapa 3, bloco 3: Criar e editar (2026-10-30)](#etapa-3-bloco-3-criar-e-editar-2026-10-30)
+- [Etapa 3, bloco 4: Tela Tarefas (2026-10-30)](#etapa-3-bloco-4-tela-tarefas-2026-10-30)
+- [Etapa 3, bloco 5: Pessoas e Projetos (2026-10-30)](#etapa-3-bloco-5-pessoas-e-projetos-2026-10-30)
+- [Etapa 3, bloco 6: Quadro (2026-10-30)](#etapa-3-bloco-6-quadro-2026-10-30)
+- [Etapa 4: Google Agenda (2026-10-30)](#etapa-4-google-agenda-2026-10-30)
+- [Etapa 4: sync automático e Configurações (2026-10-30)](#etapa-4-sync-automático-e-configurações-2026-10-30)
+- [Etapa 5: Google Classroom (2026-10-30)](#etapa-5-google-classroom-2026-10-30)
+- [Etapa 5.1: Relatórios semanais (2026-10-30)](#etapa-51-relatórios-semanais-2026-10-30)
+- [Etapa 6: Kairos como aplicativo (2026-10-30)](#etapa-6-kairos-como-aplicativo-2026-10-30)
+- [Etapa 6.1: Bandeja, iniciar com o Windows e notificações (2026-10-30)](#etapa-61-bandeja-iniciar-com-o-windows-e-notificações-2026-10-30)
 
 ## Etapa 0: Preparação (2026-10-29)
 
@@ -211,3 +261,12 @@ Formato: contexto → escolha → motivo.
 - **Teste que enganou** → um Kairos antigo (versão sem bandeja) estava aberto; a instância única desviou o teste para ele. Lição: confirmar qual versão está rodando antes de concluir algo de um teste de integração.
 - **Botões do Quadro vazando do card** (o texto "← A fazer / Aguardando →" não cabe numa coluna) → **só a seta**, com o destino no "passar o mouse" e para leitor de tela → arrastar é o caminho principal no computador; os botões ficam compactos.
 - **Títulos quebrando no meio da palavra** ("indicador/es") → `overflow-wrap: break-word` em vez de `anywhere` (só corta palavra que não cabe sozinha na linha); no Quadro, bandeira e ⋯ flutuam no canto em vez de ocupar uma coluna ao lado do título.
+
+## Etapa 7: Acabamento (2026-10-30)
+
+- **Verificador de código** → **ruff** (um pacote, regras E/F/W/I/B/UP, linha de 120) configurado no `pyproject.toml` e em `requirements-dev.txt` → mesmas regras nas duas máquinas; o PC de uso não instala ferramentas de desenvolvimento. Formatação automática aplicada uma vez (só forma, sem mudar comportamento; 196 testes passando antes e depois).
+- **`.pyw` no verificador** → `extend-include = ["*.pyw"]` → o ruff ignorava o `iniciar.pyw` por padrão.
+- **Prints do README** → **gerados por script (`ferramentas/gerar_prints.py`) num banco temporário com dados de demonstração e empresa fictícia** → o repositório é público; nenhum dado real (reuniões, empresa, faculdade) aparece. O script se recusa a rodar fora da pasta temporária.
+- **Dados de exemplo no banco de desenvolvimento** → removidos só os registros criados pelo `dados_exemplo` (por nome/título exato), com backup antes → o dono passou a ver só dados reais; o banco do PC de uso nunca teve exemplos.
+- **Textos de tempo** → filtro `ha_quanto` ("agora", "há 5 min") em vez do `timesince` do Django ("há 0 minuto"); contador de reuniões diz "em andamento agora" quando a reunião já começou (antes contradizia o topo).
+- **DECISOES.md** → resumo, lições aprendidas e índice no topo, histórico intacto → porta de entrada para quem chega pelo GitHub.
