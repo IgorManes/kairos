@@ -1,8 +1,10 @@
 asgiref==3.13.0
+bottle==0.13.4
 certifi==2026.10.23
 cffi==2.1.1
 charset-normalizer==3.5.2
 click==8.5.0
+clr_loader==0.3.1
 cryptography==50.0.2
 Django==5.2.18
 django-axes==8.3.1
@@ -21,11 +23,14 @@ oauthlib==4.0.0
 opentelemetry-api==1.45.2
 proto-plus==1.29.0
 protobuf==7.36.2
+proxy_tools==0.1.0
 pyasn1==0.6.5
 pyasn1_modules==0.4.2
 pycparser==3.12
 pyparsing==3.3.3
 python-dotenv==1.2.4
+pythonnet==3.2.1
+pywebview==6.2.1
 requests==2.34.2
 requests-oauthlib==2.0.0
 semver==3.1.0
@@ -34,3 +39,5 @@ typing_extensions==4.16.0
 tzdata==2026.6
 uritemplate==4.2.0
 urllib3==2.8.0
+waitress==3.0.2
+whitenoise==6.12.0

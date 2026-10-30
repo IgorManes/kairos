@@ -100,10 +100,10 @@ class TelaTests(ComTokenFalso):
         self.assertEqual(resposta["HX-Refresh"], "true")
         revogar.assert_called_once()
 
-    def test_desconectado_nao_tem_relogio(self):
+    def test_desconectado_mantem_o_relogio_para_backup_e_relatorios(self):
         self.token.unlink()
         html = self.client.get("/").content.decode()
-        self.assertNotIn("every 60s", html)
+        self.assertIn("every 60s", html)  # backup diário e fotos semanais não dependem do Google
         self.assertIn("Google desconectado", html)
 
 

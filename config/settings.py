@@ -74,6 +74,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Serve CSS, fonte e JS quando DEBUG=False (o app de verdade roda assim).
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -162,6 +164,13 @@ USE_TZ = True  # guarda em UTC no banco, mostra no fuso de São Paulo
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+# App local: o whitenoise lê direto de static/ (sem precisar de collectstatic a cada atualização).
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = DEBUG
+
+# Pasta dos backups do banco (o app guarda os últimos 14).
+BACKUP_DIR = DATA_DIR / "backups"
+BACKUPS_MANTIDOS = 14
 
 # Tailwind via executável standalone (sem Node). Versão fixa para as duas
 # máquinas gerarem o mesmo CSS. O fonte fica fora de static/ (o pacote exige);

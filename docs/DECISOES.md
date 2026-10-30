@@ -177,3 +177,18 @@ Formato: contexto → escolha → motivo.
 - **Recortes** → calculados sobre a foto na exportação; o recorte Trabalho inclui as reuniões da agenda da empresa (Invoga).
 - **Atrasada no relatório** → prazo antes do que vier primeiro: a próxima segunda (semana encerrada) ou hoje (semana em andamento) → o print pegou tarefas de amanhã marcadas como atrasadas na semana parcial.
 - **Formato de data no template** → filtro próprio `add_days` (templatetags) para mostrar "26/10 a 01/11".
+
+## Etapa 6: Kairos como aplicativo (2026-10-30)
+
+- **Janela** → **pywebview** (janela nativa do Windows com o motor do Edge/WebView2) em vez de aba do navegador → ícone próprio, sem barra de endereço; mesmo visual. O app nunca depende do pywebview: é só uma janela em volta do site (requisito da seção 11).
+- **Servidor** → **waitress** (`create_server` numa thread) com `DEBUG=False` forçado pelo `iniciar.pyw` → servidor de produção que roda no Windows; fechar a janela chama `servidor.close()`.
+- **Estáticos com DEBUG=False** → **whitenoise com `WHITENOISE_USE_FINDERS`** (lê direto de `static/`) → app local: sem `collectstatic` a cada atualização.
+- **Instância única** → **mutex com nome do Windows**; se já existe, traz a janela para a frente (busca por título) e sai.
+- **Sessão e tema entre aberturas** → `private_mode=False` + pasta própria em `%LOCALAPPDATA%\Kairos\janela` → o padrão do pywebview esquece cookies e localStorage ao fechar (login de 30 dias e tema se perderiam).
+- **Ícone da janela** → **API do Windows (`WM_SETICON`)** em vez do objeto WinForms → o evento "janela mostrada" roda em outra thread e o WinForms não aceita ser mexido fora da dele. `SetCurrentProcessExplicitAppUserModelID` agrupa a janela como "Kairos" na barra de tarefas, não como "Python".
+- **Ícone (.ico)** → **gerado sem pacote novo**: o Edge desenha o SVG em PNG (fundo transparente) e o script junta os PNGs num .ico (o formato aceita PNG dentro); `ferramentas/gerar_icone.py` regera se o logo mudar.
+- **Backup** → **API de backup do SQLite** (cópia consistente com o banco em uso; copiar o arquivo no meio de uma gravação pode corromper), diário + antes de migrations, mantém os últimos 14.
+- **Tarefas periódicas** (foto semanal, backup diário) → **no relógio da página, sempre ativo** (antes só existia com o Google conectado) e na abertura do app.
+- **.pyw sem terminal** → erros vão para `kairos.log` e erro fatal vira caixa de mensagem → senão sumiriam.
+- **Testes de backup no Windows** → `closing()` nas conexões sqlite: `with sqlite3.connect()` não fecha a conexão, e o Windows não deixa apagar arquivo aberto.
+- **Script do atalho em PowerShell** → **arquivo .ps1 em UTF-8 com BOM** → o PowerShell 5.1 do Windows lê .ps1 sem BOM no padrão antigo (cp1252); um travessão em UTF-8 virou aspa e quebrou o script. Conferido com o analisador do próprio PowerShell (sem executar).

@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titulo %}Kairos{% endblock %} · Kairos</title>
+  <link rel="icon" href="{% static 'img/kairos.svg' %}" type="image/svg+xml">
   {# Aplica o tema salvo antes de desenhar a página (evita "piscar" claro/escuro). #}
   <script>try{var t=localStorage.getItem("kairos-tema");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
   {% tailwind_css %}

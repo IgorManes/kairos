@@ -12,7 +12,7 @@ from django.views.decorators.http import require_POST
 from .google.credenciais import escopos_faltando, obter_credenciais
 from .google.servico import sincronizar_tudo, ultimo_sync
 from .models import EstadoSync, Preferencias
-from .relatorios import garantir_relatorios
+from .periodico import rodar_periodicos
 
 
 def situacao_sync():
@@ -55,7 +55,7 @@ def sincronizar(request):
     if motivo not in ("auto", "foco", "botao"):
         motivo = "auto"
     r = sincronizar_tudo(motivo=motivo)
-    garantir_relatorios()  # toda segunda (ou ao abrir, se o PC estava desligado) guarda a foto da semana
+    rodar_periodicos()  # foto semanal dos relatórios e backup diário
 
     html = render_to_string("partials/sync_status.html", {"sync": situacao_sync()}, request)
     if motivo == "botao":

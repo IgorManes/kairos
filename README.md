@@ -46,6 +46,24 @@ Durante o desenvolvimento, `python manage.py tailwind watch` (em outro terminal)
 
 Os dados (banco, token do Google, backups) ficam em `%LOCALAPPDATA%\Kairos\`, fora da pasta do código.
 
+## Instalar como aplicativo (PC de uso)
+
+O Kairos abre numa janela própria (pywebview, motor do Edge), com ícone na área de trabalho, sem terminal.
+
+```powershell
+# 1. Passos 1 a 4 acima (venv, dependências, .env, migrate/createsuperuser).
+#    No .env deste PC: KAIROS_DB_NAME=kairos.sqlite3 (banco real).
+#    DJANGO_DEBUG não importa: o app sempre roda em modo produção.
+
+# 2. Credenciais do Google: coloque o credentials.json em %LOCALAPPDATA%\Kairos\
+#    e conecte a conta em Configurações → Conectar conta Google.
+
+# 3. Criar o atalho na área de trabalho:
+powershell -ExecutionPolicy Bypass -File .\criar_atalho.ps1
+```
+
+Ao abrir, o Kairos faz backup do banco antes de aplicar migrations pendentes, guarda um backup por dia (últimos 14, em `%LOCALAPPDATA%\Kairos\backups\`) e gera o CSS na primeira vez. Erros ficam em `%LOCALAPPDATA%\Kairos\kairos.log`.
+
 ## Estrutura
 
 ```
