@@ -38,7 +38,7 @@ class FiltrosTests(TestCase):
         self.assertEqual(resultado, ["Relatório da Ana"])
 
     def test_busca_ignora_maiusculas_e_acentos(self):
-        self.assertEqual(titulos({"q": "CAFÉ"}), ["Mercado"])      # observações
+        self.assertEqual(titulos({"q": "CAFÉ"}), ["Mercado"])  # observações
         self.assertEqual(titulos({"q": "cafe"}), ["Mercado"])
         self.assertEqual(titulos({"q": "relatorio"}), ["Relatório da Ana"])
         self.assertEqual(titulos({"q": "deploy"}), ["Deploy do Bruno"])

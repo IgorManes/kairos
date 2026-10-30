@@ -1,0 +1,11 @@
+# Configuração do verificador de código (ruff). Uso: venv\Scripts\ruff check .
+[tool.ruff]
+target-version = "py313"
+line-length = 120
+extend-exclude = ["tarefas/migrations"]  # geradas pelo Django
+extend-include = ["*.pyw"]  # o iniciar.pyw também
+
+[tool.ruff.lint]
+# E/W: estilo · F: erros (imports sem uso, nomes indefinidos) · I: ordem dos imports
+# B: armadilhas comuns · UP: sintaxe moderna do Python
+select = ["E", "F", "W", "I", "B", "UP"]

@@ -18,9 +18,9 @@ from .credenciais import SemConexaoGoogle, obter_credenciais, servico_agenda, se
 
 # Intervalo mínimo desde o último sync, por motivo.
 INTERVALO_MINIMO = {
-    "auto": timedelta(seconds=50),   # relógio da página (a cada 60 s)
-    "foco": timedelta(seconds=15),   # voltou para o app
-    "botao": timedelta(0),           # "Sincronizar agora": sempre
+    "auto": timedelta(seconds=50),  # relógio da página (a cada 60 s)
+    "foco": timedelta(seconds=15),  # voltou para o app
+    "botao": timedelta(0),  # "Sincronizar agora": sempre
 }
 
 # O Classroom não tem sync incremental (lê tudo a cada vez): no máximo a cada 5 min.

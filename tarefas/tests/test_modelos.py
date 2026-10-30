@@ -44,15 +44,19 @@ class RegrasDaTarefaTests(TestCase):
 
     def test_reuniao_com_fim_antes_do_inicio_e_invalida(self):
         t = Tarefa(
-            titulo="Daily", categoria=Categoria.REUNIAO,
-            inicio=self.agora, fim=self.agora - timedelta(minutes=1),
+            titulo="Daily",
+            categoria=Categoria.REUNIAO,
+            inicio=self.agora,
+            fim=self.agora - timedelta(minutes=1),
         )
         self.assertErroNoCampo(t, "fim")
 
     def test_reuniao_com_fim_igual_ao_inicio_e_valida(self):
         t = Tarefa(
-            titulo="Daily", categoria=Categoria.REUNIAO,
-            inicio=self.agora, fim=self.agora,
+            titulo="Daily",
+            categoria=Categoria.REUNIAO,
+            inicio=self.agora,
+            fim=self.agora,
         )
         t.full_clean()
 
@@ -144,21 +148,30 @@ class BancoTests(TestCase):
 
     def test_item_do_google_nao_pode_ser_importado_duas_vezes(self):
         Tarefa.objects.create(
-            titulo="A", categoria=Categoria.FACULDADE,
-            origem=Origem.GOOGLE_CLASSROOM, id_externo="123",
+            titulo="A",
+            categoria=Categoria.FACULDADE,
+            origem=Origem.GOOGLE_CLASSROOM,
+            id_externo="123",
         )
         with self.assertRaises(IntegrityError):
             Tarefa.objects.create(
-                titulo="B", categoria=Categoria.FACULDADE,
-                origem=Origem.GOOGLE_CLASSROOM, id_externo="123",
+                titulo="B",
+                categoria=Categoria.FACULDADE,
+                origem=Origem.GOOGLE_CLASSROOM,
+                id_externo="123",
             )
 
     def test_mesmo_id_em_origens_diferentes_pode(self):
-        Tarefa.objects.create(titulo="A", categoria=Categoria.FACULDADE,
-                              origem=Origem.GOOGLE_CLASSROOM, id_externo="123")
-        Tarefa.objects.create(titulo="B", categoria=Categoria.REUNIAO,
-                              origem=Origem.GOOGLE_AGENDA, id_externo="123",
-                              inicio=timezone.now())
+        Tarefa.objects.create(
+            titulo="A", categoria=Categoria.FACULDADE, origem=Origem.GOOGLE_CLASSROOM, id_externo="123"
+        )
+        Tarefa.objects.create(
+            titulo="B",
+            categoria=Categoria.REUNIAO,
+            origem=Origem.GOOGLE_AGENDA,
+            id_externo="123",
+            inicio=timezone.now(),
+        )
 
     def test_varias_tarefas_manuais_sem_id_externo_podem(self):
         Tarefa.objects.create(titulo="A", categoria=Categoria.PESSOAL)

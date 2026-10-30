@@ -15,7 +15,9 @@ HTMX = {"HTTP_HX_REQUEST": "true"}
 class AcoesTests(TestCase):
     def setUp(self):
         self.client.force_login(get_user_model().objects.create_user("dono", password="x-senha-123"))
-        self.tarefa = Tarefa.objects.create(titulo="Comprar pão", categoria=Categoria.PESSOAL, prazo=timezone.localdate())
+        self.tarefa = Tarefa.objects.create(
+            titulo="Comprar pão", categoria=Categoria.PESSOAL, prazo=timezone.localdate()
+        )
 
     def post(self, url, dados=None):
         return self.client.post(url, dados or {}, **HTMX)
@@ -84,15 +86,20 @@ class AcoesTests(TestCase):
             self.assertEqual(self.post(url, vals).status_code, 400)
 
     def test_item_do_google_nao_pode_ser_excluido(self):
-        google = Tarefa.objects.create(titulo="Lista", categoria=Categoria.FACULDADE,
-                                       origem=Origem.GOOGLE_CLASSROOM, id_externo="1")
+        google = Tarefa.objects.create(
+            titulo="Lista", categoria=Categoria.FACULDADE, origem=Origem.GOOGLE_CLASSROOM, id_externo="1"
+        )
         self.assertEqual(self.post(f"/tarefas/{google.pk}/excluir/").status_code, 400)
         self.assertTrue(Tarefa.objects.filter(pk=google.pk).exists())
 
     def test_item_do_google_pode_ser_cancelado(self):
-        google = Tarefa.objects.create(titulo="Lista", categoria=Categoria.FACULDADE,
-                                       origem=Origem.GOOGLE_CLASSROOM, id_externo="1",
-                                       prazo=timezone.localdate() - timedelta(days=1))
+        google = Tarefa.objects.create(
+            titulo="Lista",
+            categoria=Categoria.FACULDADE,
+            origem=Origem.GOOGLE_CLASSROOM,
+            id_externo="1",
+            prazo=timezone.localdate() - timedelta(days=1),
+        )
         resposta = self.post(f"/tarefas/{google.pk}/status/", {"status": "cancelada"})
         self.assertIn("continua no Google", resposta.content.decode())
         google.refresh_from_db()

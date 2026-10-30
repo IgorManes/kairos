@@ -48,8 +48,12 @@ def contexto_documento(inicio, recorte, incluir_obs):
         if not incluir_obs:
             linha["observacoes"] = ""  # observações só entram se marcar (são anotações pessoais)
         linhas.append(linha)
-    reunioes = [dict(r, inicio=_momento(r["inicio"]), fim=_momento(r["fim"]),
-                     observacoes=r["observacoes"] if incluir_obs else "") for r in reunioes]
+    reunioes = [
+        dict(
+            r, inicio=_momento(r["inicio"]), fim=_momento(r["fim"]), observacoes=r["observacoes"] if incluir_obs else ""
+        )
+        for r in reunioes
+    ]
 
     concluidas = sorted((t for t in linhas if t["concluida_na_semana"]), key=lambda t: t["concluida_em"])
     abertas = sorted(
@@ -90,8 +94,14 @@ def lista(request):
     atual = _semana_atual()
     semanas = [{"inicio": atual, "parcial": True, "recortes": relatorios.recortes_de(relatorios.gerar_foto(atual))}]
     for r in RelatorioSemanal.objects.all():
-        semanas.append({"inicio": r.semana_inicio, "parcial": False, "gerado_em": r.gerado_em,
-                        "recortes": relatorios.recortes_de(r.dados)})
+        semanas.append(
+            {
+                "inicio": r.semana_inicio,
+                "parcial": False,
+                "gerado_em": r.gerado_em,
+                "recortes": relatorios.recortes_de(r.dados),
+            }
+        )
     return render(request, "tarefas/relatorios.html", {"semanas": semanas})
 
 
@@ -108,7 +118,9 @@ def baixar_pdf(request, inicio):
     try:
         pdf = html_para_pdf(html)
     except ErroPDF as erro:
-        return HttpResponse(f"Não foi possível gerar o PDF: {erro}", status=500, content_type="text/plain; charset=utf-8")
+        return HttpResponse(
+            f"Não foi possível gerar o PDF: {erro}", status=500, content_type="text/plain; charset=utf-8"
+        )
     sufixo = recorte.split(":", 1)[-1].replace(" ", "-").lower() if recorte != "geral" else "geral"
     nome = f"kairos-semana-{semana:%Y-%m-%d}-{sufixo}{'-parcial' if contexto['parcial'] else ''}.pdf"
     resposta = HttpResponse(pdf, content_type="application/pdf")

@@ -27,10 +27,22 @@ def png_do_svg(edge, svg, tamanho, pasta):
         encoding="utf-8",
     )
     png = pasta / f"icone-{tamanho}.png"
-    subprocess.run([edge, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-                    f"--user-data-dir={pasta / 'perfil'}", "--default-background-color=00000000",
-                    f"--window-size={tamanho},{tamanho}", f"--screenshot={png}", html.as_uri()],
-                   capture_output=True, timeout=60, check=False)
+    subprocess.run(
+        [
+            edge,
+            "--headless=new",
+            "--disable-gpu",
+            "--hide-scrollbars",
+            f"--user-data-dir={pasta / 'perfil'}",
+            "--default-background-color=00000000",
+            f"--window-size={tamanho},{tamanho}",
+            f"--screenshot={png}",
+            html.as_uri(),
+        ],
+        capture_output=True,
+        timeout=60,
+        check=False,
+    )
     return png.read_bytes()
 
 

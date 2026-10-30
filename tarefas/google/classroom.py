@@ -10,8 +10,7 @@ Cada sync lê tudo de novo (o Classroom não tem sync incremental):
   5. Atividade que sumiu de uma turma ativa → cancelada (diferença de conjuntos).
 """
 
-from datetime import datetime
-from datetime import timezone as tz_utc
+from datetime import UTC, datetime
 
 from django.db import transaction
 from django.utils import timezone
@@ -26,6 +25,7 @@ ENVIO_CANCELADO = "RECLAIMED_BY_STUDENT"
 
 # ===== Decisões (funções puras) =====
 
+
 def prazo_local(data_utc, hora_utc):
     """
     O Classroom manda prazo em UTC: {"year","month","day"} + {"hours","minutes"}.
@@ -35,8 +35,12 @@ def prazo_local(data_utc, hora_utc):
         return None, None
     hora_utc = hora_utc or {}
     momento = datetime(
-        data_utc["year"], data_utc["month"], data_utc["day"],
-        hora_utc.get("hours", 0), hora_utc.get("minutes", 0), tzinfo=tz_utc.utc,
+        data_utc["year"],
+        data_utc["month"],
+        data_utc["day"],
+        hora_utc.get("hours", 0),
+        hora_utc.get("minutes", 0),
+        tzinfo=UTC,
     )
     local = timezone.localtime(momento)
     return local.date(), local.time().replace(second=0, microsecond=0)
@@ -89,8 +93,16 @@ def campos_da_atividade(atividade, disciplina):
     }
 
 
-CAMPOS_COMPARADOS = ["titulo", "prazo", "prazo_hora", "disciplina_id", "link_externo",
-                     "descricao_externa", "status", "estado_entrega"]
+CAMPOS_COMPARADOS = [
+    "titulo",
+    "prazo",
+    "prazo_hora",
+    "disciplina_id",
+    "link_externo",
+    "descricao_externa",
+    "status",
+    "estado_entrega",
+]
 
 
 def _foto(tarefa):
@@ -112,8 +124,13 @@ def corrigir_datas(tarefa, publicada_em, entrega_atualizada_em):
     if publicada and publicada < tarefa.criado_em:
         mudancas["criado_em"] = publicada
     entregue = _quando(entrega_atualizada_em)
-    if (entregue and tarefa.status == Status.CONCLUIDA and tarefa.estado_entrega in ENTREGUE
-            and tarefa.concluida_em and entregue < tarefa.concluida_em):
+    if (
+        entregue
+        and tarefa.status == Status.CONCLUIDA
+        and tarefa.estado_entrega in ENTREGUE
+        and tarefa.concluida_em
+        and entregue < tarefa.concluida_em
+    ):
         mudancas["concluida_em"] = entregue
     if mudancas:
         # update() direto: não dispara o save() (que mexeria em concluida_em/atualizado_em)
@@ -127,6 +144,7 @@ def id_externo(atividade):
 
 # ===== Conversa com o Google =====
 
+
 def _todas_as_paginas(chamada, chave, **parametros):
     itens, pagina = [], None
     while True:
@@ -139,21 +157,30 @@ def _todas_as_paginas(chamada, chave, **parametros):
 
 def buscar(servico):
     """Devolve (turmas, atividades_por_turma, entregas_por_atividade)."""
-    turmas = _todas_as_paginas(servico.courses().list, "courses", studentId="me",
-                               courseStates=["ACTIVE", "ARCHIVED"], pageSize=100)
+    turmas = _todas_as_paginas(
+        servico.courses().list, "courses", studentId="me", courseStates=["ACTIVE", "ARCHIVED"], pageSize=100
+    )
     atividades, entregas = {}, {}
     for turma in turmas:
         if turma.get("courseState") != "ACTIVE":
             continue  # arquivada: não busca atividades (só marca a disciplina como inativa)
         atividades[turma["id"]] = _todas_as_paginas(
-            servico.courses().courseWork().list, "courseWork", courseId=turma["id"], pageSize=100)
-        for e in _todas_as_paginas(servico.courses().courseWork().studentSubmissions().list, "studentSubmissions",
-                                   courseId=turma["id"], courseWorkId="-", userId="me", pageSize=100):
+            servico.courses().courseWork().list, "courseWork", courseId=turma["id"], pageSize=100
+        )
+        for e in _todas_as_paginas(
+            servico.courses().courseWork().studentSubmissions().list,
+            "studentSubmissions",
+            courseId=turma["id"],
+            courseWorkId="-",
+            userId="me",
+            pageSize=100,
+        ):
             entregas[e["courseWorkId"]] = {"estado": e.get("state", ""), "atualizada_em": e.get("updateTime")}
     return turmas, atividades, entregas
 
 
 # ===== Aplicar no banco =====
+
 
 def aplicar(turmas, atividades, entregas, agora, concluir_ao_entregar=True, marco_zero=None):
     resumo = {"criadas": 0, "atualizadas": 0, "canceladas": 0, "concluidas": 0}
@@ -165,15 +192,16 @@ def aplicar(turmas, atividades, entregas, agora, concluir_ao_entregar=True, marc
         if turma.get("section"):
             nome = f"{nome} – {turma['section']}"
         disciplina, _ = Disciplina.objects.update_or_create(
-            classroom_id=turma["id"], defaults={"nome": nome[:200], "ativo": turma.get("courseState") == "ACTIVE"})
+            classroom_id=turma["id"], defaults={"nome": nome[:200], "ativo": turma.get("courseState") == "ACTIVE"}
+        )
         disciplinas[turma["id"]] = disciplina
 
     # 2. Atividades → Tarefas
     recebidas = set()
     todas = [a for lista in atividades.values() for a in lista]
     existentes = {
-        t.id_externo: t for t in
-        Tarefa.objects.filter(origem=Origem.GOOGLE_CLASSROOM, id_externo__in=[id_externo(a) for a in todas])
+        t.id_externo: t
+        for t in Tarefa.objects.filter(origem=Origem.GOOGLE_CLASSROOM, id_externo__in=[id_externo(a) for a in todas])
     }
     for atividade in todas:
         chave = id_externo(atividade)
@@ -185,8 +213,9 @@ def aplicar(turmas, atividades, entregas, agora, concluir_ao_entregar=True, marc
             info_entrega = {"estado": info_entrega, "atualizada_em": None}
         entrega = info_entrega["estado"]
         prazo, _ = prazo_local(atividade.get("dueDate"), atividade.get("dueTime"))
-        if nova and deve_ignorar_nova(prazo, entrega in ENTREGUE, atividade.get("creationTime"), marco_zero,
-                                      timezone.localdate(agora)):
+        if nova and deve_ignorar_nova(
+            prazo, entrega in ENTREGUE, atividade.get("creationTime"), marco_zero, timezone.localdate(agora)
+        ):
             continue  # uma que entrou a tempo e venceu depois continua aparecendo como atrasada
         if nova:
             tarefa = Tarefa(origem=Origem.GOOGLE_CLASSROOM, id_externo=chave, categoria=Categoria.FACULDADE)
@@ -227,15 +256,23 @@ def aplicar(turmas, atividades, entregas, agora, concluir_ao_entregar=True, marc
 
 # ===== Orquestração =====
 
+
 def sincronizar_classroom(servico, agora=None):
     agora = agora or timezone.now()
     turmas, atividades, entregas = buscar(servico)
     estado, _ = EstadoSync.objects.get_or_create(fonte=FONTE, defaults={"iniciado_em": agora})
     with transaction.atomic():  # o lote entra inteiro ou nada entra
-        resumo = aplicar(turmas, atividades, entregas, agora, Preferencias.atual().concluir_ao_entregar,
-                         marco_zero=estado.iniciado_em)
+        resumo = aplicar(
+            turmas,
+            atividades,
+            entregas,
+            agora,
+            Preferencias.atual().concluir_ao_entregar,
+            marco_zero=estado.iniciado_em,
+        )
         EstadoSync.objects.update_or_create(
-            fonte=FONTE, defaults={"ultimo_sync_em": agora, "ultimo_completo_em": agora, "ultimo_erro": ""})
+            fonte=FONTE, defaults={"ultimo_sync_em": agora, "ultimo_completo_em": agora, "ultimo_erro": ""}
+        )
     resumo["completo"] = True
     return resumo
 

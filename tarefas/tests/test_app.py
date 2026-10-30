@@ -26,7 +26,8 @@ class BackupTests(TestCase):
             con.commit()
         ajuste = override_settings(
             DATABASES={"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": self.banco}},
-            BACKUP_DIR=self.pasta / "backups", BACKUPS_MANTIDOS=3,
+            BACKUP_DIR=self.pasta / "backups",
+            BACKUPS_MANTIDOS=3,
         )
         ajuste.enable()
         self.addCleanup(ajuste.disable)

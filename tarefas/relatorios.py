@@ -20,6 +20,7 @@ ENCERRADAS = (Status.CONCLUIDA, Status.CANCELADA)
 
 # ===== Semanas =====
 
+
 def semana_de(data):
     """A segunda-feira da semana de `data` (weekday(): segunda = 0 ... domingo = 6)."""
     return data - timedelta(days=data.weekday())
@@ -32,6 +33,7 @@ def limites(inicio):
 
 
 # ===== Foto =====
+
 
 def _iso(valor):
     return valor.isoformat() if valor else None
@@ -63,7 +65,9 @@ def _linha(t, comeco, fim, agora):
         "aberta": aberta,
         # Atrasada: aberta e com prazo antes do que vier primeiro, a próxima segunda (semana
         # encerrada) ou hoje (semana em andamento: o prazo de amanhã ainda não venceu).
-        "atrasada": bool(aberta and t.prazo and t.prazo < min(timezone.localtime(fim).date(), timezone.localdate(agora))),
+        "atrasada": bool(
+            aberta and t.prazo and t.prazo < min(timezone.localtime(fim).date(), timezone.localdate(agora))
+        ),
     }
 
 
@@ -130,12 +134,15 @@ def garantir_relatorios(agora=None):
 
 # ===== Recortes (filtros na exportação) =====
 
+
 def recortes_de(dados):
     """Opções de recorte que fazem sentido para esta foto: [(valor, rótulo), ...]."""
     tarefas = dados["tarefas"]
     opcoes = [("geral", "Geral (tudo)")]
     for cat in (Categoria.TRABALHO, Categoria.FACULDADE, Categoria.PESSOAL):
-        if any(t["categoria"] == cat for t in tarefas) or (cat == Categoria.TRABALHO and any(r["agenda"] for r in dados["reunioes"])):
+        if any(t["categoria"] == cat for t in tarefas) or (
+            cat == Categoria.TRABALHO and any(r["agenda"] for r in dados["reunioes"])
+        ):
             opcoes.append((f"categoria:{cat.value}", cat.label))
     for campo, rotulo in (("solicitante", "Solicitante"), ("projeto", "Projeto"), ("disciplina", "Disciplina")):
         for nome in sorted({t[campo] for t in tarefas if t[campo]}):

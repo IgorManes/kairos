@@ -58,9 +58,13 @@ def momento(dia=0, hora=14, minuto=0):
 def evento(id_, titulo="Reunião", dia=0, hora=14, convidados=None, organizei=False, **extra):
     inicio = momento(dia, hora)
     e = {
-        "id": id_, "status": "confirmed", "summary": titulo,
-        "start": {"dateTime": inicio.isoformat()}, "end": {"dateTime": (inicio + timedelta(hours=1)).isoformat()},
-        "organizer": {"self": organizei}, "htmlLink": f"https://calendar.google.com/{id_}",
+        "id": id_,
+        "status": "confirmed",
+        "summary": titulo,
+        "start": {"dateTime": inicio.isoformat()},
+        "end": {"dateTime": (inicio + timedelta(hours=1)).isoformat()},
+        "organizer": {"self": organizei},
+        "htmlLink": f"https://calendar.google.com/{id_}",
     }
     if convidados is not None:
         e["attendees"] = convidados
@@ -87,7 +91,9 @@ class RegrasDeImportacaoTests(TestCase):
                 self.assertEqual(sync.deve_importar(e, PRINCIPAL), esperado)
 
     def test_empresa_importa_tudo_menos_recusados(self):
-        convidados = lambda r: [{"email": "EMPRESA@invoga.com", "responseStatus": r}]  # sem "self": acha pelo e-mail
+        def convidados(r):  # sem "self": acha pelo e-mail
+            return [{"email": "EMPRESA@invoga.com", "responseStatus": r}]
+
         self.assertTrue(sync.deve_importar(evento("a", convidados=convidados("needsAction")), INVOGA))
         self.assertFalse(sync.deve_importar(evento("b", convidados=convidados("declined")), INVOGA))
 
@@ -96,9 +102,17 @@ class RegrasDeImportacaoTests(TestCase):
         self.assertFalse(sync.deve_importar(feriado, PRINCIPAL))
 
     def test_link_do_meet(self):
-        self.assertEqual(sync.link_da_reuniao({"hangoutLink": "https://meet.google.com/abc"}), "https://meet.google.com/abc")
-        video = {"conferenceData": {"entryPoints": [{"entryPointType": "phone", "uri": "tel:1"},
-                                                    {"entryPointType": "video", "uri": "https://zoom.us/j/1"}]}}
+        self.assertEqual(
+            sync.link_da_reuniao({"hangoutLink": "https://meet.google.com/abc"}), "https://meet.google.com/abc"
+        )
+        video = {
+            "conferenceData": {
+                "entryPoints": [
+                    {"entryPointType": "phone", "uri": "tel:1"},
+                    {"entryPointType": "video", "uri": "https://zoom.us/j/1"},
+                ]
+            }
+        }
         self.assertEqual(sync.link_da_reuniao(video), "https://zoom.us/j/1")
 
 
@@ -113,8 +127,10 @@ class SincronizacaoTests(TestCase):
         self.assertIn("timeMin", google.chamadas[0])
         self.assertEqual(EstadoSync.objects.get(fonte="agenda:primary").sync_token, "T1")
         t = Tarefa.objects.get()
-        self.assertEqual((t.titulo, t.origem, t.agenda_id, t.link_reuniao),
-                         ("Daily", Origem.GOOGLE_AGENDA, "primary", "https://meet.google.com/x"))
+        self.assertEqual(
+            (t.titulo, t.origem, t.agenda_id, t.link_reuniao),
+            ("Daily", Origem.GOOGLE_AGENDA, "primary", "https://meet.google.com/x"),
+        )
 
     def test_varias_paginas(self):
         google = GoogleDeMentira(pagina(evento("a"), proxima="p2"), pagina(evento("b")))
@@ -196,8 +212,9 @@ class SincronizacaoTests(TestCase):
 
 class ConfiguracaoTests(TestCase):
     def test_le_agendas_extras_do_env(self):
-        self.assertEqual(ler_agendas_extras("Invoga=a@b.com, Outra = c@d.com,lixo"),
-                         [("Invoga", "a@b.com"), ("Outra", "c@d.com")])
+        self.assertEqual(
+            ler_agendas_extras("Invoga=a@b.com, Outra = c@d.com,lixo"), [("Invoga", "a@b.com"), ("Outra", "c@d.com")]
+        )
         self.assertEqual(ler_agendas_extras(None), [])
 
     def test_comando_sem_conexao_pede_para_conectar(self):

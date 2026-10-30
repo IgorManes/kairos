@@ -26,13 +26,19 @@ class ComTokenFalso(TestCase):
         self.addCleanup(self.pasta.cleanup)
         self.token = Path(self.pasta.name) / "token.json"
         self.token.write_text(json.dumps({"scopes": ESCOPOS}), encoding="utf-8")
-        ajuste = override_settings(GOOGLE_TOKEN=self.token, GOOGLE_CREDENCIAIS=Path(self.pasta.name) / "credentials.json")
+        ajuste = override_settings(
+            GOOGLE_TOKEN=self.token, GOOGLE_CREDENCIAIS=Path(self.pasta.name) / "credentials.json"
+        )
         ajuste.enable()
         self.addCleanup(ajuste.disable)
         self.client.force_login(get_user_model().objects.create_user("dono", password="x-senha-123"))
         # Nada fala com o Google de verdade
-        for alvo in ("tarefas.google.servico.obter_credenciais", "tarefas.google.servico.servico_agenda",
-                     "tarefas.google.servico.servico_classroom", "tarefas.google.classroom.buscar"):
+        for alvo in (
+            "tarefas.google.servico.obter_credenciais",
+            "tarefas.google.servico.servico_agenda",
+            "tarefas.google.servico.servico_classroom",
+            "tarefas.google.classroom.buscar",
+        ):
             patcher = mock.patch(alvo, return_value=([], {}, {})) if alvo.endswith("buscar") else mock.patch(alvo)
             patcher.start()
             self.addCleanup(patcher.stop)
@@ -61,8 +67,10 @@ class IntervaloTests(ComTokenFalso):
 
 
 class TelaTests(ComTokenFalso):
-    @mock.patch("tarefas.google.agenda.sincronizar_agenda",
-                return_value={"criadas": 1, "atualizadas": 0, "canceladas": 0, "completo": False})
+    @mock.patch(
+        "tarefas.google.agenda.sincronizar_agenda",
+        return_value={"criadas": 1, "atualizadas": 0, "canceladas": 0, "completo": False},
+    )
     def test_com_novidades_avisa_as_telas(self, _):
         resposta = self.client.post("/sincronizar/", {"motivo": "auto"}, **HTMX)
         self.assertEqual(resposta["HX-Trigger"], "dadosMudaram")

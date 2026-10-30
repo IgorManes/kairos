@@ -16,12 +16,20 @@ from .views import responder_acao
 # Configuração de cada cadastro
 CADASTROS = {
     "pessoa": {
-        "modelo": Pessoa, "form": PessoaForm, "nome": "pessoa", "titulo": "Pessoas",
-        "filtro_tarefas": "solicitante", "rota": "pessoas",
+        "modelo": Pessoa,
+        "form": PessoaForm,
+        "nome": "pessoa",
+        "titulo": "Pessoas",
+        "filtro_tarefas": "solicitante",
+        "rota": "pessoas",
     },
     "projeto": {
-        "modelo": Projeto, "form": ProjetoForm, "nome": "projeto", "titulo": "Projetos",
-        "filtro_tarefas": "projeto", "rota": "projetos",
+        "modelo": Projeto,
+        "form": ProjetoForm,
+        "nome": "projeto",
+        "titulo": "Projetos",
+        "filtro_tarefas": "projeto",
+        "rota": "projetos",
     },
 }
 
@@ -38,11 +46,15 @@ def com_contagens(modelo):
 def lista(request, tipo):
     cfg = CADASTROS[tipo]
     itens = list(com_contagens(cfg["modelo"]))
-    return render(request, "tarefas/cadastros.html", {
-        "cfg": cfg,
-        "ativos": [i for i in itens if i.ativo],
-        "inativos": [i for i in itens if not i.ativo],
-    })
+    return render(
+        request,
+        "tarefas/cadastros.html",
+        {
+            "cfg": cfg,
+            "ativos": [i for i in itens if i.ativo],
+            "inativos": [i for i in itens if not i.ativo],
+        },
+    )
 
 
 def formulario(request, tipo, pk=None):
@@ -54,7 +66,9 @@ def formulario(request, tipo, pk=None):
     if request.method == "POST":
         if form.is_valid():
             form.save()
-            mensagem = "Alterações salvas" if pk else f"{cfg['nome'].capitalize()} criad{'a' if tipo == 'pessoa' else 'o'}"
+            mensagem = (
+                "Alterações salvas" if pk else f"{cfg['nome'].capitalize()} criad{'a' if tipo == 'pessoa' else 'o'}"
+            )
             return responder_acao(request, mensagem, gatilhos=["fecharPainel"])
         resposta = render(request, "tarefas/_painel_cadastro.html", {"form": form, "item": item, "cfg": cfg})
         resposta["HX-Retarget"] = "#drawer-conteudo"
@@ -74,7 +88,8 @@ def alternar_ativo(request, tipo, pk):
     estado = "reativad" if item.ativo else "desativad"
     sufixo = "a" if tipo == "pessoa" else "o"
     return responder_acao(
-        request, f"{item.nome} {estado}{sufixo}",
+        request,
+        f"{item.nome} {estado}{sufixo}",
         (reverse("alternar_ativo", args=[tipo, pk]), {}),
     )
 

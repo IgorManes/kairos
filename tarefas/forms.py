@@ -24,11 +24,15 @@ class FiltroTarefasForm(forms.Form):
     ORDENS = [("prazo", "Prazo"), ("prioridade", "Prioridade"), ("recentes", "Mais recentes")]
 
     q = forms.CharField(required=False, max_length=100, label="Buscar")
-    categoria = forms.ChoiceField(required=False, label="Categoria", choices=[("", "Todas as categorias"), *Categoria.choices])
-    status = forms.ChoiceField(required=False, label="Status",
-                               choices=[(STATUS_ABERTAS, "Abertas"), (STATUS_TODAS, "Todas"), *Status.choices])
-    prioridade = forms.ChoiceField(required=False, label="Prioridade",
-                                   choices=[("", "Qualquer prioridade"), *Prioridade.choices])
+    categoria = forms.ChoiceField(
+        required=False, label="Categoria", choices=[("", "Todas as categorias"), *Categoria.choices]
+    )
+    status = forms.ChoiceField(
+        required=False, label="Status", choices=[(STATUS_ABERTAS, "Abertas"), (STATUS_TODAS, "Todas"), *Status.choices]
+    )
+    prioridade = forms.ChoiceField(
+        required=False, label="Prioridade", choices=[("", "Qualquer prioridade"), *Prioridade.choices]
+    )
     solicitante = forms.ModelChoiceField(Pessoa.objects.all(), required=False, empty_label="Qualquer solicitante")
     projeto = forms.ModelChoiceField(Projeto.objects.all(), required=False, empty_label="Qualquer projeto")
     disciplina = forms.ModelChoiceField(Disciplina.objects.all(), required=False, empty_label="Qualquer disciplina")
@@ -36,7 +40,7 @@ class FiltroTarefasForm(forms.Form):
 
     def __init__(self, dados, *args, **kwargs):
         super().__init__(dados, *args, **kwargs)
-        for nome, campo in self.fields.items():
+        for campo in self.fields.values():
             campo.widget.attrs["class"] = "input input-sm"
         self.fields["q"].widget.attrs.update({"placeholder": "Buscar no título e nas observações…", "type": "search"})
 
@@ -57,13 +61,33 @@ class TarefaForm(forms.ModelForm):
     class Meta:
         model = Tarefa
         fields = [
-            "titulo", "categoria", "solicitante", "disciplina", "projeto", "status", "prioridade",
-            "prazo", "prazo_hora", "inicio", "fim", "link_reuniao", "observacoes",
+            "titulo",
+            "categoria",
+            "solicitante",
+            "disciplina",
+            "projeto",
+            "status",
+            "prioridade",
+            "prazo",
+            "prazo_hora",
+            "inicio",
+            "fim",
+            "link_reuniao",
+            "observacoes",
         ]
         labels = {
-            "titulo": "Título", "solicitante": "Solicitante", "disciplina": "Disciplina", "projeto": "Projeto",
-            "status": "Status", "prioridade": "Prioridade", "prazo": "Prazo", "prazo_hora": "Hora",
-            "inicio": "Início", "fim": "Fim", "link_reuniao": "Link da reunião", "observacoes": "Observações",
+            "titulo": "Título",
+            "solicitante": "Solicitante",
+            "disciplina": "Disciplina",
+            "projeto": "Projeto",
+            "status": "Status",
+            "prioridade": "Prioridade",
+            "prazo": "Prazo",
+            "prazo_hora": "Hora",
+            "inicio": "Início",
+            "fim": "Fim",
+            "link_reuniao": "Link da reunião",
+            "observacoes": "Observações",
         }
         widgets = {
             "categoria": forms.RadioSelect,
@@ -149,8 +173,15 @@ class ProjetoForm(forms.ModelForm):
 class PreferenciasNotificacaoForm(forms.ModelForm):
     class Meta:
         model = Preferencias
-        fields = ["avisar_reuniao", "minutos_antes_reuniao", "avisar_prazos", "hora_aviso_prazos",
-                  "avisar_atrasadas", "avisar_classroom", "avisar_resumo"]
+        fields = [
+            "avisar_reuniao",
+            "minutos_antes_reuniao",
+            "avisar_prazos",
+            "hora_aviso_prazos",
+            "avisar_atrasadas",
+            "avisar_classroom",
+            "avisar_resumo",
+        ]
         widgets = {"hora_aviso_prazos": forms.TimeInput(attrs={"type": "time"}, format="%H:%M")}
 
     def __init__(self, *args, **kwargs):

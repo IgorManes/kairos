@@ -111,9 +111,11 @@ def quadro(categoria=None):
     status das colunas vizinhas, para os botões ← →.
     """
     desde = timezone.now() - timedelta(days=DIAS_CONCLUIDAS_NO_QUADRO)
-    qs = tarefas_visiveis(categoria).filter(
-        Q(status__in=COLUNAS_QUADRO[:-1]) | Q(status=Status.CONCLUIDA, concluida_em__gte=desde)
-    ).order_by("-peso", F("prazo").asc(nulls_last=True), "-criado_em")
+    qs = (
+        tarefas_visiveis(categoria)
+        .filter(Q(status__in=COLUNAS_QUADRO[:-1]) | Q(status=Status.CONCLUIDA, concluida_em__gte=desde))
+        .order_by("-peso", F("prazo").asc(nulls_last=True), "-criado_em")
+    )
 
     colunas = {status: [] for status in COLUNAS_QUADRO}
     for t in qs:
@@ -201,8 +203,14 @@ def linha_do_tempo(reunioes, agora):
     eventos = []
     for r in reunioes:
         fim = r.fim or r.inicio + timedelta(minutes=30)
-        eventos.append({"tarefa": r, "ini": _horas(r.inicio), "fim": max(_horas(fim), _horas(r.inicio) + 0.25),
-                        "passada": fim <= agora})
+        eventos.append(
+            {
+                "tarefa": r,
+                "ini": _horas(r.inicio),
+                "fim": max(_horas(fim), _horas(r.inicio) + 0.25),
+                "passada": fim <= agora,
+            }
+        )
 
     distribuir_em_colunas(eventos)
 

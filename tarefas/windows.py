@@ -27,7 +27,9 @@ def registrar_app():
     winreg = _winreg()
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, CHAVE_APP) as chave:
         winreg.SetValueEx(chave, "DisplayName", 0, winreg.REG_SZ, "Kairos")
-        winreg.SetValueEx(chave, "IconUri", 0, winreg.REG_SZ, str(settings.BASE_DIR / "static" / "img" / "kairos-256.png"))
+        winreg.SetValueEx(
+            chave, "IconUri", 0, winreg.REG_SZ, str(settings.BASE_DIR / "static" / "img" / "kairos-256.png")
+        )
 
 
 def comando_inicializacao():

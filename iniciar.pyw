@@ -49,6 +49,7 @@ kernel32.WaitForSingleObject.restype = ctypes.c_uint32
 
 # ===== 1. Instância única =====
 
+
 def ja_esta_aberto():
     """Trava com nome do Windows (mutex): se já existe, outro Kairos está rodando."""
     kernel32.CreateMutexW(None, False, NOME_TRAVA)
@@ -65,9 +66,12 @@ def pedir_para_mostrar():
 
 # ===== 2. Registro de erros (sem terminal, eles sumiriam) =====
 
+
 def configurar_log(pasta):
     pasta.mkdir(parents=True, exist_ok=True)
-    arquivo = logging.handlers.RotatingFileHandler(pasta / "kairos.log", maxBytes=1_000_000, backupCount=3, encoding="utf-8")
+    arquivo = logging.handlers.RotatingFileHandler(
+        pasta / "kairos.log", maxBytes=1_000_000, backupCount=3, encoding="utf-8"
+    )
     arquivo.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
     raiz = logging.getLogger()
     raiz.setLevel(logging.INFO)
@@ -81,6 +85,7 @@ def mostrar_erro(mensagem):
 
 
 # ===== 3 a 5. Preparar o Django =====
+
 
 def preparar():
     import django
@@ -114,6 +119,7 @@ def preparar():
 
 # ===== 6. Servidor =====
 
+
 def iniciar_servidor(settings):
     from waitress import create_server
 
@@ -134,6 +140,7 @@ def iniciar_servidor(settings):
 
 # ===== 7 e 8. Janela, bandeja e relógio =====
 
+
 class App:
     def __init__(self, settings, servidor, endereco, na_bandeja):
         self.settings, self.servidor, self.endereco = settings, servidor, endereco
@@ -149,8 +156,15 @@ class App:
     def abrir(self):
         import webview
 
-        self.janela = webview.create_window(TITULO, self.endereco, width=1320, height=860, min_size=(380, 600),
-                                            background_color="#07080f", hidden=self.na_bandeja)
+        self.janela = webview.create_window(
+            TITULO,
+            self.endereco,
+            width=1320,
+            height=860,
+            min_size=(380, 600),
+            background_color="#07080f",
+            hidden=self.na_bandeja,
+        )
         self.janela.events.closing += self.ao_fechar
         self.janela.events.closed += self.ao_encerrar
         # private_mode=False + storage_path: guarda cookies (login de 30 dias) e o tema entre aberturas.
@@ -163,7 +177,9 @@ class App:
         self.janela.hide()
         if not self.avisou_bandeja:
             self.avisou_bandeja = True
-            self.notificar("O Kairos continua aberto", "Ele fica na bandeja, perto do relógio. Para fechar, use Sair.", "/")
+            self.notificar(
+                "O Kairos continua aberto", "Ele fica na bandeja, perto do relógio. Para fechar, use Sair.", "/"
+            )
         return False
 
     def ao_encerrar(self):
@@ -285,8 +301,12 @@ class App:
 
         close_old_connections()
         r = sincronizar_tudo(motivo="botao")
-        textos = {"ok": "Tudo em dia" + (", com novidades" if r.mudou else ""), "ocupado": "Já estava sincronizando",
-                  "desconectado": "Conecte a conta Google nas Configurações", "erro": "Houve um erro (veja nas Configurações)"}
+        textos = {
+            "ok": "Tudo em dia" + (", com novidades" if r.mudou else ""),
+            "ocupado": "Já estava sincronizando",
+            "desconectado": "Conecte a conta Google nas Configurações",
+            "erro": "Houve um erro (veja nas Configurações)",
+        }
         self.notificar("Sincronização", textos.get(r.situacao, ""), "/configuracoes/" if r.situacao != "ok" else "/")
 
 

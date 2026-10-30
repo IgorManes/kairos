@@ -30,6 +30,7 @@ class TokenVencido(Exception):
 
 # ===== Decisões (funções puras) =====
 
+
 def participante_eu(evento, agenda):
     """
     O convidado que representa esta agenda. O Google marca com `self`
@@ -96,6 +97,7 @@ def janela(agora):
 
 # ===== Conversa com o Google =====
 
+
 def buscar_eventos(servico, agenda_id, sync_token, agora):
     """
     Todas as páginas de events.list. Completo: limitado à janela de datas.
@@ -128,12 +130,14 @@ def buscar_eventos(servico, agenda_id, sync_token, agora):
 
 # ===== Aplicar no banco =====
 
+
 def aplicar_eventos(eventos, agenda, completo, agora):
     """Cria/atualiza/cancela tarefas. Devolve um resumo com as contagens."""
     resumo = {"criadas": 0, "atualizadas": 0, "canceladas": 0}
     inicio_janela, fim_janela = janela(agora)
     existentes = {
-        t.id_externo: t for t in Tarefa.objects.filter(origem=Origem.GOOGLE_AGENDA, id_externo__in=[e["id"] for e in eventos])
+        t.id_externo: t
+        for t in Tarefa.objects.filter(origem=Origem.GOOGLE_AGENDA, id_externo__in=[e["id"] for e in eventos])
     }
     recebidos = set()
 
@@ -170,8 +174,9 @@ def aplicar_eventos(eventos, agenda, completo, agora):
     if completo:
         # Diferença de conjuntos: o que o Kairos tem desta agenda (na janela) e o Google não mandou.
         sumidas = (
-            Tarefa.objects.filter(origem=Origem.GOOGLE_AGENDA, agenda_id=agenda["id"],
-                                  inicio__range=(inicio_janela, fim_janela))
+            Tarefa.objects.filter(
+                origem=Origem.GOOGLE_AGENDA, agenda_id=agenda["id"], inicio__range=(inicio_janela, fim_janela)
+            )
             .exclude(status=Status.CANCELADA)
             .exclude(id_externo__in=recebidos)
         )
@@ -189,14 +194,14 @@ def _cancelar(tarefa, agora):
 
 # ===== Orquestração =====
 
+
 def sincronizar_agenda(servico, agenda, agora=None, forcar_completo=False):
     """Sincroniza uma agenda e atualiza o EstadoSync dela. Erros sobem para quem chamou."""
     agora = agora or timezone.now()
     estado, _ = EstadoSync.objects.get_or_create(fonte=f"agenda:{agenda['id']}")
-    primeiro_do_dia = (
-        estado.ultimo_completo_em is None
-        or timezone.localdate(estado.ultimo_completo_em) != timezone.localdate(agora)
-    )
+    primeiro_do_dia = estado.ultimo_completo_em is None or timezone.localdate(
+        estado.ultimo_completo_em
+    ) != timezone.localdate(agora)
     completo = forcar_completo or not estado.sync_token or primeiro_do_dia
 
     try:

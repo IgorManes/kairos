@@ -37,14 +37,19 @@ def html_para_pdf(html, tempo_limite=60):
             edge,
             "--headless=new",
             "--disable-gpu",
-            "--no-pdf-header-footer",              # sem data/URL nas margens
+            "--no-pdf-header-footer",  # sem data/URL nas margens
             f"--user-data-dir={pasta / 'perfil'}",  # não disputa o perfil do Edge aberto
             f"--print-to-pdf={saida}",
             entrada.as_uri(),
         ]
         try:
-            subprocess.run(comando, capture_output=True, timeout=tempo_limite, check=False,
-                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            subprocess.run(
+                comando,
+                capture_output=True,
+                timeout=tempo_limite,
+                check=False,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
         except subprocess.TimeoutExpired as erro:
             raise ErroPDF("O Edge demorou demais para gerar o PDF.") from erro
         if not saida.exists() or saida.stat().st_size == 0:

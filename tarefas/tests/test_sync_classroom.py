@@ -31,13 +31,16 @@ def aplicar(turmas, atividades, entregas=None, concluir=True):
 class PrazoTests(TestCase):
     def test_converte_de_utc_para_o_horario_de_brasilia(self):
         # 31/10 02:59 em Londres (UTC) = 30/10 23:59 em Brasília
-        self.assertEqual(sync.prazo_local({"year": 2026, "month": 10, "day": 31}, {"hours": 2, "minutes": 59}),
-                         (date(2026, 10, 30), time(23, 59)))
+        self.assertEqual(
+            sync.prazo_local({"year": 2026, "month": 10, "day": 31}, {"hours": 2, "minutes": 59}),
+            (date(2026, 10, 30), time(23, 59)),
+        )
 
     def test_campos_zerados_nao_vem(self):
         # {"hours": 3} = 03:00 UTC = 00:00 em Brasília (minutos ausentes = 0)
-        self.assertEqual(sync.prazo_local({"year": 2026, "month": 11, "day": 5}, {"hours": 3}),
-                         (date(2026, 11, 5), time(0, 0)))
+        self.assertEqual(
+            sync.prazo_local({"year": 2026, "month": 11, "day": 5}, {"hours": 3}), (date(2026, 11, 5), time(0, 0))
+        )
 
     def test_sem_prazo(self):
         self.assertEqual(sync.prazo_local(None, None), (None, None))
@@ -47,11 +50,11 @@ class RegraDaEntregaTests(TestCase):
     def test_reage_so_a_mudanca(self):
         casos = [
             # (status atual, entrega antes, entrega agora, esperado)
-            (Status.A_FAZER, "CREATED", "TURNED_IN", Status.CONCLUIDA),       # entregou
+            (Status.A_FAZER, "CREATED", "TURNED_IN", Status.CONCLUIDA),  # entregou
             (Status.EM_ANDAMENTO, "TURNED_IN", "RETURNED", Status.CONCLUIDA),  # devolvida
-            (Status.A_FAZER, "TURNED_IN", "TURNED_IN", Status.A_FAZER),       # dono reabriu: não briga
+            (Status.A_FAZER, "TURNED_IN", "TURNED_IN", Status.A_FAZER),  # dono reabriu: não briga
             (Status.CONCLUIDA, "TURNED_IN", "RECLAIMED_BY_STUDENT", Status.A_FAZER),  # cancelou o envio
-            (Status.CANCELADA, "CREATED", "TURNED_IN", Status.CANCELADA),     # cancelada fica cancelada
+            (Status.CANCELADA, "CREATED", "TURNED_IN", Status.CANCELADA),  # cancelada fica cancelada
             (Status.A_FAZER, "", "NEW", Status.A_FAZER),
         ]
         for atual, antes, agora, esperado in casos:
@@ -69,9 +72,14 @@ class AplicarTests(TestCase):
         self.assertFalse(Disciplina.objects.get(classroom_id="T2").ativo)
 
     def test_atividade_vira_tarefa_de_faculdade(self):
-        aplicar([turma("T1")], {"T1": [atividade("A1", prazo={"year": 2026, "month": 11, "day": 6}, hora={"hours": 2, "minutes": 59})]})
+        aplicar(
+            [turma("T1")],
+            {"T1": [atividade("A1", prazo={"year": 2026, "month": 11, "day": 6}, hora={"hours": 2, "minutes": 59})]},
+        )
         t = Tarefa.objects.get()
-        self.assertEqual((t.categoria, t.origem, t.disciplina.nome), ("faculdade", Origem.GOOGLE_CLASSROOM, "Cálculo II"))
+        self.assertEqual(
+            (t.categoria, t.origem, t.disciplina.nome), ("faculdade", Origem.GOOGLE_CLASSROOM, "Cálculo II")
+        )
         self.assertEqual((t.prazo, t.prazo_hora), (date(2026, 11, 5), time(23, 59)))
 
     def test_primeira_importacao_de_atividade_ja_entregue_chega_concluida(self):
@@ -122,6 +130,7 @@ class EscoposTests(TestCase):
 class TokenConcedidoTests(TestCase):
     def test_grava_as_permissoes_concedidas_e_nao_as_pedidas(self):
         from unittest import mock
+
         from tarefas.google.credenciais import salvar_token
 
         credenciais = mock.Mock(granted_scopes=[ESCOPOS[0]])  # dono desmarcou o Classroom
@@ -134,7 +143,11 @@ class TokenConcedidoTests(TestCase):
 
 class ApelidosDeEscopoTests(TestCase):
     def test_nome_atual_da_permissao_vale_pelo_nome_antigo(self):
-        concedidos = [ESCOPOS[0], ESCOPOS[1], "https://www.googleapis.com/auth/classroom.student-submissions.me.readonly"]
+        concedidos = [
+            ESCOPOS[0],
+            ESCOPOS[1],
+            "https://www.googleapis.com/auth/classroom.student-submissions.me.readonly",
+        ]
         with tempfile.TemporaryDirectory() as pasta:
             token = Path(pasta) / "token.json"
             token.write_text(json.dumps({"scopes": concedidos}), encoding="utf-8")
@@ -156,7 +169,9 @@ class VencidasTests(TestCase):
         self.assertFalse(Tarefa.objects.exists())
 
     def test_vencida_mas_entregue_entra_concluida(self):
-        aplicar([turma("T1")], {"T1": [atividade("A1", prazo=data_google(-1), hora=self.MEIO_DIA)]}, {"A1": "TURNED_IN"})
+        aplicar(
+            [turma("T1")], {"T1": [atividade("A1", prazo=data_google(-1), hora=self.MEIO_DIA)]}, {"A1": "TURNED_IN"}
+        )
         self.assertEqual(Tarefa.objects.get().status, Status.CONCLUIDA)
 
     def test_entrou_no_prazo_e_venceu_depois_continua_atrasada(self):
@@ -190,8 +205,13 @@ class MarcoZeroTests(TestCase):
         self.assertTrue(Tarefa.objects.exists())
 
     def test_prazo_futuro_entra_e_vencido_nao(self):
-        self.sync([atividade("A1", prazo=data_google(3), hora={"hours": 15}),
-                   atividade("A2", prazo=data_google(-3), hora={"hours": 15})], {"A1": "CREATED", "A2": "CREATED"})
+        self.sync(
+            [
+                atividade("A1", prazo=data_google(3), hora={"hours": 15}),
+                atividade("A2", prazo=data_google(-3), hora={"hours": 15}),
+            ],
+            {"A1": "CREATED", "A2": "CREATED"},
+        )
         self.assertEqual([t.id_externo for t in Tarefa.objects.all()], ["T1:A1"])
 
     def test_entregue_entra_concluida_mesmo_antiga(self):

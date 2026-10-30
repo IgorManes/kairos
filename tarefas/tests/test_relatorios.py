@@ -2,7 +2,7 @@ from datetime import date, datetime, time, timedelta
 from unittest import mock
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.utils import timezone
 
 from tarefas import relatorios
@@ -47,7 +47,9 @@ class FotoTests(TestCase):
         return {t["titulo"]: t for t in dados["tarefas"]}
 
     def test_o_que_entra_na_foto(self):
-        concluida = nova("Relatório", Categoria.TRABALHO, solicitante=self.ana, criada=momento(SEGUNDA - timedelta(days=10)))
+        concluida = nova(
+            "Relatório", Categoria.TRABALHO, solicitante=self.ana, criada=momento(SEGUNDA - timedelta(days=10))
+        )
         concluir(concluida, momento(SEGUNDA + timedelta(days=2)))
         nova("Aberta antiga", criada=momento(SEGUNDA - timedelta(days=20)), prazo=SEGUNDA + timedelta(days=3))
         velha = nova("Concluída semana passada", criada=momento(SEGUNDA - timedelta(days=20)))
@@ -101,8 +103,9 @@ class RecorteTests(TestCase):
 
     def test_opcoes_vem_da_propria_foto(self):
         valores = [v for v, _ in relatorios.recortes_de(self.dados())]
-        self.assertEqual(valores, ["geral", "categoria:trabalho", "categoria:faculdade",
-                                   "solicitante:Ana", "disciplina:Cálculo II"])
+        self.assertEqual(
+            valores, ["geral", "categoria:trabalho", "categoria:faculdade", "solicitante:Ana", "disciplina:Cálculo II"]
+        )
 
     def test_trabalho_inclui_reunioes_da_empresa(self):
         tarefas, reunioes, _ = relatorios.aplicar_recorte(self.dados(), "categoria:trabalho")
@@ -122,8 +125,12 @@ class TelasTests(TestCase):
         self.client.force_login(get_user_model().objects.create_user("dono", password="x-senha-123"))
         hoje = timezone.localdate()
         self.atual = relatorios.semana_de(hoje)
-        t = nova("Revisar contrato", Categoria.TRABALHO, observacoes="anotação pessoal",
-                 solicitante=Pessoa.objects.create(nome="Ana"))
+        t = nova(
+            "Revisar contrato",
+            Categoria.TRABALHO,
+            observacoes="anotação pessoal",
+            solicitante=Pessoa.objects.create(nome="Ana"),
+        )
         concluir(t, timezone.now())
 
     def test_lista_mostra_semana_atual_sem_salvar_ela(self):

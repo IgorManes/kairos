@@ -11,9 +11,21 @@ HTMX = {"HTTP_HX_REQUEST": "true"}
 
 def dados_form(**campos):
     """Envio completo do formulário, como o navegador faria."""
-    base = {"titulo": "Nova", "categoria": "pessoal", "status": "a_fazer", "prioridade": "media",
-            "prazo": timezone.localdate().isoformat(), "prazo_hora": "", "solicitante": "", "disciplina": "",
-            "projeto": "", "inicio": "", "fim": "", "link_reuniao": "", "observacoes": ""}
+    base = {
+        "titulo": "Nova",
+        "categoria": "pessoal",
+        "status": "a_fazer",
+        "prioridade": "media",
+        "prazo": timezone.localdate().isoformat(),
+        "prazo_hora": "",
+        "solicitante": "",
+        "disciplina": "",
+        "projeto": "",
+        "inicio": "",
+        "fim": "",
+        "link_reuniao": "",
+        "observacoes": "",
+    }
     base.update(campos)
     return base
 
@@ -76,13 +88,16 @@ class PainelTarefaTests(TestCase):
         self.assertEqual((tarefa.titulo, tarefa.prioridade), ("Depois", "alta"))
 
     def test_campos_do_google_ignoram_envio_forjado(self):
-        tarefa = Tarefa.objects.create(titulo="Lista 3", categoria=Categoria.FACULDADE,
-                                       origem=Origem.GOOGLE_CLASSROOM, id_externo="1")
-        self.client.post(f"/tarefas/{tarefa.pk}/editar/",
-                         dados_form(titulo="Hackeado", categoria="faculdade", observacoes="minha nota",
-                                    status="em_andamento"), **HTMX)
+        tarefa = Tarefa.objects.create(
+            titulo="Lista 3", categoria=Categoria.FACULDADE, origem=Origem.GOOGLE_CLASSROOM, id_externo="1"
+        )
+        self.client.post(
+            f"/tarefas/{tarefa.pk}/editar/",
+            dados_form(titulo="Hackeado", categoria="faculdade", observacoes="minha nota", status="em_andamento"),
+            **HTMX,
+        )
         tarefa.refresh_from_db()
-        self.assertEqual(tarefa.titulo, "Lista 3")          # do Google: não mudou
+        self.assertEqual(tarefa.titulo, "Lista 3")  # do Google: não mudou
         self.assertEqual(tarefa.observacoes, "minha nota")  # do dono: mudou
         self.assertEqual(tarefa.status, Status.EM_ANDAMENTO)
 

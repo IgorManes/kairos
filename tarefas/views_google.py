@@ -9,12 +9,12 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from .forms import PreferenciasNotificacaoForm
 from .google.credenciais import escopos_faltando, obter_credenciais
 from .google.servico import sincronizar_tudo, ultimo_sync
-from .forms import PreferenciasNotificacaoForm
 from .models import EstadoSync, Preferencias
-from .windows import definir_inicializacao, inicializacao_ativa
 from .periodico import rodar_periodicos
+from .windows import definir_inicializacao, inicializacao_ativa
 
 
 def situacao_sync():
@@ -80,16 +80,20 @@ def configuracoes(request):
         {"nome": a["nome"] or "Agenda principal", "regra": a["regra"], "estado": estados.get(f"agenda:{a['id']}")}
         for a in settings.GOOGLE_AGENDAS
     ]
-    return render(request, "tarefas/configuracoes.html", {
-        "agendas": agendas,
-        "classroom": estados.get("classroom"),
-        "preferencias": Preferencias.atual(),
-        "form_notificacoes": PreferenciasNotificacaoForm(instance=Preferencias.atual()),
-        "inicia_com_windows": inicializacao_ativa(),
-        "tem_credenciais": settings.GOOGLE_CREDENCIAIS.exists(),
-        "conectando": _conectando.is_set(),
-        "erro_conexao": _erro_conexao["mensagem"],
-    })
+    return render(
+        request,
+        "tarefas/configuracoes.html",
+        {
+            "agendas": agendas,
+            "classroom": estados.get("classroom"),
+            "preferencias": Preferencias.atual(),
+            "form_notificacoes": PreferenciasNotificacaoForm(instance=Preferencias.atual()),
+            "inicia_com_windows": inicializacao_ativa(),
+            "tem_credenciais": settings.GOOGLE_CREDENCIAIS.exists(),
+            "conectando": _conectando.is_set(),
+            "erro_conexao": _erro_conexao["mensagem"],
+        },
+    )
 
 
 # ===== Conectar / desconectar a conta Google =====
@@ -134,14 +138,19 @@ def desconectar_google(request):
             from google.oauth2.credentials import Credentials
 
             credenciais = Credentials.from_authorized_user_file(str(settings.GOOGLE_TOKEN))
-            requests.post("https://oauth2.googleapis.com/revoke", params={"token": credenciais.token},
-                          headers={"content-type": "application/x-www-form-urlencoded"}, timeout=10)
+            requests.post(
+                "https://oauth2.googleapis.com/revoke",
+                params={"token": credenciais.token},
+                headers={"content-type": "application/x-www-form-urlencoded"},
+                timeout=10,
+            )
         except Exception:
             pass  # mesmo sem internet, apagar o token local já desconecta este PC
         settings.GOOGLE_TOKEN.unlink(missing_ok=True)
     EstadoSync.objects.update(sync_token="")  # ao reconectar, começa com sync completo
-    resposta = HttpResponse(render_to_string(
-        "tarefas/_resposta_acao.html", {"toast": {"mensagem": "Conta Google desconectada"}}))
+    resposta = HttpResponse(
+        render_to_string("tarefas/_resposta_acao.html", {"toast": {"mensagem": "Conta Google desconectada"}})
+    )
     resposta["HX-Refresh"] = "true"
     return resposta
 
@@ -153,16 +162,18 @@ def preferencia_concluir_ao_entregar(request):
     preferencias.concluir_ao_entregar = request.POST.get("valor") == "on"
     preferencias.save()
     estado = "ligado" if preferencias.concluir_ao_entregar else "desligado"
-    return render(request, "tarefas/_resposta_acao.html",
-                  {"toast": {"mensagem": f"Concluir ao entregar: {estado}"}})
+    return render(request, "tarefas/_resposta_acao.html", {"toast": {"mensagem": f"Concluir ao entregar: {estado}"}})
 
 
 @require_POST
 def preferencias_notificacoes(request):
     """Seção Notificações das Configurações: salva a cada mudança."""
     form = PreferenciasNotificacaoForm(request.POST, instance=Preferencias.atual())
-    mensagem = "Notificações salvas" if form.is_valid() else "Valor inválido: " + "; ".join(
-        f"{form.fields[c].label}: {e[0]}" for c, e in form.errors.items())
+    mensagem = (
+        "Notificações salvas"
+        if form.is_valid()
+        else "Valor inválido: " + "; ".join(f"{form.fields[c].label}: {e[0]}" for c, e in form.errors.items())
+    )
     if form.is_valid():
         form.save()
     return render(request, "tarefas/_resposta_acao.html", {"toast": {"mensagem": mensagem}})

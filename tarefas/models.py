@@ -6,7 +6,6 @@ from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 
-
 # --- Listas de escolha -----------------------------------------------------
 # No banco fica o código curto (1º valor); na tela aparece o rótulo (2º).
 
@@ -43,9 +42,7 @@ class Origem(models.TextChoices):
     GOOGLE_CLASSROOM = "google_classroom", "Google Classroom"
 
 
-validar_cor = RegexValidator(
-    r"^#[0-9a-fA-F]{6}$", "Use o formato #RRGGBB (ex.: #3b82f6)."
-)
+validar_cor = RegexValidator(r"^#[0-9a-fA-F]{6}$", "Use o formato #RRGGBB (ex.: #3b82f6).")
 
 
 # --- Tabelas de apoio ------------------------------------------------------
@@ -100,12 +97,8 @@ class Tarefa(models.Model):
     titulo = models.CharField(max_length=200)
     observacoes = models.TextField(blank=True)  # só local, o sync nunca mexe
     categoria = models.CharField(max_length=20, choices=Categoria.choices)
-    status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.A_FAZER
-    )
-    prioridade = models.CharField(
-        max_length=20, choices=Prioridade.choices, default=Prioridade.MEDIA
-    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.A_FAZER)
+    prioridade = models.CharField(max_length=20, choices=Prioridade.choices, default=Prioridade.MEDIA)
 
     prazo = models.DateField(null=True, blank=True)
     prazo_hora = models.TimeField(null=True, blank=True)
@@ -115,22 +108,29 @@ class Tarefa(models.Model):
 
     # PROTECT: não deixa apagar uma pessoa/disciplina que tem tarefas.
     solicitante = models.ForeignKey(
-        Pessoa, on_delete=models.PROTECT, null=True, blank=True,
+        Pessoa,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="tarefas",
     )
     projeto = models.ForeignKey(
-        Projeto, on_delete=models.SET_NULL, null=True, blank=True,
+        Projeto,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="tarefas",
     )
     disciplina = models.ForeignKey(
-        Disciplina, on_delete=models.PROTECT, null=True, blank=True,
+        Disciplina,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="tarefas",
     )
 
     # Campos da sincronização com o Google
-    origem = models.CharField(
-        max_length=20, choices=Origem.choices, default=Origem.MANUAL
-    )
+    origem = models.CharField(max_length=20, choices=Origem.choices, default=Origem.MANUAL)
     id_externo = models.CharField(max_length=255, blank=True)
     # Só Google Agenda: de qual agenda veio ("primary" ou o e-mail da agenda da empresa).
     agenda_id = models.CharField(max_length=255, blank=True)

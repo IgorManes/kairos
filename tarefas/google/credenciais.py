@@ -12,7 +12,7 @@ from django.conf import settings
 
 # Somente leitura.
 ESCOPOS = [
-    "https://www.googleapis.com/auth/calendar.events.readonly",   # eventos das agendas
+    "https://www.googleapis.com/auth/calendar.events.readonly",  # eventos das agendas
     "https://www.googleapis.com/auth/classroom.courses.readonly",  # turmas
     "https://www.googleapis.com/auth/classroom.coursework.me.readonly",  # atividades e minhas entregas
 ]

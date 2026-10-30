@@ -26,8 +26,11 @@ class Command(BaseCommand):
             raise CommandError("Já existe uma sincronização em andamento.")
         for nome, d in r.detalhes:
             tipo = "completo" if d["completo"] else "incremental"
-            self.stdout.write(self.style.SUCCESS(
-                f"{nome} ({tipo}): {d['criadas']} novas, {d['atualizadas']} atualizadas, {d['canceladas']} canceladas"
-            ))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"{nome} ({tipo}): {d['criadas']} novas, {d['atualizadas']} atualizadas, "
+                    f"{d['canceladas']} canceladas"
+                )
+            )
         if r.situacao == "erro":
             raise CommandError(f"Com erro: {r.erro} (detalhes salvos para a tela de Configurações).")

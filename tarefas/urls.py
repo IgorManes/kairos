@@ -1,6 +1,7 @@
 from django.urls import path, re_path
 
-from . import views, views_cadastros as cad, views_google, views_relatorios
+from . import views, views_google, views_relatorios
+from . import views_cadastros as cad
 
 urlpatterns = [
     path("", views.hoje, name="hoje"),

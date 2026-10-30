@@ -35,7 +35,9 @@ class CadastrosTests(TestCase):
         self.assertEqual(Pessoa.objects.filter(nome="Ana").count(), 1)
 
     def test_editar_pessoa(self):
-        self.client.post(f"/pessoa/{self.ana.pk}/editar/", {"nome": "Ana Paula", "cor": "#f59e0b", "ativo": "on"}, **HTMX)
+        self.client.post(
+            f"/pessoa/{self.ana.pk}/editar/", {"nome": "Ana Paula", "cor": "#f59e0b", "ativo": "on"}, **HTMX
+        )
         self.ana.refresh_from_db()
         self.assertEqual(self.ana.nome, "Ana Paula")
 

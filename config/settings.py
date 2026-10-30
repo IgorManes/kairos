@@ -34,8 +34,7 @@ try:
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 except KeyError:
     raise ImproperlyConfigured(
-        "DJANGO_SECRET_KEY não definida. Copie .env.example para .env "
-        "e gere uma chave (veja o README)."
+        "DJANGO_SECRET_KEY não definida. Copie .env.example para .env e gere uma chave (veja o README)."
     ) from None
 
 # Padrão False: se esquecer de configurar, fica no modo seguro.

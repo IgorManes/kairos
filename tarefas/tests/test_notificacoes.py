@@ -90,7 +90,8 @@ class ClassroomTests(Base):
 class PreferenciasTests(Base):
     def test_tudo_desligado_nao_avisa(self):
         Preferencias.objects.filter(pk=Preferencias.atual().pk).update(
-            avisar_reuniao=False, avisar_prazos=False, avisar_atrasadas=False, avisar_classroom=False)
+            avisar_reuniao=False, avisar_prazos=False, avisar_atrasadas=False, avisar_classroom=False
+        )
         nova("Daily", Categoria.REUNIAO, inicio=as_horas(14))
         nova("Atrasada", prazo=timezone.localdate() - timedelta(days=1))
         self.assertEqual(self.titulos(as_horas(13, 55)), [])

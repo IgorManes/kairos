@@ -27,8 +27,13 @@ class DisciplinaAdmin(admin.ModelAdmin):
 @admin.register(Tarefa)
 class TarefaAdmin(admin.ModelAdmin):
     list_display = [
-        "titulo", "categoria", "status", "prioridade", "prazo",
-        "solicitante", "origem",
+        "titulo",
+        "categoria",
+        "status",
+        "prioridade",
+        "prazo",
+        "solicitante",
+        "origem",
     ]
     list_filter = ["categoria", "status", "prioridade", "origem", "solicitante"]
     search_fields = ["titulo", "observacoes"]
@@ -38,9 +43,12 @@ class TarefaAdmin(admin.ModelAdmin):
         (None, {"fields": ["titulo", "categoria", "status", "prioridade", "observacoes"]}),
         ("Prazo e horário", {"fields": ["prazo", "prazo_hora", "inicio", "fim", "link_reuniao"]}),
         ("Vínculos", {"fields": ["solicitante", "projeto", "disciplina"]}),
-        ("Google", {
-            "classes": ["collapse"],
-            "fields": ["origem", "id_externo", "link_externo", "descricao_externa", "sincronizado_em"],
-        }),
+        (
+            "Google",
+            {
+                "classes": ["collapse"],
+                "fields": ["origem", "id_externo", "link_externo", "descricao_externa", "sincronizado_em"],
+            },
+        ),
         ("Datas", {"fields": ["criado_em", "atualizado_em", "concluida_em"]}),
     ]

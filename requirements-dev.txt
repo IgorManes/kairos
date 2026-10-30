@@ -1,0 +1,3 @@
+# Ferramentas de desenvolvimento (não são necessárias para rodar o Kairos).
+-r requirements.txt
+ruff==0.17.1
