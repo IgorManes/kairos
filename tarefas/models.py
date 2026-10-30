@@ -132,6 +132,9 @@ class Tarefa(models.Model):
     id_externo = models.CharField(max_length=255, blank=True)
     # Só Google Agenda: de qual agenda veio ("primary" ou o e-mail da agenda da empresa).
     agenda_id = models.CharField(max_length=255, blank=True)
+    # Só Classroom: última situação da entrega vista (NEW, CREATED, TURNED_IN, RETURNED,
+    # RECLAIMED_BY_STUDENT). O sync só mexe no status quando ela MUDA.
+    estado_entrega = models.CharField(max_length=30, blank=True)
     link_externo = models.URLField(max_length=500, blank=True)
     descricao_externa = models.TextField(blank=True)  # sobrescrito a cada sync
     sincronizado_em = models.DateTimeField(null=True, blank=True)
@@ -237,3 +240,22 @@ class EstadoSync(models.Model):
 
     def __str__(self):
         return self.fonte
+
+
+class Preferencias(models.Model):
+    """Configurações do dono. Uma linha só (singleton): use Preferencias.atual()."""
+
+    concluir_ao_entregar = models.BooleanField(
+        default=True, help_text="Concluir a tarefa quando a atividade for entregue no Classroom."
+    )
+
+    class Meta:
+        verbose_name = verbose_name_plural = "preferências"
+
+    def __str__(self):
+        return "Preferências"
+
+    @classmethod
+    def atual(cls):
+        objeto, _ = cls.objects.get_or_create(pk=1)
+        return objeto

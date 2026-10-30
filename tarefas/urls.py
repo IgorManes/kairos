@@ -19,6 +19,7 @@ urlpatterns = [
     path("sincronizar/", views_google.sincronizar, name="sincronizar"),
     path("google/conectar/", views_google.conectar_google, name="conectar_google"),
     path("google/desconectar/", views_google.desconectar_google, name="desconectar_google"),
+    path("preferencias/concluir-ao-entregar/", views_google.preferencia_concluir_ao_entregar, name="pref_concluir"),
     # Só "pessoa" ou "projeto"; qualquer outra coisa é 404.
     re_path(r"^(?P<tipo>pessoa|projeto)/novo/$", cad.formulario, name="novo_cadastro"),
     re_path(r"^(?P<tipo>pessoa|projeto)/(?P<pk>\d+)/editar/$", cad.formulario, name="editar_cadastro"),

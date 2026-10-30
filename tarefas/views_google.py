@@ -9,19 +9,23 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .google.credenciais import obter_credenciais
+from .google.credenciais import escopos_faltando, obter_credenciais
 from .google.servico import sincronizar_tudo, ultimo_sync
-from .models import EstadoSync
+from .models import EstadoSync, Preferencias
 
 
 def situacao_sync():
     """O que a barra lateral e as Configurações mostram sobre o sync."""
-    conectado = settings.GOOGLE_TOKEN.exists()
+    tem_token = settings.GOOGLE_TOKEN.exists()
+    reconectar = tem_token and bool(escopos_faltando())  # token antigo, sem as permissões novas
+    conectado = tem_token and not reconectar
     ultimo = ultimo_sync()
     com_erro = EstadoSync.objects.exclude(ultimo_erro="").order_by("-ultimo_erro_em").first()
     erro_recente = com_erro and (not ultimo or com_erro.ultimo_erro_em >= ultimo)
 
-    if not conectado:
+    if reconectar:
+        estado, texto = "desconectado", "Reconecte a conta Google"
+    elif not conectado:
         estado, texto = "desconectado", "Google desconectado"
     elif erro_recente:
         estado, texto = "erro", "Erro no último sync"
@@ -33,7 +37,7 @@ def situacao_sync():
         texto = "Sincronizado agora" if segundos < 60 else f"Sincronizado há {int(segundos // 60)} min"
         if segundos >= 3600:
             texto = f"Sincronizado há {int(segundos // 3600)} h"
-    return {"estado": estado, "texto": texto, "ultimo": ultimo, "conectado": conectado}
+    return {"estado": estado, "texto": texto, "ultimo": ultimo, "conectado": conectado, "reconectar": reconectar}
 
 
 def contexto_sync(request):
@@ -74,22 +78,28 @@ def configuracoes(request):
     ]
     return render(request, "tarefas/configuracoes.html", {
         "agendas": agendas,
+        "classroom": estados.get("classroom"),
+        "preferencias": Preferencias.atual(),
         "tem_credenciais": settings.GOOGLE_CREDENCIAIS.exists(),
         "conectando": _conectando.is_set(),
+        "erro_conexao": _erro_conexao["mensagem"],
     })
 
 
 # ===== Conectar / desconectar a conta Google =====
 
 _conectando = threading.Event()
+_erro_conexao = {"mensagem": ""}  # último erro do login, mostrado nas Configurações
 
 
 def _login_em_segundo_plano():
+    _erro_conexao["mensagem"] = ""
     try:
         obter_credenciais(interativo=True)  # abre o navegador deste PC e espera a autorização
         sincronizar_tudo(motivo="botao")
-    except Exception:
-        pass  # a tela mostra "desconectado" e o usuário tenta de novo
+    except Exception as erro:  # nunca engolir em silêncio: a tela mostra o motivo
+        _erro_conexao["mensagem"] = str(erro) or erro.__class__.__name__
+        print(f"[Kairos] Falha ao conectar a conta Google: {erro!r}")
     finally:
         _conectando.clear()
 
@@ -128,3 +138,14 @@ def desconectar_google(request):
         "tarefas/_resposta_acao.html", {"toast": {"mensagem": "Conta Google desconectada"}}))
     resposta["HX-Refresh"] = "true"
     return resposta
+
+
+@require_POST
+def preferencia_concluir_ao_entregar(request):
+    """Chave das Configurações: salva na hora (sem botão Salvar)."""
+    preferencias = Preferencias.atual()
+    preferencias.concluir_ao_entregar = request.POST.get("valor") == "on"
+    preferencias.save()
+    estado = "ligado" if preferencias.concluir_ao_entregar else "desligado"
+    return render(request, "tarefas/_resposta_acao.html",
+                  {"toast": {"mensagem": f"Concluir ao entregar: {estado}"}})

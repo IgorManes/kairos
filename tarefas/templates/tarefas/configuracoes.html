@@ -10,10 +10,14 @@
   <div class="config-topo">
     <div>
       <h2 class="text-lg font-semibold">Google</h2>
-      <p class="text-sm text-text-3">Somente leitura: o Kairos nunca altera nada no Google. Sincroniza a cada minuto enquanto está aberto.</p>
+      <p class="text-sm text-text-3">Somente leitura: o Kairos nunca altera nada no Google. Enquanto está aberto, sincroniza a Agenda a cada minuto e o Classroom a cada 5 minutos.</p>
     </div>
     {% include "partials/sync_status.html" with id_status="sync-status-config" %}
   </div>
+
+  {% if erro_conexao %}
+    <p class="config-erro">⚠ Não deu para conectar: {{ erro_conexao }}</p>
+  {% endif %}
 
   <div class="config-acoes">
     {% if sync.conectado %}
@@ -22,6 +26,9 @@
       </button>
       <button class="btn btn-danger" hx-post="{% url 'desconectar_google' %}" hx-swap="none"
               hx-confirm="Desconectar a conta Google? As reuniões já importadas continuam no Kairos.">Desconectar conta</button>
+    {% elif sync.reconectar and not conectando %}
+      <button class="btn btn-primary" hx-post="{% url 'conectar_google' %}" hx-swap="none">Reconectar conta Google</button>
+      <p class="text-[13px] text-text-3">O Kairos passou a ler também o Classroom e precisa da sua autorização para isso.</p>
     {% elif not tem_credenciais %}
       <p class="chip chip-late h-auto py-2">Falta o arquivo credentials.json na pasta de dados (%LOCALAPPDATA%\Kairos\).</p>
     {% elif conectando %}
@@ -48,6 +55,25 @@
         {% endif %}
       </div>
     {% endfor %}
+    <div class="config-linha">
+      <div>
+        <b>Classroom</b>
+        <small>atividades das turmas em que você é aluno</small>
+      </div>
+      <div class="text-[13px] text-text-2">
+        {% if classroom.ultimo_sync_em %}Último sync: há {{ classroom.ultimo_sync_em|timesince }}{% else %}Nunca sincronizado{% endif %}
+      </div>
+      {% if classroom.ultimo_erro %}
+        <p class="config-erro">⚠ {{ classroom.ultimo_erro_em|date:"d/m H:i" }} — {{ classroom.ultimo_erro|truncatechars:300 }}</p>
+      {% endif %}
+    </div>
   </div>
+
+  <label class="check-linha">
+    <input type="checkbox" name="valor" {% if preferencias.concluir_ao_entregar %}checked{% endif %}
+           hx-post="{% url 'pref_concluir' %}" hx-trigger="change" hx-swap="none">
+    <span>Concluir a tarefa quando eu entregar a atividade no Classroom
+      <small class="block text-text-3">Se você cancelar o envio, ela volta para "A fazer".</small></span>
+  </label>
 </section>
 {% endblock %}

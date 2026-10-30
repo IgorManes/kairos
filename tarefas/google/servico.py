@@ -13,7 +13,8 @@ from django.utils import timezone
 
 from ..models import EstadoSync
 from . import agenda as sync_agenda
-from .credenciais import SemConexaoGoogle, obter_credenciais, servico_agenda
+from . import classroom as sync_classroom
+from .credenciais import SemConexaoGoogle, obter_credenciais, servico_agenda, servico_classroom
 
 # Intervalo mínimo desde o último sync, por motivo.
 INTERVALO_MINIMO = {
@@ -21,6 +22,9 @@ INTERVALO_MINIMO = {
     "foco": timedelta(seconds=15),   # voltou para o app
     "botao": timedelta(0),           # "Sincronizar agora": sempre
 }
+
+# O Classroom não tem sync incremental (lê tudo a cada vez): no máximo a cada 5 min.
+INTERVALO_CLASSROOM = timedelta(minutes=5)
 
 _trava = threading.Lock()  # só um sync por vez (duas abas, botão + relógio...)
 
@@ -37,6 +41,13 @@ def ultimo_sync():
     return EstadoSync.objects.filter(fonte__startswith="agenda:").aggregate(m=Max("ultimo_sync_em"))["m"]
 
 
+def classroom_na_hora(motivo, agora):
+    if motivo == "botao":
+        return True
+    ultimo = EstadoSync.objects.filter(fonte=sync_classroom.FONTE).values_list("ultimo_sync_em", flat=True).first()
+    return ultimo is None or agora - ultimo >= INTERVALO_CLASSROOM
+
+
 def sincronizar_tudo(motivo="botao", forcar_completo=False, interativo=False, agora=None):
     agora = agora or timezone.now()
     ultimo = ultimo_sync()
@@ -47,9 +58,10 @@ def sincronizar_tudo(motivo="botao", forcar_completo=False, interativo=False, ag
         return Resultado("ocupado")
     try:
         try:
-            servico = servico_agenda(obter_credenciais(interativo=interativo))
+            credenciais = obter_credenciais(interativo=interativo)
         except SemConexaoGoogle as erro:
             return Resultado("desconectado", erro=str(erro))
+        servico = servico_agenda(credenciais)
 
         mudou, detalhes, erros = False, [], []
         for agenda in settings.GOOGLE_AGENDAS:
@@ -62,6 +74,15 @@ def sincronizar_tudo(motivo="botao", forcar_completo=False, interativo=False, ag
                 continue
             detalhes.append((nome, r))
             mudou = mudou or any(r[k] for k in ("criadas", "atualizadas", "canceladas"))
+        if classroom_na_hora(motivo, agora) or forcar_completo:
+            try:
+                r = sync_classroom.sincronizar_classroom(servico_classroom(credenciais), agora)
+                detalhes.append(("Classroom", r))
+                mudou = mudou or any(r[k] for k in ("criadas", "atualizadas", "canceladas"))
+            except Exception as erro:
+                sync_classroom.registrar_erro(erro)
+                erros.append(f"Classroom: {erro}")
+
         if erros:
             return Resultado("erro", mudou, detalhes, erro="; ".join(erros))
         return Resultado("ok", mudou, detalhes)

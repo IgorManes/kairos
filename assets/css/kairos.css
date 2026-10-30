@@ -356,6 +356,7 @@
   .chip-progress i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor;
                      animation: blink 1.6s ease-in-out infinite; }
   .chip-google { background: transparent; color: var(--text-3); padding: 0 4px; text-decoration: none; }
+  .chip-entrega { color: var(--c-pessoal); background: color-mix(in srgb, var(--c-pessoal) var(--tint), transparent); }
   /* Etiqueta da agenda de empresa (ex.: "Invoga") */
   .chip-agenda { height: 18px; padding: 0 7px; font-size: 11px; font-weight: 600; letter-spacing: .02em;
                  color: var(--c-reuniao); background: color-mix(in srgb, var(--c-reuniao) var(--tint), transparent);

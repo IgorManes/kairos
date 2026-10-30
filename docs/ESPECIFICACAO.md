@@ -136,7 +136,10 @@ Interações importantes:
 ### Google Classroom
 - Turmas ativas em que o dono é aluno → Disciplina.
 - Atividades (courseWork) → Tarefa categoria faculdade, com prazo/hora e link.
-- Se a entrega do aluno estiver como entregue/devolvida → marcar concluída automaticamente (configurável).
+- Se a entrega do aluno **passar a** entregue/devolvida → marcar concluída automaticamente; se o envio for cancelado → volta para "A fazer". O sync só age quando a situação da entrega muda (guardada em `estado_entrega`), para não brigar com o dono. Configurável (`Preferencias.concluir_ao_entregar`, padrão ligado).
+- Escopos: `classroom.courses.readonly` + `classroom.coursework.me.readonly`. Prazos vêm em UTC → converter para o fuso local.
+- Sem sync incremental: lê tudo a cada 5 min e só grava o que mudou.
+- 1º sync do Classroom ("marco zero"): entram só as entregues (como concluídas) e as não entregues com prazo no futuro. Depois: toda atividade nova entra, exceto a que já aparece vencida. Se entrou no prazo e venceu depois, continua aparecendo como atrasada.
 - Atividade removida no Classroom → cancelada, não apagada.
 - Mesmas regras de campos do Google x campos do dono.
 

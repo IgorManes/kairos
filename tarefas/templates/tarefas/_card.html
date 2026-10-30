@@ -20,6 +20,8 @@
         {% if t.status == 'em_andamento' %}<span class="chip chip-progress"><i></i>Em andamento</span>{% endif %}
         {% if t.status == 'aguardando' %}<span class="chip chip-wait"><svg class="icon icon-sm"><use href="#i-hourglass"/></svg>Aguardando</span>{% endif %}
       {% endif %}
+      {% if t.estado_entrega == 'TURNED_IN' %}<span class="chip chip-entrega"><svg class="icon icon-sm"><use href="#i-check"/></svg>Entregue</span>
+      {% elif t.estado_entrega == 'RETURNED' %}<span class="chip chip-entrega"><svg class="icon icon-sm"><use href="#i-check"/></svg>Devolvida</span>{% endif %}
       {% if t.etiqueta_agenda %}<span class="chip chip-agenda">{{ t.etiqueta_agenda }}</span>{% endif %}
       {% if t.origem != 'manual' and t.link_externo %}
         <a class="chip chip-google" href="{{ t.link_externo }}" target="_blank" rel="noopener" title="Abrir no Google"><svg class="icon icon-sm"><use href="#i-external"/></svg>{{ t.get_origem_display|cut:"Google " }}</a>

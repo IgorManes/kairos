@@ -151,3 +151,19 @@ Formato: contexto → escolha → motivo.
 - **Conectar pela tela** → abre o navegador **deste PC** numa thread; limitação conhecida: acessando pelo celular (futuro), o navegador abriria no PC de casa.
 - **Desconectar** → revoga no Google, apaga o `token.json` e zera os tokens de sync (ao reconectar, começa completo); reuniões importadas continuam.
 - **Reuniões que já terminaram** (dados reais mostraram acumulando como "A fazer") → **saem da lista de abertas, sem mudar o status**; aparecem em "Todas" → "concluída" significa "eu fiz", o que o sync não tem como saber; marcar sozinho poluiria os relatórios semanais e quebraria a regra "status é do dono".
+
+## Etapa 5: Google Classroom (2026-10-30)
+
+- **Escopos** → `classroom.courses.readonly` + `classroom.coursework.me.readonly` (confirmados na documentação; o segundo cobre atividades e as minhas entregas) → mínimo necessário, só leitura.
+- **Token antigo sem as permissões novas** → o Kairos compara os escopos gravados no `token.json` com os que pede e mostra "Reconecte a conta Google" → em vez de um erro 403 confuso na primeira chamada ao Classroom.
+- **Sem sync incremental no Classroom** → lê tudo a cada 5 min (1 + 2 consultas por turma); **só grava o que mudou** (compara uma "foto" dos campos) → sem isso o banco seria reescrito e a tela "piscaria" a cada 5 min.
+- **Prazo em UTC** → convertido para o fuso local; campos zerados não vêm no JSON (`{"hours": 3}` = 03:00) → sem conversão, prazos de 23:59 cairiam no dia seguinte.
+- **Concluir ao entregar** (especificação: "configurável") → **reage à mudança da entrega, não ao estado**: guarda a última situação vista (`estado_entrega`) e só conclui quando ela vira entregue/devolvida (e reabre se o envio for cancelado) → se o dono reabrir a tarefa, o sync não a conclui de novo a cada 5 min. Chave nas Configurações (`Preferencias`, uma linha só), ligada por padrão.
+- **Primeira importação** → atividades já entregues chegam concluídas (a entrega "mudou" de nada para entregue) → não aparecem como atrasadas.
+- **Turma arquivada** → Disciplina inativa; as atividades dela não são buscadas nem canceladas.
+- **Atividade apagada pelo professor** → cancelada pela diferença de conjuntos, só para turmas ativas.
+- **Id da atividade** → `turma:atividade` → o id é único dentro da turma; o prefixo garante unicidade geral.
+- **Permissão com dois nomes** (o console gravou `classroom.student-submissions.me.readonly` no lugar de `classroom.coursework.me.readonly`; o token veio com o nome novo) → **tabela de equivalentes**: qualquer um dos nomes vale → o Kairos pedia para reconectar para sempre por causa de um apelido.
+- **Token grava as permissões CONCEDIDAS, não as pedidas** → a tela de consentimento deixa desmarcar caixas; gravando as pedidas, o Kairos acharia que tem acesso e não teria.
+- **Erro no login em segundo plano era descartado em silêncio** (`except: pass`) → agora aparece nas Configurações → foi por isso que as primeiras tentativas falharam sem explicação.
+- **O que entra na 1ª importação do Classroom** (a primeira trouxe 14 vencidas, algumas de 2025, e 9 "atividades" sem prazo que eram avisos/materiais; o dono disse que a única pendência real era a de 3/11) → **"marco zero"**: no 1º sync entram só as entregues (como concluídas, histórico para os relatórios) e as não entregues com prazo no futuro; depois, toda atividade nova entra, exceto a que já aparece vencida. Uma heurística de idade ("sem prazo e publicada há +14 dias") foi tentada e descartada: deixava passar avisos recentes. Validado com um ensaio nos dados reais dentro de uma transação desfeita (27 concluídas + 1 pendente).
