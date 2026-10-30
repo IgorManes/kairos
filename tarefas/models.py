@@ -1,3 +1,5 @@
+from datetime import time
+
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
@@ -251,6 +253,15 @@ class Preferencias(models.Model):
         default=True, help_text="Concluir a tarefa quando a atividade for entregue no Classroom."
     )
 
+    # Notificações do Windows (só com o app aberto pelo iniciar.pyw)
+    avisar_reuniao = models.BooleanField("Reuniões", default=True)
+    minutos_antes_reuniao = models.PositiveSmallIntegerField("Minutos antes", default=10)
+    avisar_prazos = models.BooleanField("Prazos do dia", default=True)
+    hora_aviso_prazos = models.TimeField("Horário do aviso de prazos", default=time(9, 0))
+    avisar_atrasadas = models.BooleanField("Tarefas que ficaram atrasadas", default=True)
+    avisar_classroom = models.BooleanField("Atividades novas do Classroom", default=True)
+    avisar_resumo = models.BooleanField("Resumo ao abrir o Kairos no dia", default=True)
+
     class Meta:
         verbose_name = verbose_name_plural = "preferências"
 
@@ -281,3 +292,32 @@ class RelatorioSemanal(models.Model):
 
     def __str__(self):
         return f"Semana de {self.semana_inicio:%d/%m/%Y}"
+
+
+class Notificacao(models.Model):
+    """
+    Aviso já enviado (para nunca repetir). A `chave` descreve exatamente o que foi
+    avisado, ex.: "reuniao:42:2026-10-30T14:00" — se a reunião for remarcada, a
+    chave muda e o aviso sai de novo.
+    """
+
+    class Tipo(models.TextChoices):
+        REUNIAO = "reuniao", "Reunião"
+        PRAZOS = "prazos", "Prazos do dia"
+        ATRASADA = "atrasada", "Atrasada"
+        CLASSROOM = "classroom", "Classroom"
+        RESUMO = "resumo", "Resumo do dia"
+
+    chave = models.CharField(max_length=255, unique=True)
+    tipo = models.CharField(max_length=20, choices=Tipo.choices)
+    tarefa = models.ForeignKey(Tarefa, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    enviada_em = models.DateTimeField(auto_now_add=True)
+    mostrada = models.BooleanField(default=True)  # False: registrada em silêncio (1ª verificação)
+
+    class Meta:
+        ordering = ["-enviada_em"]
+        verbose_name = "notificação"
+        verbose_name_plural = "notificações"
+
+    def __str__(self):
+        return self.chave

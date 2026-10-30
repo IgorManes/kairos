@@ -201,6 +201,14 @@ document.addEventListener("drop", evento => {
 document.addEventListener("DOMContentLoaded", () => {
   aplicarTema(document.documentElement.dataset.theme || "dark");
   agendarToasts();
+  // Clique numa notificação do Windows abre "/?abrir=42": abre o painel da tarefa 42.
+  const parametros = new URLSearchParams(location.search);
+  const id = parametros.get("abrir");
+  if (/^\d+$/.test(id || "") && document.getElementById("drawer-conteudo")) {
+    htmx.ajax("GET", `/tarefas/${id}/editar/`, { target: "#drawer-conteudo" });
+    parametros.delete("abrir");
+    history.replaceState(null, "", location.pathname + (parametros.size ? `?${parametros}` : ""));
+  }
 });
 // Toasts que chegarem em respostas do HTMX também somem sozinhos.
 document.addEventListener("htmx:afterSettle", agendarToasts);

@@ -1,7 +1,7 @@
 from django import forms
 from django.db.models import Q
 
-from .models import Categoria, Disciplina, Origem, Pessoa, Prioridade, Projeto, Status, Tarefa
+from .models import Categoria, Disciplina, Origem, Pessoa, Preferencias, Prioridade, Projeto, Status, Tarefa
 
 FORMATO_DATA_HORA = "%Y-%m-%dT%H:%M"  # formato do <input type="datetime-local">
 
@@ -144,3 +144,18 @@ class ProjetoForm(forms.ModelForm):
         self.fields["categoria"].choices = [c for c in Categoria.choices if c[0] != Categoria.REUNIAO]
         if not self.instance.pk:
             self.initial.setdefault("categoria", Categoria.PESSOAL)
+
+
+class PreferenciasNotificacaoForm(forms.ModelForm):
+    class Meta:
+        model = Preferencias
+        fields = ["avisar_reuniao", "minutos_antes_reuniao", "avisar_prazos", "hora_aviso_prazos",
+                  "avisar_atrasadas", "avisar_classroom", "avisar_resumo"]
+        widgets = {"hora_aviso_prazos": forms.TimeInput(attrs={"type": "time"}, format="%H:%M")}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["minutos_antes_reuniao"].min_value = 1
+        self.fields["minutos_antes_reuniao"].max_value = 120
+        self.fields["minutos_antes_reuniao"].widget.attrs.update({"class": "input input-sm w-20", "min": 1, "max": 120})
+        self.fields["hora_aviso_prazos"].widget.attrs["class"] = "input input-sm w-28"

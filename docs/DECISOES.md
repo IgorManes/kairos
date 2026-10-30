@@ -192,3 +192,20 @@ Formato: contexto → escolha → motivo.
 - **.pyw sem terminal** → erros vão para `kairos.log` e erro fatal vira caixa de mensagem → senão sumiriam.
 - **Testes de backup no Windows** → `closing()` nas conexões sqlite: `with sqlite3.connect()` não fecha a conexão, e o Windows não deixa apagar arquivo aberto.
 - **Script do atalho em PowerShell** → **arquivo .ps1 em UTF-8 com BOM** → o PowerShell 5.1 do Windows lê .ps1 sem BOM no padrão antigo (cp1252); um travessão em UTF-8 virou aspa e quebrou o script. Conferido com o analisador do próprio PowerShell (sem executar).
+
+## Etapa 6.1: Bandeja, iniciar com o Windows e notificações (2026-10-30)
+
+- **Bandeja e notificações** → **`NotifyIcon` do próprio Windows via pythonnet** (já veio com o pywebview) em vez de pystray (sem versão desde 2023, traz o Pillow) ou win11toast/windows-toasts (vários pacotes winrt) → zero pacotes novos; no Windows 11 o aviso aparece como notificação nativa e o clique é informado.
+- **Nome e ícone nas notificações** (saía "Kairos.App" e sem ícone; com um ID não registrado o Windows chegou a descartar o aviso) → **AppUserModelID "Kairos" registrado em `HKCU\Software\Classes\AppUserModelId\Kairos`** (DisplayName + IconUri), refeito a cada abertura → sem administrador, só o usuário atual.
+- **Fechar a janela** → **esconde na bandeja** (o evento "fechando" devolve False); só "Sair" encerra → sync e avisos continuam com a janela fechada.
+- **WinForms só na thread da janela** → bandeja criada e avisos mostrados via `native.BeginInvoke`.
+- **Instância única com a janela escondida** → a 2ª abertura **sinaliza** a 1ª por um evento com nome do Windows (antes procurava a janela visível, que não existe quando está na bandeja).
+- **Handles de 64 bits no ctypes** → `restype`/`argtypes` declarados; por padrão o ctypes corta retornos para 32 bits.
+- **Relógio do app** (thread, a cada minuto) → sync + tarefas periódicas + avisos, mesmo com a janela escondida; chama as mesmas funções do relógio da página.
+- **Nunca repetir aviso** → `Notificacao.chave` única que descreve o que foi avisado (`reuniao:42:<início>`): reunião remarcada muda a chave e avisa de novo. 1ª verificação de todas só registra, sem mostrar (não inunda no 1º dia).
+- **Gravar chave repetida** → `transaction.atomic()` aninhado (ponto de salvamento) → o erro de chave duplicada "envenenaria" a transação inteira (o teste pegou).
+- **Bug da 1ª verificação** → o resumo do dia roda antes e fazia a 1ª verificação achar que já tinha rodado, mostrando tudo de uma vez → o resumo não conta para decidir.
+- **Avisos agrupados** → prazos do dia num aviso só; várias atrasadas ou atividades do Classroom num aviso só → menos ruído.
+- **Iniciar com o Windows** (especificação: atalho na pasta Inicializar) → **valor no Registro `HKCU\...\Run`** com `pythonw iniciar.pyw --bandeja` → padrão dos apps, sem COM, aparece no Gerenciador de Tarefas → Aplicativos de inicialização; abre direto na bandeja.
+- **Clique no aviso** → abre `/?abrir=<id>`: o JS abre o painel daquela tarefa.
+- **Teste que enganou** → um Kairos antigo (versão sem bandeja) estava aberto; a instância única desviou o teste para ele. Lição: confirmar qual versão está rodando antes de concluir algo de um teste de integração.

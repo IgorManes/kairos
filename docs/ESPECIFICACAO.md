@@ -166,14 +166,15 @@ Interações importantes:
 
 ## 7.1 Notificações do Windows
 - O app precisa continuar rodando com a janela fechada: ícone na **bandeja do sistema** (ex.: `pystray`) com opções Abrir / Sincronizar / Sair. Fechar a janela minimiza para a bandeja.
-- Opção "Iniciar com o Windows" (atalho na pasta Inicializar), ligada/desligada nas Configurações.
+- Opção "Iniciar com o Windows" (valor `Kairos` em `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, abrindo direto na bandeja com `--bandeja`), ligada/desligada nas Configurações.
+- Bandeja e notificações pelo `NotifyIcon` do Windows (via pythonnet, sem pacote extra). App registrado em `HKCU\Software\Classes\AppUserModelId\Kairos` para nome e ícone nos avisos.
 - Notificações nativas (toast) do Windows (ex.: `windows-toasts` ou `win11toast`; confirme qual está mantida). Clicar na notificação abre a tarefa.
 - Disparos (configuráveis nas Configurações):
   - Reunião: X minutos antes do início (padrão 10).
   - Prazo: no dia, num horário fixo (padrão 9h), e quando ficar atrasada.
   - Nova atividade importada do Classroom.
   - Resumo ao ligar o PC: "3 atrasadas, 5 para hoje, 2 reuniões".
-- Guardar o que já foi notificado para não repetir o mesmo aviso.
+- Guardar o que já foi notificado para não repetir o mesmo aviso (tabela `Notificacao`, chave única por aviso; reunião remarcada avisa de novo). A 1ª verificação só registra o que já está pendente, sem mostrar. Prazos do dia, atrasadas e atividades novas são agrupados num aviso só quando são várias.
 
 ## 8. Etapas (uma por vez, cada uma termina com commit(s) aprovados)
 0. Preparação: venv, Django, estrutura, `.gitignore`, `.env.example`, README inicial, primeiro commit.

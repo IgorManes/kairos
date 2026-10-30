@@ -11,7 +11,9 @@ from django.views.decorators.http import require_POST
 
 from .google.credenciais import escopos_faltando, obter_credenciais
 from .google.servico import sincronizar_tudo, ultimo_sync
+from .forms import PreferenciasNotificacaoForm
 from .models import EstadoSync, Preferencias
+from .windows import definir_inicializacao, inicializacao_ativa
 from .periodico import rodar_periodicos
 
 
@@ -82,6 +84,8 @@ def configuracoes(request):
         "agendas": agendas,
         "classroom": estados.get("classroom"),
         "preferencias": Preferencias.atual(),
+        "form_notificacoes": PreferenciasNotificacaoForm(instance=Preferencias.atual()),
+        "inicia_com_windows": inicializacao_ativa(),
         "tem_credenciais": settings.GOOGLE_CREDENCIAIS.exists(),
         "conectando": _conectando.is_set(),
         "erro_conexao": _erro_conexao["mensagem"],
@@ -151,3 +155,23 @@ def preferencia_concluir_ao_entregar(request):
     estado = "ligado" if preferencias.concluir_ao_entregar else "desligado"
     return render(request, "tarefas/_resposta_acao.html",
                   {"toast": {"mensagem": f"Concluir ao entregar: {estado}"}})
+
+
+@require_POST
+def preferencias_notificacoes(request):
+    """Seção Notificações das Configurações: salva a cada mudança."""
+    form = PreferenciasNotificacaoForm(request.POST, instance=Preferencias.atual())
+    mensagem = "Notificações salvas" if form.is_valid() else "Valor inválido: " + "; ".join(
+        f"{form.fields[c].label}: {e[0]}" for c, e in form.errors.items())
+    if form.is_valid():
+        form.save()
+    return render(request, "tarefas/_resposta_acao.html", {"toast": {"mensagem": mensagem}})
+
+
+@require_POST
+def preferencia_inicializacao(request):
+    """Liga/desliga "Iniciar com o Windows" (Registro do usuário, sem administrador)."""
+    ativar = request.POST.get("valor") == "on"
+    definir_inicializacao(ativar)
+    estado = "ligado" if ativar else "desligado"
+    return render(request, "tarefas/_resposta_acao.html", {"toast": {"mensagem": f"Iniciar com o Windows: {estado}"}})

@@ -76,4 +76,28 @@
       <small class="block text-text-3">Se você cancelar o envio, ela volta para "A fazer".</small></span>
   </label>
 </section>
+
+{% with f=form_notificacoes %}
+<section class="config-secao mt-5">
+  <div>
+    <h2 class="text-lg font-semibold">Notificações e Windows</h2>
+    <p class="text-sm text-text-3">Avisos do Windows enquanto o Kairos está aberto (inclusive escondido na bandeja). Funcionam no app aberto pelo atalho, não no navegador.</p>
+  </div>
+
+  <form class="grid gap-3" hx-post="{% url 'pref_notificacoes' %}" hx-trigger="change" hx-swap="none">
+    <label class="check-linha">{{ f.avisar_reuniao }} <span>Reuniões, {{ f.minutos_antes_reuniao }} minutos antes</span></label>
+    <label class="check-linha">{{ f.avisar_prazos }} <span>Tarefas do dia, às {{ f.hora_aviso_prazos }}</span></label>
+    <label class="check-linha">{{ f.avisar_atrasadas }} <span>Quando uma tarefa ficar atrasada</span></label>
+    <label class="check-linha">{{ f.avisar_classroom }} <span>Atividade nova no Classroom</span></label>
+    <label class="check-linha">{{ f.avisar_resumo }} <span>Resumo do dia ao abrir o Kairos</span></label>
+  </form>
+
+  <label class="check-linha border-t border-border pt-4">
+    <input type="checkbox" name="valor" {% if inicia_com_windows %}checked{% endif %}
+           hx-post="{% url 'pref_inicializacao' %}" hx-trigger="change" hx-swap="none">
+    <span>Iniciar com o Windows
+      <small class="block text-text-3">Abre direto na bandeja ao ligar o PC, para os avisos funcionarem desde cedo.</small></span>
+  </label>
+</section>
+{% endwith %}
 {% endblock %}
