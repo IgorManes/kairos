@@ -62,3 +62,12 @@ Formato: contexto → escolha → motivo.
 - **Novo campo `agenda_id` na Tarefa** → guarda de qual agenda veio → etiqueta "Invoga" e o sync só cancela eventos das agendas que acompanha.
 - **Duplicatas entre agendas** → **`id_externo` = `iCalUID`** (igual em todas as agendas) → a mesma reunião nas duas agendas vira uma tarefa só.
 - **Agenda removida do `.env`** → **eventos ficam como histórico** → o Kairos parou de acompanhar a agenda; as reuniões não deixaram de existir.
+
+## Etapa 3, bloco 1: Tela Hoje (2026-10-30)
+
+- **Ordenar por prioridade guardada como texto** (alfabético poria "urgente" no fim) → **`Case`/`When` (CASE WHEN do SQL) converte em peso na consulta** em vez de tabela de prioridades com chave estrangeira → mesma ideia (texto → número), sem mudar o modelo nem criar tabela para 4 valores fixos.
+- **Onde ficam as consultas** → **`tarefas/consultas.py`**, não dentro das views → cada regra ("atrasada", "próximos 7 dias") num lugar só e testável isoladamente.
+- **Card de tarefa** → **um `partialdef` reutilizado nas três seções** → o HTMX vai pedir só esse pedaço ao atualizar um card.
+- **Filtro por categoria** → **link com `?categoria=` na URL**; valor desconhecido é ignorado → dá para favoritar/compartilhar o filtro e não quebra com entrada inválida.
+- **Números no CSS da linha do tempo** → **formatados em Python com ponto** → o template em pt-BR escreveria "1,5", que o CSS não entende.
+- **Dados de exemplo** → **comando `dados_exemplo` que só roda no `dev.sqlite3`** e não roda duas vezes → dá para ver as telas no notebook sem risco de sujar o banco real.

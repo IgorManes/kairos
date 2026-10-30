@@ -1,16 +1,125 @@
 {% extends "base_app.html" %}
+{% load partials %}
 {% block titulo %}Hoje{% endblock %}
+
+{# ===== Card de tarefa (reutilizado nas seções; o HTMX vai pedir só este pedaço) ===== #}
+{% partialdef card %}
+<article class="task{% if t.atrasada %} is-late{% endif %}{% if t.status == 'concluida' %} is-done{% endif %}" data-cat="{{ t.categoria }}" id="tarefa-{{ t.pk }}">
+  <button class="check" aria-label="{% if t.status == 'concluida' %}Reabrir{% else %}Concluir{% endif %}"><svg class="icon"><use href="#i-check"/></svg></button>
+  <div class="task-body">
+    <p class="task-title"><s>{{ t.titulo }}</s></p>
+    <div class="task-meta">
+      <span class="cat"><i class="dot"></i>{% if t.disciplina %}{{ t.disciplina.nome }}{% elif t.projeto %}{{ t.projeto.nome }}{% else %}{{ t.get_categoria_display }}{% endif %}</span>
+      {% if t.solicitante %}
+        <span class="person"><span class="avatar" style="--p:{{ t.solicitante.cor|default:'#94a3b8' }}">{{ t.solicitante.nome|slice:":2"|upper }}</span>{{ t.solicitante.nome }}</span>
+      {% endif %}
+      {% if t.prazo_hora %}<span class="time num"><svg class="icon icon-sm"><use href="#i-clock"/></svg>{{ t.prazo_hora|time:"H:i" }}</span>{% endif %}
+      {% if t.atrasada %}<span class="chip chip-late"><svg class="icon icon-sm"><use href="#i-clock"/></svg>Atrasada · {{ t.dias_atraso }} dia{{ t.dias_atraso|pluralize }}</span>{% endif %}
+      {% if t.status == 'em_andamento' %}<span class="chip chip-progress"><i></i>Em andamento</span>{% endif %}
+      {% if t.status == 'aguardando' %}<span class="chip chip-wait"><svg class="icon icon-sm"><use href="#i-hourglass"/></svg>Aguardando</span>{% endif %}
+      {% if t.origem != 'manual' and t.link_externo %}
+        <a class="chip chip-google" href="{{ t.link_externo }}" target="_blank" rel="noopener" title="Abrir no Google"><svg class="icon icon-sm"><use href="#i-external"/></svg>{{ t.get_origem_display|cut:"Google " }}</a>
+      {% endif %}
+    </div>
+  </div>
+  {% if t.prioridade == 'urgente' or t.prioridade == 'alta' %}
+    <span class="prio prio-{{ t.prioridade }}" title="Prioridade {{ t.get_prioridade_display }}"><svg class="icon icon-sm"><use href="#i-flag"/></svg>{{ t.get_prioridade_display }}</span>
+  {% endif %}
+</article>
+{% endpartialdef %}
+
 {% block conteudo %}
-<section class="hero borda-gradiente relative mb-5 min-h-[148px] rounded-[20px] border border-border p-5 sm:px-7 sm:py-6">
+{# ===== Topo ===== #}
+<section class="hero borda-gradiente relative mb-4 min-h-[148px] rounded-[20px] border border-border p-5 sm:px-7 sm:py-6">
   <p class="grad-text text-[11.5px] font-semibold uppercase tracking-[.09em]">Hoje · {{ hoje|date:"l, j \d\e F" }}</p>
   <h1 class="mt-1.5 mb-1 text-2xl font-semibold tracking-tight sm:text-3xl">{{ saudacao }}, {{ user.get_username }}</h1>
-  <p class="max-w-[44ch] text-sm text-text-2">Visual aplicado. A tela Hoje completa chega na etapa 3.</p>
+  <p class="hero-resumo max-w-[44ch] text-sm text-text-2">
+    Você tem
+    {% if total_atrasadas %}<b class="hot">{{ total_atrasadas }} atrasada{{ total_atrasadas|pluralize }}</b>,{% endif %}
+    <b>{{ pendentes_hoje }} tarefa{{ pendentes_hoje|pluralize }}</b> para hoje e
+    <b>{{ linha.restantes }} reuni{{ linha.restantes|pluralize:"ão,ões" }}</b> pela frente.
+  </p>
   {% include "partials/circuito.html" with classe="hero-circuito" %}
 </section>
 
-<div class="empty">
-  <div class="big">🛠️</div>
-  <strong>Em construção</strong>
-  <span>Lista de atrasadas, tarefas do dia, reuniões e próximos 7 dias vêm na etapa 3.</span>
+{# ===== Contadores (clicar filtra; o filtro fica na URL) ===== #}
+<div class="counters">
+  {% for c in contadores %}
+    <a class="counter" data-cat="{{ c.categoria }}" href="{% if categoria == c.categoria %}?{% else %}?categoria={{ c.categoria }}{% endif %}"
+       {% if categoria == c.categoria %}aria-current="true"{% endif %}>
+      <span class="cat"><i class="dot"></i>{{ c.rotulo }}</span>
+      <b class="num">{{ c.total }}</b>
+      {% if c.atrasadas %}<small class="hot">{{ c.atrasadas }} atrasada{{ c.atrasadas|pluralize }}</small>{% else %}<small>em dia</small>{% endif %}
+    </a>
+  {% endfor %}
+  <a class="counter" data-cat="reuniao" href="#reunioes">
+    <span class="cat"><i class="dot"></i>Reuniões</span>
+    <b class="num">{{ linha.eventos|length }}</b>
+    <small>{% if linha.proxima %}hoje · próxima {{ linha.proxima.inicio|time:"H:i" }}{% else %}nenhuma restante{% endif %}</small>
+  </a>
+</div>
+{% if categoria %}
+  <div class="filter-info">Mostrando só <b>{{ categoria_rotulo }}</b> <a class="btn btn-ghost btn-sm" href="?">Limpar</a></div>
+{% endif %}
+
+<div class="content">
+  <div class="stack">
+    {# ===== Atrasadas ===== #}
+    <section class="{% if secoes.atrasadas %}panel-late{% endif %}">
+      <h2 class="section-head">{% if secoes.atrasadas %}<i class="live-dot"></i>{% endif %}Atrasadas <span class="count num">{{ secoes.atrasadas|length|default:"" }}</span></h2>
+      <div class="list">
+        {% for t in secoes.atrasadas %}{% partial card %}{% empty %}
+          <div class="empty"><div class="big">🎉</div><strong>Nada atrasado</strong><span>Tudo em dia. Aproveite o momento.</span></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# ===== Para hoje ===== #}
+    <section>
+      <h2 class="section-head">Para hoje</h2>
+      <div class="list">
+        {% for t in secoes.hoje %}{% partial card %}{% empty %}
+          <div class="empty"><div class="big">🌤️</div><strong>Nada para hoje</strong>
+            <span>{% if categoria %}Nenhuma tarefa desta categoria hoje.{% else %}Dia livre por enquanto.{% endif %}</span></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# ===== Próximos 7 dias ===== #}
+    <section>
+      <h2 class="section-head">Próximos 7 dias</h2>
+      {% for dia, itens in secoes.proximos %}
+        <p class="day-label">{% if dia == amanha %}Amanhã{% else %}{{ dia|date:"l"|capfirst }}{% endif %} <span>· {{ dia|date:"d/m" }}</span></p>
+        <div class="list">{% for t in itens %}{% partial card %}{% endfor %}</div>
+      {% empty %}
+        <div class="empty"><div class="big">🗓️</div><strong>Semana livre</strong><span>Nada com prazo nos próximos 7 dias.</span></div>
+      {% endfor %}
+    </section>
+  </div>
+
+  {# ===== Reuniões de hoje ===== #}
+  <aside id="reunioes">
+    <h2 class="section-head"><svg class="icon icon-sm"><use href="#i-calendar"/></svg>Reuniões de hoje</h2>
+    {% if linha.eventos %}
+      <div class="timeline-card">
+        <div class="timeline" style="height:calc(var(--h) * {{ linha.total }})">
+          {% for h in linha.horas %}<div class="hour num" style="top:calc(var(--h) * {{ h.topo }})"><span>{{ h.rotulo }}</span></div>{% endfor %}
+          {% if linha.agora %}<div class="now" style="top:calc(var(--h) * {{ linha.agora }})"><span class="num">{% now "H:i" %}</span></div>{% endif %}
+          {% for e in linha.eventos %}
+            <div class="event{% if e.passada %} is-past{% endif %}{% if e.curta %} is-short{% endif %}" data-cat="reuniao"
+                 title="{{ e.tarefa.titulo }} · {{ e.tarefa.inicio|time:'H:i' }}"
+                 style="top:calc(var(--h) * {{ e.topo }} + 1px); height:calc(var(--h) * {{ e.altura }} - 3px)">
+              <div><b>{{ e.tarefa.titulo }}</b><small class="num">{{ e.tarefa.inicio|time:"H:i" }}{% if e.tarefa.fim %} – {{ e.tarefa.fim|time:"H:i" }}{% endif %}</small></div>
+              {% if e.tarefa.link_reuniao and not e.passada %}
+                <a class="btn btn-secondary btn-sm" href="{{ e.tarefa.link_reuniao }}" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-video"/></svg>Entrar</a>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <div class="empty"><div class="big">☕</div><strong>Nenhuma reunião hoje</strong><span>Dia livre para trabalho focado.</span></div>
+    {% endif %}
+  </aside>
 </div>
 {% endblock %}

@@ -200,3 +200,10 @@ class Tarefa(models.Model):
             return False
         encerrada = self.status in (Status.CONCLUIDA, Status.CANCELADA)
         return not encerrada and self.prazo < timezone.localdate()
+
+    @property
+    def dias_atraso(self):
+        """Quantos dias passou do prazo (0 se não está atrasada)."""
+        if not self.atrasada:
+            return 0
+        return (timezone.localdate() - self.prazo).days
