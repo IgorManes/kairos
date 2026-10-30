@@ -13,7 +13,7 @@
       <a class="nav-item" href="{% url 'quadro' %}" {% if atual == 'quadro' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-board"/></svg>Quadro</a>
       <a class="nav-item" href="{% url 'pessoas' %}" {% if atual == 'pessoas' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-users"/></svg>Pessoas</a>
       <a class="nav-item" href="{% url 'projetos' %}" {% if atual == 'projetos' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-folder"/></svg>Projetos</a>
-      <span class="nav-item" aria-disabled="true" title="Em breve (etapa 5.1)"><svg class="icon"><use href="#i-report"/></svg>Relatórios</span>
+      <a class="nav-item" href="{% url 'relatorios' %}" {% if atual == 'relatorios' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-report"/></svg>Relatórios</a>
       <div class="flex-1"></div>
       <a class="nav-item" href="{% url 'configuracoes' %}" {% if atual == 'configuracoes' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-sliders"/></svg>Configurações</a>
       <button class="nav-item" data-action="tema"><svg class="icon"><use href="#i-sun"/></svg><span>Modo claro</span></button>

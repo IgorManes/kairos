@@ -261,3 +261,23 @@ class Preferencias(models.Model):
     def atual(cls):
         objeto, _ = cls.objects.get_or_create(pk=1)
         return objeto
+
+
+class RelatorioSemanal(models.Model):
+    """
+    "Foto congelada" de uma semana (segunda a domingo). Os dados são copiados no
+    momento da geração e nunca recalculados: editar ou excluir tarefas depois não
+    muda o relatório. O PDF é montado na hora a partir destes dados.
+    """
+
+    semana_inicio = models.DateField(unique=True)  # a segunda-feira
+    gerado_em = models.DateTimeField(auto_now_add=True)
+    dados = models.JSONField()
+
+    class Meta:
+        ordering = ["-semana_inicio"]
+        verbose_name = "relatório semanal"
+        verbose_name_plural = "relatórios semanais"
+
+    def __str__(self):
+        return f"Semana de {self.semana_inicio:%d/%m/%Y}"

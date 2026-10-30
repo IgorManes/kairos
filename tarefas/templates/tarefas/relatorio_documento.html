@@ -1,0 +1,128 @@
+<!doctype html>
+{# Documento do relatório (navegador e PDF). Estilo próprio, claro e para impressão: autocontido, porque o Edge abre este arquivo isolado. #}
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<title>Kairos · Relatório da semana {{ inicio|date:"d/m" }}–{{ fim|date:"d/m/Y" }}</title>
+<style>
+  @font-face { font-family: "Inter"; src: url("{{ fonte_url }}") format("woff2"); font-weight: 100 900; }
+  @page { size: A4; margin: 14mm 13mm 16mm; }
+  :root { --texto: #12142b; --texto-2: #4d5373; --texto-3: #858aa6; --linha: #e4e6ef; --fundo-2: #f5f6fb;
+          --trabalho: #2563eb; --faculdade: #8b3ff0; --pessoal: #059f6e; --reuniao: #d6339f;
+          --perigo: #e11d48; --alerta: #d97706; --grad: linear-gradient(135deg, #2563eb, #7c3aed 55%, #db2777); }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter", "Segoe UI", sans-serif; font-size: 10.5pt; line-height: 1.45; color: var(--texto);
+         -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff; }
+  .pagina { max-width: 820px; margin: 0 auto; padding: 24px; }
+  @media print { .pagina { padding: 0; max-width: none; } }
+  header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding-bottom: 14px;
+           border-bottom: 2px solid transparent; border-image: var(--grad) 1; }
+  .marca { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 12pt; }
+  .marca i { width: 14px; height: 14px; border-radius: 50%; background: var(--grad); display: inline-block; }
+  h1 { margin: 6px 0 0; font-size: 19pt; letter-spacing: -.02em; }
+  .periodo { color: var(--texto-2); }
+  .etiquetas { text-align: right; font-size: 9pt; color: var(--texto-3); }
+  .etiqueta { display: inline-block; padding: 2px 9px; border-radius: 999px; background: var(--fundo-2); color: var(--texto-2);
+              font-weight: 600; font-size: 9pt; margin-bottom: 4px; }
+  .etiqueta.parcial { background: #fff4e5; color: var(--alerta); }
+  .resumo { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 18px 0 6px; }
+  .resumo div { padding: 10px 12px; border-radius: 10px; background: var(--fundo-2); }
+  .resumo b { display: block; font-size: 17pt; line-height: 1.1; }
+  .resumo span { font-size: 8.5pt; color: var(--texto-2); text-transform: uppercase; letter-spacing: .04em; }
+  .resumo .alerta b { color: var(--perigo); }
+  h2 { margin: 22px 0 6px; font-size: 11pt; text-transform: uppercase; letter-spacing: .06em; color: var(--texto-2); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 8.5pt; font-weight: 600; color: var(--texto-3); text-transform: uppercase; letter-spacing: .04em;
+       padding: 6px 8px; border-bottom: 1px solid var(--linha); }
+  td { padding: 7px 8px; border-bottom: 1px solid var(--linha); vertical-align: top; }
+  tr { break-inside: avoid; }
+  .titulo { font-weight: 600; }
+  .obs { margin-top: 3px; color: var(--texto-2); font-size: 9pt; white-space: pre-line; }
+  .bolinha { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+  .c-trabalho { background: var(--trabalho); } .c-faculdade { background: var(--faculdade); }
+  .c-pessoal { background: var(--pessoal); } .c-reuniao { background: var(--reuniao); }
+  .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .atrasada { color: var(--perigo); font-weight: 600; }
+  .status { font-size: 9pt; color: var(--texto-2); white-space: nowrap; }
+  .vazio { padding: 10px 8px; color: var(--texto-3); font-style: italic; }
+  footer { margin-top: 26px; font-size: 8.5pt; color: var(--texto-3); text-align: center; }
+</style>
+</head>
+<body>
+<div class="pagina">
+  <header>
+    <div>
+      <div class="marca"><i></i>Kairos</div>
+      <h1>Relatório semanal</h1>
+      <div class="periodo">Segunda, {{ inicio|date:"d/m" }} a domingo, {{ fim|date:"d/m/Y" }}</div>
+    </div>
+    <div class="etiquetas">
+      <span class="etiqueta">{{ recorte_rotulo }}</span><br>
+      {% if parcial %}<span class="etiqueta parcial">Parcial — semana em andamento</span><br>{% endif %}
+      Gerado em {{ gerado_em|date:"d/m/Y H:i" }}
+    </div>
+  </header>
+
+  <section class="resumo">
+    <div><b>{{ resumo.concluidas }}</b><span>Concluídas</span></div>
+    <div><b>{{ resumo.novas }}</b><span>Novas</span></div>
+    <div><b>{{ resumo.abertas }}</b><span>Em aberto</span></div>
+    <div class="{% if resumo.atrasadas %}alerta{% endif %}"><b>{{ resumo.atrasadas }}</b><span>Atrasadas</span></div>
+    <div><b>{{ resumo.reunioes }}</b><span>Reuniões</span></div>
+  </section>
+
+  <h2>Concluídas na semana</h2>
+  <table>
+    <thead><tr><th>Tarefa</th><th>Onde</th><th>Solicitante</th><th>Concluída</th></tr></thead>
+    <tbody>
+    {% for t in concluidas %}
+      <tr>
+        <td><span class="titulo">{{ t.titulo }}</span>{% if t.observacoes %}<div class="obs">{{ t.observacoes }}</div>{% endif %}</td>
+        <td><span class="bolinha c-{{ t.categoria }}"></span>{{ t.disciplina|default:t.projeto|default:t.categoria_rotulo }}</td>
+        <td>{{ t.solicitante|default:"—" }}</td>
+        <td class="num">{{ t.concluida_em|date:"D d/m H:i" }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4" class="vazio">Nenhuma tarefa concluída nesta semana.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Em aberto ao fim da semana</h2>
+  <table>
+    <thead><tr><th>Tarefa</th><th>Onde</th><th>Solicitante</th><th>Situação</th><th>Prazo</th></tr></thead>
+    <tbody>
+    {% for t in abertas %}
+      <tr>
+        <td><span class="titulo">{{ t.titulo }}</span>{% if t.observacoes %}<div class="obs">{{ t.observacoes }}</div>{% endif %}</td>
+        <td><span class="bolinha c-{{ t.categoria }}"></span>{{ t.disciplina|default:t.projeto|default:t.categoria_rotulo }}</td>
+        <td>{{ t.solicitante|default:"—" }}</td>
+        <td class="status">{% if t.atrasada %}<span class="atrasada">Atrasada</span>{% else %}{{ t.status_rotulo }}{% endif %}{% if t.prioridade == 'urgente' or t.prioridade == 'alta' %} · {{ t.prioridade_rotulo }}{% endif %}</td>
+        <td class="num {% if t.atrasada %}atrasada{% endif %}">{{ t.prazo|date:"d/m"|default:"—" }}{% if t.prazo_hora %} {{ t.prazo_hora }}{% endif %}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" class="vazio">Nada em aberto. 🎉</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  {% if reunioes %}
+  <h2>Reuniões</h2>
+  <table>
+    <thead><tr><th>Quando</th><th>Reunião</th><th>Agenda</th></tr></thead>
+    <tbody>
+    {% for r in reunioes %}
+      <tr>
+        <td class="num">{{ r.inicio|date:"D d/m H:i" }}{% if r.fim %}–{{ r.fim|date:"H:i" }}{% endif %}</td>
+        <td><span class="titulo">{{ r.titulo }}</span>{% if r.observacoes %}<div class="obs">{{ r.observacoes }}</div>{% endif %}</td>
+        <td>{{ r.agenda|default:"Pessoal" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <footer>Gerado pelo Kairos{% if not incluir_obs %} · observações pessoais não incluídas{% endif %}</footer>
+</div>
+</body>
+</html>

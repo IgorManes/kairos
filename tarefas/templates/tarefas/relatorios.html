@@ -1,0 +1,40 @@
+{% extends "base_app.html" %}
+{% load kairos %}
+{% block titulo %}Relatórios{% endblock %}
+{% block conteudo %}
+<header class="mb-6">
+  <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Relatórios</h1>
+  <p class="text-sm text-text-3">Toda segunda o Kairos guarda uma "foto" da semana anterior; ela não muda se você editar tarefas depois. A semana atual pode ser exportada como parcial.</p>
+</header>
+
+<div class="relatorios">
+  {% for s in semanas %}
+    <form class="relatorio" method="get" target="_blank">
+      <div class="relatorio-topo">
+        <div>
+          <h2 class="font-semibold">{{ s.inicio|date:"d/m" }} a {{ s.inicio|add_days:6|date:"d/m/Y" }}</h2>
+          <small class="text-text-3">
+            {% if s.parcial %}Semana atual · parcial{% else %}Foto de {{ s.gerado_em|date:"d/m/Y H:i" }}{% endif %}
+          </small>
+        </div>
+        {% if s.parcial %}<span class="chip chip-progress"><i></i>Em andamento</span>{% endif %}
+      </div>
+
+      <label class="field">
+        <span>Recorte</span>
+        <select class="input input-sm" name="recorte">
+          {% for valor, rotulo in s.recortes %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="check-linha text-[13px]"><input type="checkbox" name="obs" value="1"> Incluir minhas observações</label>
+
+      <div class="flex gap-2">
+        <button class="btn btn-secondary btn-sm" formaction="{% url 'relatorio_ver' s.inicio|date:'Y-m-d' %}">Ver</button>
+        <button class="btn btn-primary btn-sm" formaction="{% url 'relatorio_pdf' s.inicio|date:'Y-m-d' %}" formtarget="_self">
+          <svg class="icon icon-sm"><use href="#i-download"/></svg>Baixar PDF
+        </button>
+      </div>
+    </form>
+  {% endfor %}
+</div>
+{% endblock %}

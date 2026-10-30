@@ -4,7 +4,7 @@ App pessoal para organizar, num lugar só, as demandas do trabalho (e quem pediu
 
 Roda localmente no Windows, numa janela própria com ícone na área de trabalho.
 
-> **Status:** em desenvolvimento. Telas prontas (Hoje, Tarefas, Quadro, Pessoas, Projetos); próxima etapa: sincronização com o Google Agenda. Veja o plano em [docs/ESPECIFICACAO.md](docs/ESPECIFICACAO.md).
+> **Status:** em desenvolvimento. Prontos: telas (Hoje, Tarefas, Quadro, Pessoas, Projetos), sincronização com Google Agenda e Classroom, relatórios semanais em PDF. Próxima etapa: janela própria, atalho e backup. Veja o plano em [docs/ESPECIFICACAO.md](docs/ESPECIFICACAO.md).
 
 ## Tecnologias
 

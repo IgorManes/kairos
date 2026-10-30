@@ -152,7 +152,8 @@ Interações importantes:
 - O que a foto guarda: tarefas concluídas na semana, criadas na semana, abertas ao fim da semana (com destaque para atrasadas e aguardando) e reuniões da semana. Por tarefa: título, categoria, status, prioridade, prazo, datas de criação/conclusão, solicitante, projeto, disciplina, origem e observações.
 - **Recortes na exportação** (filtros aplicados sobre a foto, sem fotos extras): Geral; por categoria (Trabalho, Faculdade, Pessoal); por solicitante (Trabalho); por projeto; por disciplina (Faculdade).
 - **Observações** só entram no PDF se marcar "incluir observações" na exportação (desmarcado por padrão), para não mandar anotação privada ao gestor sem querer.
-- O PDF é gerado na hora a partir da foto (melhorias no visual valem também para semanas antigas). Biblioteca a definir na etapa: preferir solução só em Python que use templates do Django (WeasyPrint exige GTK no Windows).
+- O PDF é gerado na hora a partir da foto (melhorias no visual valem também para semanas antigas), pelo **Microsoft Edge em modo sem janela** (`--print-to-pdf`) a partir de um template HTML: nada a instalar. Caminho do Edge configurável por `KAIROS_EDGE` no `.env`.
+- Na 1ª vez gera só a foto da semana passada; depois, toda semana encerrada que falta (verificado no relógio do sync e ao abrir a tela).
 - Testes: geração da foto, imutabilidade após editar/excluir tarefa, recortes e geração de semanas que faltam.
 
 ## 7. Abrir como aplicativo no Windows

@@ -1,6 +1,6 @@
 from django.urls import path, re_path
 
-from . import views, views_cadastros as cad, views_google
+from . import views, views_cadastros as cad, views_google, views_relatorios
 
 urlpatterns = [
     path("", views.hoje, name="hoje"),
@@ -16,6 +16,9 @@ urlpatterns = [
     path("projetos/", cad.projetos, name="projetos"),
     path("mais/", cad.mais, name="mais"),
     path("configuracoes/", views_google.configuracoes, name="configuracoes"),
+    path("relatorios/", views_relatorios.lista, name="relatorios"),
+    path("relatorios/<str:inicio>/ver/", views_relatorios.ver, name="relatorio_ver"),
+    path("relatorios/<str:inicio>/pdf/", views_relatorios.baixar_pdf, name="relatorio_pdf"),
     path("sincronizar/", views_google.sincronizar, name="sincronizar"),
     path("google/conectar/", views_google.conectar_google, name="conectar_google"),
     path("google/desconectar/", views_google.desconectar_google, name="desconectar_google"),
