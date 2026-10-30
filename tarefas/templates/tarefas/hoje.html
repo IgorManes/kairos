@@ -50,7 +50,7 @@
   <a class="counter" data-cat="reuniao" href="#reunioes">
     <span class="cat"><i class="dot"></i>Reuniões</span>
     <b class="num" data-contar="reuniao">{{ linha.eventos|length }}</b>
-    <small>{% if linha.proxima %}hoje · próxima {{ linha.proxima.inicio|time:"H:i" }}{% else %}nenhuma restante{% endif %}</small>
+    <small>{% if linha.proxima %}hoje · próxima {{ linha.proxima.inicio|time:"H:i" }}{% elif linha.restantes %}em andamento agora{% else %}nenhuma restante{% endif %}</small>
   </a>
 </div>
 {% if categoria %}

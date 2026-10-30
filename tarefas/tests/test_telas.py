@@ -35,3 +35,37 @@ class TelasTests(TestCase):
         resposta = self.client.post("/entrar/", {"username": "dono", "password": "errada"})
         self.assertEqual(resposta.status_code, 429)
         self.assertIn("Muitas tentativas", resposta.content.decode())
+
+
+class TextosDeTempoTests(TestCase):
+    def test_ha_quanto(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from tarefas.templatetags.kairos import ha_quanto
+
+        agora = timezone.now()
+        casos = {20: "agora", 300: "há 5 min", 7200: "há 2 h", 86400 * 3: "há 3 dias"}
+        for segundos, esperado in casos.items():
+            with self.subTest(segundos=segundos):
+                self.assertEqual(ha_quanto(agora - timedelta(seconds=segundos)), esperado)
+
+    def test_reuniao_em_andamento_no_contador(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from tarefas.models import Categoria, Tarefa
+
+        self.client.force_login(get_user_model().objects.create_user("dono2", password="x-senha-123"))
+        agora = timezone.now()
+        Tarefa.objects.create(
+            titulo="Agora",
+            categoria=Categoria.REUNIAO,
+            inicio=agora - timedelta(minutes=10),
+            fim=agora + timedelta(minutes=20),
+        )
+        if timezone.localtime(agora - timedelta(minutes=10)).date() != timezone.localdate(agora):
+            self.skipTest("logo após a meia-noite a reunião começou 'ontem'")
+        self.assertIn("em andamento agora", self.client.get("/").content.decode())

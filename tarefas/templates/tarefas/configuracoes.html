@@ -1,4 +1,5 @@
 {% extends "base_app.html" %}
+{% load kairos %}
 {% block titulo %}Configurações{% endblock %}
 {% block conteudo %}
 <header class="mb-6">
@@ -47,7 +48,7 @@
           <small>{% if a.regra == 'aceitos' %}reuniões que você aceitou ou organizou{% else %}tudo, menos as recusadas{% endif %}</small>
         </div>
         <div class="text-[13px] text-text-2">
-          {% if a.estado.ultimo_sync_em %}Último sync: há {{ a.estado.ultimo_sync_em|timesince }}{% else %}Nunca sincronizada{% endif %}
+          {% if a.estado.ultimo_sync_em %}Último sync: {{ a.estado.ultimo_sync_em|ha_quanto }}{% else %}Nunca sincronizada{% endif %}
           {% if a.estado.ultimo_completo_em %}<br><small class="text-text-3">Último completo: {{ a.estado.ultimo_completo_em|date:"d/m H:i" }}</small>{% endif %}
         </div>
         {% if a.estado.ultimo_erro %}
@@ -61,7 +62,7 @@
         <small>atividades das turmas em que você é aluno</small>
       </div>
       <div class="text-[13px] text-text-2">
-        {% if classroom.ultimo_sync_em %}Último sync: há {{ classroom.ultimo_sync_em|timesince }}{% else %}Nunca sincronizado{% endif %}
+        {% if classroom.ultimo_sync_em %}Último sync: {{ classroom.ultimo_sync_em|ha_quanto }}{% else %}Nunca sincronizado{% endif %}
       </div>
       {% if classroom.ultimo_erro %}
         <p class="config-erro">⚠ {{ classroom.ultimo_erro_em|date:"d/m H:i" }} — {{ classroom.ultimo_erro|truncatechars:300 }}</p>
