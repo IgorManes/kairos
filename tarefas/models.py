@@ -228,6 +228,8 @@ class EstadoSync(models.Model):
     """
 
     fonte = models.CharField(max_length=255, unique=True)  # ex.: "agenda:primary"
+    # Quando o Kairos começou a acompanhar esta fonte ("marco zero" do Classroom).
+    iniciado_em = models.DateTimeField(default=timezone.now)
     sync_token = models.TextField(blank=True)  # marca do Google para pedir só o que mudou
     ultimo_completo_em = models.DateTimeField(null=True, blank=True)  # 1 sync completo por dia
     ultimo_sync_em = models.DateTimeField(null=True, blank=True)

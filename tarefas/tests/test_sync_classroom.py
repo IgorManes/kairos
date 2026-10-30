@@ -167,23 +167,53 @@ class VencidasTests(TestCase):
 
 
 class MarcoZeroTests(TestCase):
-    """1º sync do Classroom: só entra o que é pendência real (entregue ou prazo futuro)."""
+    """O que já existia sem prazo antes do Kairos acompanhar o Classroom não entra — em NENHUM sync."""
 
-    def primeiro(self, atividades, entregas):
-        return sync.aplicar([turma("T1")], {"T1": atividades}, entregas, timezone.now(), True, primeira_vez=True)
+    def setUp(self):
+        self.marco = timezone.now()
 
-    def test_no_marco_zero_sem_prazo_nao_entregue_nao_entra(self):
-        self.primeiro([atividade("A1")], {"A1": "CREATED"})
+    def publicada(self, dias_em_relacao_ao_marco):
+        return (self.marco + timedelta(days=dias_em_relacao_ao_marco)).isoformat()
+
+    def sync(self, atividades, entregas):
+        return sync.aplicar([turma("T1")], {"T1": atividades}, entregas, timezone.now(), True, marco_zero=self.marco)
+
+    def test_sem_prazo_publicada_antes_do_marco_nao_entra_nem_no_segundo_sync(self):
+        antiga = atividade("A1") | {"creationTime": self.publicada(-30)}
+        for _ in range(3):  # vários syncs em sequência: o bug era ela voltar no 2º
+            self.sync([antiga], {"A1": "CREATED"})
         self.assertFalse(Tarefa.objects.exists())
 
-    def test_no_marco_zero_prazo_futuro_entra(self):
-        self.primeiro([atividade("A1", prazo=data_google(3), hora={"hours": 15})], {"A1": "CREATED"})
+    def test_sem_prazo_publicada_depois_do_marco_entra(self):
+        nova = atividade("A1") | {"creationTime": self.publicada(+1)}
+        self.sync([nova], {"A1": "CREATED"})
         self.assertTrue(Tarefa.objects.exists())
 
-    def test_no_marco_zero_entregue_entra_concluida(self):
-        self.primeiro([atividade("A1")], {"A1": "TURNED_IN"})
+    def test_prazo_futuro_entra_e_vencido_nao(self):
+        self.sync([atividade("A1", prazo=data_google(3), hora={"hours": 15}),
+                   atividade("A2", prazo=data_google(-3), hora={"hours": 15})], {"A1": "CREATED", "A2": "CREATED"})
+        self.assertEqual([t.id_externo for t in Tarefa.objects.all()], ["T1:A1"])
+
+    def test_entregue_entra_concluida_mesmo_antiga(self):
+        self.sync([atividade("A1") | {"creationTime": self.publicada(-90)}], {"A1": "TURNED_IN"})
         self.assertEqual(Tarefa.objects.get().status, Status.CONCLUIDA)
 
-    def test_depois_do_marco_zero_nova_sem_prazo_entra(self):
-        aplicar([turma("T1")], {"T1": [atividade("A1")]}, {"A1": "CREATED"})  # primeira_vez=False
-        self.assertTrue(Tarefa.objects.exists())
+
+class DatasReaisTests(TestCase):
+    def test_criada_e_concluida_usam_as_datas_do_classroom(self):
+        a = atividade("A1") | {"creationTime": "2026-09-01T12:00:00Z"}
+        entregas = {"A1": {"estado": "TURNED_IN", "atualizada_em": "2026-09-10T15:30:00Z"}}
+        aplicar([turma("T1")], {"T1": [a]}, entregas)
+        t = Tarefa.objects.get()
+        self.assertEqual(t.criado_em.date(), date(2026, 9, 1))
+        self.assertEqual(t.concluida_em.date(), date(2026, 9, 10))
+
+    def test_conclusao_feita_pelo_dono_mantem_a_data_dele(self):
+        aplicar([turma("T1")], {"T1": [atividade("A1")]}, {"A1": "CREATED"})
+        t = Tarefa.objects.get()
+        t.status = Status.CONCLUIDA
+        t.save()
+        concluida_pelo_dono = Tarefa.objects.get().concluida_em
+        entregas = {"A1": {"estado": "CREATED", "atualizada_em": "2020-01-01T00:00:00Z"}}
+        aplicar([turma("T1")], {"T1": [atividade("A1")]}, entregas)
+        self.assertEqual(Tarefa.objects.get().concluida_em, concluida_pelo_dono)

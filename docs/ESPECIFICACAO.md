@@ -32,6 +32,7 @@ Não pode ser apagada se tiver tarefas (`on_delete=PROTECT`); desativa em vez di
 | campo | tipo | regra |
 |---|---|---|
 | fonte | texto | único (ex.: `agenda:primary`, `agenda:email@empresa`, `classroom`) |
+| iniciado_em | data e hora | quando o Kairos começou a acompanhar a fonte (marco zero do Classroom) |
 | sync_token | texto | marca do Google para sync incremental |
 | ultimo_completo_em, ultimo_sync_em | data e hora | |
 | ultimo_erro, ultimo_erro_em | texto, data e hora | mostrados nas Configurações |
@@ -139,7 +140,8 @@ Interações importantes:
 - Se a entrega do aluno **passar a** entregue/devolvida → marcar concluída automaticamente; se o envio for cancelado → volta para "A fazer". O sync só age quando a situação da entrega muda (guardada em `estado_entrega`), para não brigar com o dono. Configurável (`Preferencias.concluir_ao_entregar`, padrão ligado).
 - Escopos: `classroom.courses.readonly` + `classroom.coursework.me.readonly`. Prazos vêm em UTC → converter para o fuso local.
 - Sem sync incremental: lê tudo a cada 5 min e só grava o que mudou.
-- 1º sync do Classroom ("marco zero"): entram só as entregues (como concluídas) e as não entregues com prazo no futuro. Depois: toda atividade nova entra, exceto a que já aparece vencida. Se entrou no prazo e venceu depois, continua aparecendo como atrasada.
+- Atividade nova não entregue: com prazo, entra se o prazo não passou; sem prazo, entra só se publicada depois do marco zero (`EstadoSync.iniciado_em`). Entregues sempre entram, como concluídas. Se entrou no prazo e venceu depois, continua aparecendo como atrasada.
+- Datas reais: "criada" = publicação no Classroom; "concluída" pela entrega = última atualização da entrega.
 - Atividade removida no Classroom → cancelada, não apagada.
 - Mesmas regras de campos do Google x campos do dono.
 
