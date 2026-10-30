@@ -1,6 +1,6 @@
-from django.urls import path
+from django.urls import path, re_path
 
-from . import views
+from . import views, views_cadastros as cad
 
 urlpatterns = [
     path("", views.hoje, name="hoje"),
@@ -11,4 +11,11 @@ urlpatterns = [
     path("tarefas/<int:pk>/status/", views.mudar_status, name="mudar_status"),
     path("tarefas/<int:pk>/excluir/", views.excluir, name="excluir"),
     path("tarefas/restaurar/", views.restaurar, name="restaurar"),
+    path("pessoas/", cad.pessoas, name="pessoas"),
+    path("projetos/", cad.projetos, name="projetos"),
+    path("mais/", cad.mais, name="mais"),
+    # Só "pessoa" ou "projeto"; qualquer outra coisa é 404.
+    re_path(r"^(?P<tipo>pessoa|projeto)/novo/$", cad.formulario, name="novo_cadastro"),
+    re_path(r"^(?P<tipo>pessoa|projeto)/(?P<pk>\d+)/editar/$", cad.formulario, name="editar_cadastro"),
+    re_path(r"^(?P<tipo>pessoa|projeto)/(?P<pk>\d+)/ativo/$", cad.alternar_ativo, name="alternar_ativo"),
 ]

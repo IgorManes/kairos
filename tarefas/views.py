@@ -66,11 +66,11 @@ def hoje(request):
     return render(request, "tarefas/hoje.html", contexto_hoje(ler_categoria(request.GET.get("categoria"))))
 
 
-# ===== Ações (chamadas pelo HTMX; respondem com um toast e o aviso "tarefasMudaram") =====
+# ===== Ações (chamadas pelo HTMX; respondem com um toast e o aviso "dadosMudaram") =====
 
 def responder_acao(request, mensagem, desfazer=None, gatilhos=()):
     """
-    Resposta das ações: só um toast + o aviso "tarefasMudaram". Cada tela escuta
+    Resposta das ações: só um toast + o aviso "dadosMudaram". Cada tela escuta
     o aviso e se redesenha sozinha (com os próprios filtros), então as ações não
     precisam saber em que tela estão. `desfazer` é (url, dados) do botão do toast.
     """
@@ -82,7 +82,7 @@ def responder_acao(request, mensagem, desfazer=None, gatilhos=()):
         toast["desfazer_url"] = url
         toast["desfazer_vals"] = json.dumps(dados)
     resposta = render(request, "tarefas/_resposta_acao.html", {"toast": toast})
-    resposta["HX-Trigger"] = json.dumps({nome: True for nome in ("tarefasMudaram", *gatilhos)})
+    resposta["HX-Trigger"] = json.dumps({nome: True for nome in ("dadosMudaram", *gatilhos)})
     return resposta
 
 

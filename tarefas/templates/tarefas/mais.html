@@ -1,0 +1,12 @@
+{% extends "base_app.html" %}
+{% block titulo %}Mais{% endblock %}
+{% block conteudo %}
+<h1 class="mb-5 text-2xl font-semibold tracking-tight">Mais</h1>
+<nav class="grid gap-2" aria-label="Outras telas">
+  <a class="nav-item vidro rounded-xl" href="{% url 'pessoas' %}"><svg class="icon"><use href="#i-users"/></svg>Pessoas</a>
+  <a class="nav-item vidro rounded-xl" href="{% url 'projetos' %}"><svg class="icon"><use href="#i-folder"/></svg>Projetos</a>
+  <span class="nav-item vidro rounded-xl" aria-disabled="true"><svg class="icon"><use href="#i-board"/></svg>Quadro <small class="ml-auto text-text-3">em breve</small></span>
+  <span class="nav-item vidro rounded-xl" aria-disabled="true"><svg class="icon"><use href="#i-report"/></svg>Relatórios <small class="ml-auto text-text-3">em breve</small></span>
+  <span class="nav-item vidro rounded-xl" aria-disabled="true"><svg class="icon"><use href="#i-sliders"/></svg>Configurações <small class="ml-auto text-text-3">em breve</small></span>
+</nav>
+{% endblock %}

@@ -33,7 +33,7 @@ class AcoesTests(TestCase):
         self.tarefa.refresh_from_db()
         self.assertEqual(self.tarefa.status, Status.CONCLUIDA)
         self.assertIsNotNone(self.tarefa.concluida_em)
-        self.assertIn("tarefasMudaram", json.loads(resposta["HX-Trigger"]))  # cada tela se redesenha
+        self.assertIn("dadosMudaram", json.loads(resposta["HX-Trigger"]))  # cada tela se redesenha
         html = resposta.content.decode()
         self.assertIn("Tarefa concluída", html)
         self.assertNotIn('id="painel"', html)  # a ação não conhece as telas

@@ -1,0 +1,32 @@
+{# Card de Pessoa ou Projeto. Espera `item` e `cfg`. #}
+<article class="cadastro{% if not item.ativo %} is-inativo{% endif %}" {% if cfg.nome == 'projeto' %}data-cat="{{ item.categoria }}"{% endif %}>
+  <div class="cadastro-topo">
+    {% if cfg.nome == 'pessoa' %}
+      <span class="avatar avatar-lg" style="--p:{{ item.cor|default:'#94a3b8' }}">{{ item.nome|slice:":2"|upper }}</span>
+    {% else %}
+      <span class="projeto-icone"><svg class="icon"><use href="#i-folder"/></svg></span>
+    {% endif %}
+    <div class="min-w-0 flex-1">
+      <h3 class="truncate font-semibold">{{ item.nome }}</h3>
+      <p class="text-[13px] text-text-3">
+        {% if cfg.nome == 'projeto' %}<span class="cat"><i class="dot"></i>{{ item.get_categoria_display }}</span> · {% endif %}
+        <b class="num text-text-2">{{ item.abertas }}</b> aberta{{ item.abertas|pluralize }} · <span class="num">{{ item.total }}</span> no total
+      </p>
+    </div>
+  </div>
+
+  {% if cfg.nome == 'projeto' and item.total %}
+    {% widthratio item.concluidas item.total 100 as progresso %}
+    <div class="progresso" role="progressbar" aria-valuenow="{{ progresso }}" aria-valuemin="0" aria-valuemax="100"
+         aria-label="{{ progresso }}% concluído"><i style="width: {{ progresso }}%"></i></div>
+  {% endif %}
+
+  <div class="cadastro-acoes">
+    <a class="btn btn-ghost btn-sm" href="{% url 'tarefas' %}?{{ cfg.filtro_tarefas }}={{ item.pk }}&status=todas"><svg class="icon icon-sm"><use href="#i-list"/></svg>Ver tarefas</a>
+    <span class="flex-1"></span>
+    <button class="btn btn-ghost btn-sm" hx-get="{% url 'editar_cadastro' cfg.nome item.pk %}" hx-target="#drawer-conteudo" aria-label="Editar {{ item.nome }}"><svg class="icon icon-sm"><use href="#i-pencil"/></svg>Editar</button>
+    <button class="btn btn-ghost btn-sm" hx-post="{% url 'alternar_ativo' cfg.nome item.pk %}" hx-swap="none">
+      {% if item.ativo %}Desativar{% else %}Reativar{% endif %}
+    </button>
+  </div>
+</article>

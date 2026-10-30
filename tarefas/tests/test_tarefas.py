@@ -84,4 +84,4 @@ class TelaTarefasTests(TestCase):
     def test_telas_escutam_o_aviso_de_mudanca(self):
         for url in ("/", "/tarefas/"):
             with self.subTest(url=url):
-                self.assertIn("tarefasMudaram from:body", self.client.get(url).content.decode())
+                self.assertIn("dadosMudaram from:body", self.client.get(url).content.decode())

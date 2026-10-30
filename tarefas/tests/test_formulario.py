@@ -51,7 +51,7 @@ class PainelTarefaTests(TestCase):
 
     def test_salvar_cria_e_pede_para_fechar_o_painel(self):
         resposta = self.client.post("/tarefas/nova/", dados_form(titulo="Estudar"), **HTMX)
-        self.assertEqual(set(json.loads(resposta["HX-Trigger"])), {"tarefasMudaram", "fecharPainel"})
+        self.assertEqual(set(json.loads(resposta["HX-Trigger"])), {"dadosMudaram", "fecharPainel"})
         self.assertTrue(Tarefa.objects.filter(titulo="Estudar").exists())
 
     def test_regra_do_modelo_aparece_como_erro_no_formulario(self):

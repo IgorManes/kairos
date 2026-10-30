@@ -114,3 +114,33 @@ class TarefaForm(forms.ModelForm):
             dados["inicio"] = dados["fim"] = None
             dados["link_reuniao"] = ""
         return dados
+
+
+class PessoaForm(forms.ModelForm):
+    class Meta:
+        model = Pessoa
+        fields = ["nome", "cor", "ativo"]
+        labels = {"nome": "Nome", "cor": "Cor", "ativo": "Ativa (aparece nos seletores)"}
+        widgets = {"cor": forms.TextInput(attrs={"type": "color"})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["nome"].widget.attrs["class"] = "input"
+        self.fields["cor"].widget.attrs["class"] = "input input-cor"
+        if not self.instance.pk:
+            self.initial.setdefault("cor", "#8b5cf6")
+
+
+class ProjetoForm(forms.ModelForm):
+    class Meta:
+        model = Projeto
+        fields = ["nome", "categoria", "ativo"]
+        labels = {"nome": "Nome", "categoria": "Categoria", "ativo": "Ativo (aparece nos seletores)"}
+        widgets = {"categoria": forms.RadioSelect}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["nome"].widget.attrs["class"] = "input"
+        self.fields["categoria"].choices = [c for c in Categoria.choices if c[0] != Categoria.REUNIAO]
+        if not self.instance.pk:
+            self.initial.setdefault("categoria", Categoria.PESSOAL)

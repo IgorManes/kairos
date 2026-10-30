@@ -1,0 +1,36 @@
+{# Painel lateral de criar/editar Pessoa ou Projeto. #}
+<form class="drawer-form" hx-post="{% if item.pk %}{% url 'editar_cadastro' cfg.nome item.pk %}{% else %}{% url 'novo_cadastro' cfg.nome %}{% endif %}"
+      hx-swap="none" novalidate>
+  {% csrf_token %}
+  <header>
+    <h2 id="drawer-titulo">{% if item.pk %}Editar {{ cfg.nome }}{% else %}Nov{% if cfg.nome == 'pessoa' %}a{% else %}o{% endif %} {{ cfg.nome }}{% endif %}</h2>
+    <button type="button" class="btn btn-ghost btn-icon" data-fechar-painel aria-label="Fechar"><svg class="icon"><use href="#i-x"/></svg></button>
+  </header>
+
+  <div class="drawer-body">
+    {% include "partials/campo.html" with campo=form.nome %}
+
+    {% if form.cor %}
+      {% include "partials/campo.html" with campo=form.cor dica="usada no avatar" %}
+    {% endif %}
+
+    {% if form.categoria %}
+      <div class="field">
+        <span>Categoria</span>
+        <div class="seg seg-radio" role="radiogroup" aria-label="Categoria">
+          {% for opcao in form.categoria %}
+            <label data-cat="{{ opcao.data.value }}">{{ opcao.tag }}<i class="dot"></i>{{ opcao.choice_label }}</label>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <label class="check-linha">{{ form.ativo }} <span>{{ form.ativo.label }}</span></label>
+  </div>
+
+  <footer>
+    <span class="flex-1"></span>
+    <button type="button" class="btn btn-secondary" data-fechar-painel>Cancelar</button>
+    <button type="submit" class="btn btn-primary">Salvar</button>
+  </footer>
+</form>

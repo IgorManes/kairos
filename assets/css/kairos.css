@@ -581,6 +581,32 @@
   .drawer-form:has(input[name="categoria"][value="reuniao"]:checked) [data-so="reuniao"] { display: grid; }
   .drawer-form:has(input[name="categoria"][value="reuniao"]:checked) [data-nao="reuniao"] { display: none; }
 
+  /* Pessoas e Projetos */
+  .cadastros { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+  .cadastro {
+    display: grid; gap: 12px; padding: 14px; border-radius: 14px;
+    background: var(--surface); backdrop-filter: blur(10px); border: 1px solid var(--border);
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .cadastro:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md); }
+  .cadastro.is-inativo { opacity: .6; }
+  .cadastro-topo { display: flex; align-items: center; gap: 12px; }
+  .cadastro-acoes { display: flex; align-items: center; gap: 4px; margin: 0 -6px -6px; }
+  .avatar-lg { width: 40px; height: 40px; font-size: 14px; }
+  .projeto-icone { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; flex: none;
+                   color: var(--c); background: color-mix(in srgb, var(--c) 15%, transparent);
+                   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent); }
+  .progresso { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .progresso i { display: block; height: 100%; border-radius: inherit; background: var(--c);
+                 box-shadow: 0 0 10px color-mix(in srgb, var(--c) var(--glow-a), transparent); }
+  .check-linha { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-2); cursor: pointer; }
+  .check-linha input { width: 18px; height: 18px; accent-color: var(--g2); }
+  .input-cor { width: 72px; padding: 4px; cursor: pointer; }
+  details > summary { list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸"; transition: transform .15s; }
+  details[open] > summary::before { transform: rotate(90deg); }
+
   /* Tela Tarefas: filtros e paginação */
   .input-sm { height: 34px; font-size: 13.5px; padding: 0 10px; }
   .filtros { display: grid; gap: 12px; margin-bottom: 24px; }

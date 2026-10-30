@@ -1,0 +1,40 @@
+{% extends "base_app.html" %}
+{% block titulo %}{{ cfg.titulo }}{% endblock %}
+{% block conteudo %}
+<header class="mb-5 flex flex-wrap items-end justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">{{ cfg.titulo }}</h1>
+    <p class="text-sm text-text-3">
+      {% if cfg.nome == 'pessoa' %}Quem pede demandas no trabalho. Inativas somem dos seletores, mas o histórico fica.
+      {% else %}Agrupam tarefas. Inativos somem dos seletores, mas o histórico fica.{% endif %}
+    </p>
+  </div>
+  <button class="btn btn-primary" hx-get="{% url 'novo_cadastro' cfg.nome %}" hx-target="#drawer-conteudo">
+    <svg class="icon icon-sm"><use href="#i-plus"/></svg>Nov{% if cfg.nome == 'pessoa' %}a{% else %}o{% endif %} {{ cfg.nome }}
+  </button>
+</header>
+
+<section id="lista" hx-get="{{ request.get_full_path }}" hx-trigger="dadosMudaram from:body delay:300ms"
+         hx-select="#lista" hx-swap="outerHTML" hx-disinherit="*">
+  <div class="cadastros">
+    {% for item in ativos %}
+      {% include "tarefas/_cadastro_item.html" %}
+    {% empty %}
+      <div class="empty col-span-full">
+        <div class="big">{% if cfg.nome == 'pessoa' %}👥{% else %}📁{% endif %}</div>
+        <strong>Nenhum{% if cfg.nome == 'pessoa' %}a pessoa ativa{% else %} projeto ativo{% endif %}</strong>
+        <span>Use o botão acima para cadastrar.</span>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if inativos %}
+    <details class="mt-8">
+      <summary class="section-head cursor-pointer">Inativ{% if cfg.nome == 'pessoa' %}as{% else %}os{% endif %} <span class="count num">{{ inativos|length }}</span></summary>
+      <div class="cadastros mt-3">
+        {% for item in inativos %}{% include "tarefas/_cadastro_item.html" %}{% endfor %}
+      </div>
+    </details>
+  {% endif %}
+</section>
+{% endblock %}

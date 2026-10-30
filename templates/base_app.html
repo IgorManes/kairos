@@ -11,8 +11,8 @@
       <a class="nav-item" href="{% url 'hoje' %}" {% if atual == 'hoje' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-sun"/></svg>Hoje</a>
       <a class="nav-item" href="{% url 'tarefas' %}" {% if atual == 'tarefas' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-list"/></svg>Tarefas</a>
       <span class="nav-item" aria-disabled="true" title="Em breve (etapa 3)"><svg class="icon"><use href="#i-board"/></svg>Quadro</span>
-      <span class="nav-item" aria-disabled="true" title="Em breve (etapa 3)"><svg class="icon"><use href="#i-users"/></svg>Pessoas</span>
-      <span class="nav-item" aria-disabled="true" title="Em breve (etapa 3)"><svg class="icon"><use href="#i-folder"/></svg>Projetos</span>
+      <a class="nav-item" href="{% url 'pessoas' %}" {% if atual == 'pessoas' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-users"/></svg>Pessoas</a>
+      <a class="nav-item" href="{% url 'projetos' %}" {% if atual == 'projetos' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-folder"/></svg>Projetos</a>
       <span class="nav-item" aria-disabled="true" title="Em breve (etapa 5.1)"><svg class="icon"><use href="#i-report"/></svg>Relatórios</span>
       <div class="flex-1"></div>
       <span class="nav-item" aria-disabled="true" title="Em breve"><svg class="icon"><use href="#i-sliders"/></svg>Configurações</span>
@@ -46,7 +46,7 @@
       <a href="{% url 'hoje' %}" {% if atual == 'hoje' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-sun"/></svg>Hoje</a>
       <a href="{% url 'tarefas' %}" {% if atual == 'tarefas' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-list"/></svg>Tarefas</a>
       <a aria-disabled="true" class="opacity-45"><svg class="icon"><use href="#i-board"/></svg>Quadro</a>
-      <a aria-disabled="true" class="opacity-45"><svg class="icon"><use href="#i-more"/></svg>Mais</a>
+      <a href="{% url 'mais' %}" {% if atual == 'mais' or atual == 'pessoas' or atual == 'projetos' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-more"/></svg>Mais</a>
     </nav>
   </div>
 </div>

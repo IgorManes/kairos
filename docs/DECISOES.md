@@ -103,3 +103,12 @@ Formato: contexto → escolha → motivo.
 - **Paginação** → **50 por página, links mantêm os filtros** → lista continua rápida com o tempo.
 - **Card compartilhado** → **`_card.html`** usado por Hoje e Tarefas; fora da Hoje mostra a data do prazo.
 - **Sem JS, ações voltam sempre para a tela Hoje** → usar a página de origem informada pelo navegador permitiria redirecionar para fora do app.
+
+## Etapa 3, bloco 5: Pessoas e Projetos (2026-10-30)
+
+- **Duas telas iguais** → **funções genéricas que recebem o modelo e o formulário** (`views_cadastros.py`) e um template só → Pessoas e Projetos não duplicam código; um terceiro cadastro seria uma entrada na configuração.
+- **Excluir pessoa/projeto pela interface** → **não existe; só desativar (com Desfazer)** → a especificação manda desativar pessoas; excluir projeto desvincularia todas as tarefas em silêncio. O admin fica como reserva para casos raros.
+- **URLs dos cadastros** → **`re_path` aceitando só `pessoa|projeto`** → tipo inventado vira 404 em vez de erro 500.
+- **Aviso de mudança renomeado para `dadosMudaram`** → renomear uma pessoa também muda os cards das tarefas; todas as listas escutam o mesmo aviso.
+- **"Ver tarefas"** → **link para a tela Tarefas com o filtro na URL** → reaproveita o bloco 4 em vez de criar outra lista.
+- **Celular** → **página "Mais"** com as telas que não cabem na barra inferior (4 itens) → nenhuma tela fica inacessível no celular.

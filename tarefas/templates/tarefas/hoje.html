@@ -35,7 +35,7 @@
 
 {# ===== Painel do dia: o que as ações (HTMX) redesenham ===== #}
 {% partialdef painel %}
-<div id="painel" hx-get="{{ request.get_full_path }}" hx-trigger="tarefasMudaram from:body delay:400ms"
+<div id="painel" hx-get="{{ request.get_full_path }}" hx-trigger="dadosMudaram from:body delay:400ms"
      hx-select="#painel" hx-select-oob="#hero-resumo" hx-swap="outerHTML" hx-disinherit="*">
 {# ===== Contadores (clicar filtra; o filtro fica na URL) ===== #}
 <div class="counters">
