@@ -158,6 +158,37 @@ def _css(numero):
     return f"{numero:.3f}"
 
 
+def distribuir_em_colunas(eventos):
+    """
+    Reuniões que se sobrepõem ficam lado a lado (cada evento ganha `coluna` e `colunas`).
+    1. Ordena por início.
+    2. Agrupa em blocos: o bloco acaba quando a próxima começa depois de todas terminarem.
+    3. Dentro do bloco, cada uma vai para a 1ª coluna livre (guloso, como "quantas salas preciso?").
+    4. Todas do bloco dividem a largura pelo nº de colunas que o bloco usou.
+    """
+    eventos.sort(key=lambda e: (e["ini"], e["fim"]))
+    bloco, fins_das_colunas, fim_do_bloco = [], [], None
+
+    def fechar_bloco():
+        for e in bloco:
+            e["colunas"] = len(fins_das_colunas)
+
+    for e in eventos:
+        if fim_do_bloco is not None and e["ini"] >= fim_do_bloco:
+            fechar_bloco()
+            bloco, fins_das_colunas = [], []
+        livre = next((i for i, fim in enumerate(fins_das_colunas) if fim <= e["ini"]), None)
+        if livre is None:
+            fins_das_colunas.append(e["fim"])
+            livre = len(fins_das_colunas) - 1
+        else:
+            fins_das_colunas[livre] = e["fim"]
+        e["coluna"] = livre
+        bloco.append(e)
+        fim_do_bloco = max(fim_do_bloco or e["fim"], e["fim"])
+    fechar_bloco()
+
+
 def linha_do_tempo(reunioes, agora):
     """
     Posições da linha do tempo, em "horas desde o topo". Vai das 8h às 18h,
@@ -168,6 +199,8 @@ def linha_do_tempo(reunioes, agora):
         fim = r.fim or r.inicio + timedelta(minutes=30)
         eventos.append({"tarefa": r, "ini": _horas(r.inicio), "fim": max(_horas(fim), _horas(r.inicio) + 0.25),
                         "passada": fim <= agora})
+
+    distribuir_em_colunas(eventos)
 
     h0 = min([8] + [int(e["ini"]) for e in eventos])
     h1 = max([18] + [int(e["fim"]) + (e["fim"] % 1 > 0) for e in eventos])

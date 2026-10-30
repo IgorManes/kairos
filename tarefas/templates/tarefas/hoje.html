@@ -101,12 +101,13 @@
           {% for h in linha.horas %}<div class="hour num" style="top:calc(var(--h) * {{ h.topo }})"><span>{{ h.rotulo }}</span></div>{% endfor %}
           {% if linha.agora %}<div class="now" style="top:calc(var(--h) * {{ linha.agora }})"><span class="num">{% now "H:i" %}</span></div>{% endif %}
           {% for e in linha.eventos %}
-            <div class="event{% if e.passada %} is-past{% endif %}{% if e.curta %} is-short{% endif %}" data-cat="reuniao"
+            <div class="event{% if e.passada %} is-past{% endif %}{% if e.curta %} is-short{% endif %}{% if e.colunas > 1 %} is-estreito{% endif %}" data-cat="reuniao"
                  title="{{ e.tarefa.titulo }} · {{ e.tarefa.inicio|time:'H:i' }}"
-                 style="top:calc(var(--h) * {{ e.topo }} + 1px); height:calc(var(--h) * {{ e.altura }} - 3px)">
-              <div><b>{{ e.tarefa.titulo }}</b><small class="num">{{ e.tarefa.inicio|time:"H:i" }}{% if e.tarefa.fim %} – {{ e.tarefa.fim|time:"H:i" }}{% endif %}</small></div>
+                 style="top:calc(var(--h) * {{ e.topo }} + 1px); height:calc(var(--h) * {{ e.altura }} - 3px);
+                        left:calc(8px + (100% - 8px) * {{ e.coluna }} / {{ e.colunas }}); width:calc((100% - 8px) / {{ e.colunas }} - 4px)">
+              <div><b>{{ e.tarefa.titulo }}</b>{% if e.tarefa.etiqueta_agenda %}<span class="chip chip-agenda">{{ e.tarefa.etiqueta_agenda }}</span>{% endif %}<small class="num">{{ e.tarefa.inicio|time:"H:i" }}{% if e.tarefa.fim %} – {{ e.tarefa.fim|time:"H:i" }}{% endif %}</small></div>
               {% if e.tarefa.link_reuniao and not e.passada %}
-                <a class="btn btn-secondary btn-sm" href="{{ e.tarefa.link_reuniao }}" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-video"/></svg>Entrar</a>
+                <a class="btn btn-secondary btn-sm" href="{{ e.tarefa.link_reuniao }}" target="_blank" rel="noopener" title="Entrar na reunião"><svg class="icon icon-sm"><use href="#i-video"/></svg><span class="entrar-texto">Entrar</span></a>
               {% endif %}
             </div>
           {% endfor %}

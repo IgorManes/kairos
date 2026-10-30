@@ -129,3 +129,15 @@ Formato: contexto → escolha → motivo.
 
 - **Frequência do sync** (especificação dizia 15 min; o dono queria menos atraso) → **Agenda a cada 1 min com sync incremental (`syncToken`) + ao abrir/voltar para o app + botão; Classroom a cada 5 min** → praticamente tempo real com custo desprezível. Aviso em tempo real do Google (webhook) exigiria endereço público com HTTPS; o app roda local.
 - **Custo** → **projeto do Google Cloud sem conta de faturamento** → sem cartão o Google não tem como cobrar; uso estimado é ~0,3% (Agenda) e ~0,1% (Classroom) dos limites gratuitos diários. Estouro de cota vira erro 429, tratado com espera crescente (backoff exponencial).
+- **Identificador do evento** (planejado: `iCalUID`) → **`id` do evento** → no sync incremental um evento apagado pode chegar só com `id` e status; pelo `iCalUID` não daria para achar qual cancelar. Para um mesmo convite o Google usa o mesmo `id` nas agendas, então a deduplicação continua.
+- **Janela de datas x sync incremental** → **1 sync completo por dia** (limitado à janela) + incrementais por token → o incremental não aceita janela e só manda o que mudou; sem o completo diário, uma reunião marcada para daqui a 70 dias nunca entraria quando chegasse a 60.
+- **Reuniões apagadas no Google** → **diferença de conjuntos no sync completo** (o que o Kairos tem da agenda na janela − o que o Google mandou = apagadas → canceladas), com `set` → O(n + m) em vez de O(n × m).
+- **Token vencido (HTTP 410)** → descarta e refaz completo, como a documentação manda.
+- **Regras da agenda da empresa** → o convidado "eu" é o marcado com `self` (o Google o define como "a agenda desta cópia"), com o e-mail da agenda como garantia.
+- **Dia inteiro** → **não vira reunião** (feriados e férias poluiriam a linha do tempo).
+- **Sync nunca reabre reunião cancelada** → se o dono cancelou no Kairos, a decisão dele vale.
+- **Lote atômico** → cada agenda é aplicada numa transação: ou entra inteira ou nada.
+- **Uma agenda com erro não para as outras** → erro registrado no `EstadoSync` para a tela de Configurações.
+- **Decisões como funções puras** (`deve_importar`, `campos_do_evento`) e um "Google de mentira" nos testes → cada regra testada sem rede nem credenciais.
+- **Login** → **só com `sincronizar --conectar`**; o sync automático nunca abre o navegador por conta própria (se a autorização cair, avisa).
+- **Reuniões no mesmo horário se sobrepunham na linha do tempo** (apareceu com os dados reais) → **algoritmo guloso de colunas**: ordena por início, agrupa em blocos de sobreposição, cada reunião vai para a 1ª coluna livre e o bloco divide a largura → mesma ideia de "quantas salas preciso?"; calculado no servidor junto com a posição vertical. Reuniões estreitas viram compactas (ícone do Meet no canto).

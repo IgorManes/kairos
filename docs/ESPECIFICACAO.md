@@ -28,6 +28,14 @@ Não pode ser apagada se tiver tarefas (`on_delete=PROTECT`); desativa em vez di
 | categoria | escolha | mesma lista da Tarefa (exceto Reunião) |
 | ativo | booleano | padrão True |
 
+### EstadoSync (estado da sincronização de cada fonte do Google)
+| campo | tipo | regra |
+|---|---|---|
+| fonte | texto | único (ex.: `agenda:primary`, `agenda:email@empresa`, `classroom`) |
+| sync_token | texto | marca do Google para sync incremental |
+| ultimo_completo_em, ultimo_sync_em | data e hora | |
+| ultimo_erro, ultimo_erro_em | texto, data e hora | mostrados nas Configurações |
+
 ### Disciplina (criada automaticamente pela sincronização do Classroom)
 | campo | tipo | regra |
 |---|---|---|
@@ -51,7 +59,7 @@ Não pode ser apagada se tiver tarefas (`on_delete=PROTECT`); desativa em vez di
 | projeto | FK Projeto | opcional, `SET_NULL` |
 | disciplina | FK Disciplina | opcional, só para faculdade |
 | origem | escolha | manual (padrão) / google_agenda / google_classroom |
-| id_externo | texto | opcional. Único junto com `origem` (impede duplicatas na sincronização). Na Agenda, usar o `iCalUID` do evento (+ início original em eventos recorrentes): é o mesmo em todas as agendas, então uma reunião presente em duas agendas não duplica |
+| id_externo | texto | opcional. Único junto com `origem` (impede duplicatas na sincronização). Na Agenda, usar o `id` do evento (cada ocorrência de evento recorrente tem o seu): evento apagado pode chegar no sync incremental só com `id` e status, sem `iCalUID`. Para um mesmo convite o Google usa o mesmo `id` nas cópias de cada agenda, então não duplica |
 | agenda_id | texto | opcional, só `google_agenda`: de qual agenda o evento veio (ID da agenda, que é o e-mail da conta). Usado para a etiqueta e para saber quais eventos o sync pode cancelar |
 | link_externo | URL | link para o item no Google |
 | descricao_externa | texto longo | o que veio do Google; sobrescrito a cada sync |
@@ -117,7 +125,11 @@ Interações importantes:
   - A agenda da empresa precisa estar compartilhada com a conta pessoal como "Ver todos os detalhes do evento" (com "livre/ocupado" o Google não envia título nem link).
 - Se depois recusar ou o evento for cancelado → status cancelada (não apagar).
 - Agenda removida do `.env` → os eventos já importados ficam como histórico (não são cancelados nem atualizados).
-- Mesmo evento em duas agendas → uma tarefa só (dedupe pelo `iCalUID`).
+- Mesmo evento em duas agendas → uma tarefa só (mesmo `id`), com a etiqueta da agenda da empresa.
+- Eventos de dia inteiro (feriado, férias) **não** viram reunião.
+- O sync cancela, mas **nunca reabre** uma reunião cancelada (se o dono cancelou no Kairos, continua cancelada).
+- Sync completo (sem token, token vencido = HTTP 410, ou 1º do dia) limitado à janela; incrementais com `syncToken`. O completo diário "anda" a janela (reuniões distantes que entram na janela sem terem mudado). No completo, reuniões que o Kairos tem e o Google não mandou → canceladas (diferença de conjuntos).
+- Estado de cada fonte em `EstadoSync` (token, último sync/completo, último erro).
 - Título, horário, link do Meet e descrição vêm do Google e são atualizados; `status`, `observacoes`, `prioridade` e `projeto` são do dono e nunca são sobrescritos.
 
 ### Google Classroom

@@ -130,6 +130,8 @@ class Tarefa(models.Model):
         max_length=20, choices=Origem.choices, default=Origem.MANUAL
     )
     id_externo = models.CharField(max_length=255, blank=True)
+    # Só Google Agenda: de qual agenda veio ("primary" ou o e-mail da agenda da empresa).
+    agenda_id = models.CharField(max_length=255, blank=True)
     link_externo = models.URLField(max_length=500, blank=True)
     descricao_externa = models.TextField(blank=True)  # sobrescrito a cada sync
     sincronizado_em = models.DateTimeField(null=True, blank=True)
@@ -202,8 +204,36 @@ class Tarefa(models.Model):
         return not encerrada and self.prazo < timezone.localdate()
 
     @property
+    def etiqueta_agenda(self):
+        """Nome da agenda de empresa (ex.: "Invoga"); vazio para a agenda principal."""
+        from django.conf import settings
+
+        return next((a["nome"] for a in settings.GOOGLE_AGENDAS if a["id"] == self.agenda_id), "")
+
+    @property
     def dias_atraso(self):
         """Quantos dias passou do prazo (0 se não está atrasada)."""
         if not self.atrasada:
             return 0
         return (timezone.localdate() - self.prazo).days
+
+
+class EstadoSync(models.Model):
+    """
+    Estado da sincronização de cada fonte do Google (uma linha por agenda e,
+    na etapa 5, uma para o Classroom). Mostrado na tela de Configurações.
+    """
+
+    fonte = models.CharField(max_length=255, unique=True)  # ex.: "agenda:primary"
+    sync_token = models.TextField(blank=True)  # marca do Google para pedir só o que mudou
+    ultimo_completo_em = models.DateTimeField(null=True, blank=True)  # 1 sync completo por dia
+    ultimo_sync_em = models.DateTimeField(null=True, blank=True)
+    ultimo_erro = models.TextField(blank=True)
+    ultimo_erro_em = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "estado de sincronização"
+        verbose_name_plural = "estados de sincronização"
+
+    def __str__(self):
+        return self.fonte

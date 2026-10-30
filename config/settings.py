@@ -169,6 +169,32 @@ TAILWIND_CLI_VERSION = "4.3.3"
 TAILWIND_CLI_SRC_CSS = "assets/css/kairos.css"
 TAILWIND_CLI_DIST_CSS = "css/tailwind.css"
 
+# --- Google (etapa 4) -------------------------------------------------------
+
+# credentials.json (baixado do Google Cloud) e token.json (gerado no login)
+# ficam na pasta de dados, nunca no repositório.
+GOOGLE_CREDENCIAIS = DATA_DIR / "credentials.json"
+GOOGLE_TOKEN = DATA_DIR / "token.json"
+
+
+def ler_agendas_extras(texto):
+    """'Invoga=a@b.com, Outra=c@d.com' → [("Invoga", "a@b.com"), ("Outra", "c@d.com")]."""
+    agendas = []
+    for item in (texto or "").split(","):
+        nome, _, email = item.partition("=")
+        if nome.strip() and email.strip():
+            agendas.append((nome.strip(), email.strip()))
+    return agendas
+
+
+# Agendas sincronizadas: a principal (regra "aceitei ou organizei") e as de
+# empresa do .env (regra "tudo, menos recusados"). O ID da agenda de uma conta
+# é o próprio e-mail.
+GOOGLE_AGENDAS = [{"id": "primary", "nome": "", "email": None, "regra": "aceitos"}] + [
+    {"id": email, "nome": nome, "email": email, "regra": "nao_recusados"}
+    for nome, email in ler_agendas_extras(os.environ.get("GOOGLE_AGENDAS_EXTRAS"))
+]
+
 # Página mostrada quando o axes bloqueia o login.
 AXES_LOCKOUT_TEMPLATE = "registration/bloqueado.html"
 

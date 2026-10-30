@@ -132,3 +132,25 @@ class DadosExemploTests(TestCase):
         self.assertEqual(Pessoa.objects.count(), 4)
         for tarefa in Tarefa.objects.all():
             tarefa.full_clean()  # todos obedecem às regras do modelo
+
+
+class ColunasDaLinhaDoTempoTests(TestCase):
+    def distribuir(self, *intervalos):
+        eventos = [{"ini": i, "fim": f, "nome": n} for n, i, f in intervalos]
+        consultas.distribuir_em_colunas(eventos)
+        return {e["nome"]: (e["coluna"], e["colunas"]) for e in eventos}
+
+    def test_sem_sobreposicao_cada_uma_ocupa_a_largura_toda(self):
+        self.assertEqual(self.distribuir(("A", 9, 10), ("B", 14, 15)), {"A": (0, 1), "B": (0, 1)})
+
+    def test_mesmo_horario_fica_lado_a_lado(self):
+        self.assertEqual(self.distribuir(("A", 14, 15), ("B", 14, 15)), {"A": (0, 2), "B": (1, 2)})
+
+    def test_reaproveita_coluna_livre_dentro_do_bloco(self):
+        # C começa quando A termina, mas ainda sobrepõe B: vai para a coluna de A.
+        resultado = self.distribuir(("A", 14, 15), ("B", 14, 16), ("C", 15, 16))
+        self.assertEqual(resultado, {"A": (0, 2), "B": (1, 2), "C": (0, 2)})
+
+    def test_blocos_separados_nao_se_influenciam(self):
+        resultado = self.distribuir(("A", 9, 10), ("B", 9, 10), ("C", 14, 15))
+        self.assertEqual(resultado["C"], (0, 1))

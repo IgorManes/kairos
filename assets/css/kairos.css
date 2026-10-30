@@ -356,6 +356,17 @@
   .chip-progress i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor;
                      animation: blink 1.6s ease-in-out infinite; }
   .chip-google { background: transparent; color: var(--text-3); padding: 0 4px; text-decoration: none; }
+  /* Etiqueta da agenda de empresa (ex.: "Invoga") */
+  .chip-agenda { height: 18px; padding: 0 7px; font-size: 11px; font-weight: 600; letter-spacing: .02em;
+                 color: var(--c-reuniao); background: color-mix(in srgb, var(--c-reuniao) var(--tint), transparent);
+                 border: 1px solid color-mix(in srgb, var(--c-reuniao) 35%, transparent); }
+  .event .chip-agenda { display: inline-flex; margin: 2px 0 0; }
+  .event b + .chip-agenda { margin-left: 6px; vertical-align: 1px; }
+  /* Reuniões lado a lado (horários sobrepostos): mais compactas */
+  .event.is-estreito { flex-direction: column; gap: 2px; padding-right: 30px; }
+  .event.is-estreito b + .chip-agenda { display: flex; width: fit-content; margin-left: 0; }
+  .event.is-estreito .entrar-texto { display: none; }
+  .event.is-estreito .btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; }
   .chip-google:hover { color: var(--text); }
 
   /* Card de tarefa */
