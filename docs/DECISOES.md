@@ -112,3 +112,15 @@ Formato: contexto → escolha → motivo.
 - **Aviso de mudança renomeado para `dadosMudaram`** → renomear uma pessoa também muda os cards das tarefas; todas as listas escutam o mesmo aviso.
 - **"Ver tarefas"** → **link para a tela Tarefas com o filtro na URL** → reaproveita o bloco 4 em vez de criar outra lista.
 - **Celular** → **página "Mais"** com as telas que não cabem na barra inferior (4 itens) → nenhuma tela fica inacessível no celular.
+
+## Etapa 3, bloco 6: Quadro (2026-10-30)
+
+- **Coluna "Concluída"** → **só os últimos 7 dias** → sem limite ela cresce para sempre; histórico completo fica na tela Tarefas (status "Todas").
+- **Mudar de coluna** → **botões ← → no card (anterior/próximo calculados na consulta)**, reaproveitando a ação de mudar status com Desfazer → a especificação pede botões antes de arrastar; nenhuma ação nova foi necessária, o Quadro só escuta `dadosMudaram`.
+- **Celular** → **colunas lado a lado com rolagem horizontal e encaixe (scroll-snap)** → uma coluna por vez, com a próxima aparecendo na borda.
+- **Largura** → **o Quadro usa a largura toda**; as outras telas mantêm largura máxima (linhas longas cansam a leitura).
+- **Card em coluna estreita** → itens de grade com `min-width: 0` (senão não encolhem e vazam) e **prioridade só como bandeira** (texto fica para leitor de tela) → o print pegou o vazamento e o título espremido.
+- **Mover entre colunas** (os botões ← → discretos não pareciam botões) → **arrastar e soltar nativo do HTML + botões visíveis** → arrastar no computador; os botões ficam para celular e teclado (arrastar nativo não funciona por toque). Sem biblioteca: ao soltar, o JS chama a mesma ação de mudar status (Desfazer e toast vêm junto).
+- **Movimento dos cards** (protótipo aprovado tinha; o app só "pulava") → **View Transitions do navegador via `hx-swap="... transition:true"`**, com `view-transition-name` por card → o navegador anima cada card da posição antiga até a nova, inclusive entre colunas, sem calcular posições em JS. Na troca de tema os nomes são desligados (senão os cards ficariam fora do efeito de círculo).
+- **Contadores** → **animam do valor antigo ao novo** (JS anota antes da troca e anima depois).
+- **Animação do circuito parada** → a animação se chamava `pulse`, mesmo nome de uma animação embutida do Tailwind, que substituiu a nossa → renomeada para `circuito-pulso`. Lição: nomes de `@keyframes` próprios com prefixo do projeto.

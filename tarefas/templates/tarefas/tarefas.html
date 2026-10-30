@@ -11,7 +11,7 @@
 {# Filtros: cada mudança atualiza só a lista e o endereço (dá para favoritar um filtro). #}
 <form id="filtros" class="filtros" action="{% url 'tarefas' %}" method="get"
       hx-get="{% url 'tarefas' %}" hx-trigger="change, keyup changed delay:350ms from:#id_q, submit"
-      hx-target="#lista" hx-select="#lista" hx-swap="outerHTML" hx-push-url="true">
+      hx-target="#lista" hx-select="#lista" hx-swap="outerHTML transition:true" hx-push-url="true">
   <label class="busca">
     <svg class="icon"><use href="#i-search"/></svg>
     <span class="sr-only">Buscar</span>
@@ -25,7 +25,7 @@
 </form>
 
 <section id="lista" hx-get="{{ request.get_full_path }}" hx-trigger="dadosMudaram from:body delay:400ms"
-         hx-select="#lista" hx-swap="outerHTML" hx-disinherit="*">
+         hx-select="#lista" hx-swap="outerHTML transition:true" hx-disinherit="*">
   <h2 class="section-head">
     {{ pagina.paginator.count }} tarefa{{ pagina.paginator.count|pluralize }}
     {% if tem_filtro %}<a class="btn btn-ghost btn-sm normal-case tracking-normal" href="{% url 'tarefas' %}"><svg class="icon icon-sm"><use href="#i-x"/></svg>Limpar filtros</a>{% endif %}

@@ -96,6 +96,30 @@ def listar_tarefas(filtros):
     return qs.order_by("feita", prazo, "-peso", "-criado_em")
 
 
+COLUNAS_QUADRO = [Status.A_FAZER, Status.EM_ANDAMENTO, Status.AGUARDANDO, Status.CONCLUIDA]
+DIAS_CONCLUIDAS_NO_QUADRO = 7
+
+
+def quadro(categoria=None):
+    """
+    Kanban: uma coluna por status. Concluídas só dos últimos 7 dias (senão a
+    coluna cresce para sempre). Cada tarefa ganha `anterior`/`proximo`: os
+    status das colunas vizinhas, para os botões ← →.
+    """
+    desde = timezone.now() - timedelta(days=DIAS_CONCLUIDAS_NO_QUADRO)
+    qs = tarefas_visiveis(categoria).filter(
+        Q(status__in=COLUNAS_QUADRO[:-1]) | Q(status=Status.CONCLUIDA, concluida_em__gte=desde)
+    ).order_by("-peso", F("prazo").asc(nulls_last=True), "-criado_em")
+
+    colunas = {status: [] for status in COLUNAS_QUADRO}
+    for t in qs:
+        i = COLUNAS_QUADRO.index(t.status)
+        t.anterior = COLUNAS_QUADRO[i - 1] if i > 0 else None
+        t.proximo = COLUNAS_QUADRO[i + 1] if i < len(COLUNAS_QUADRO) - 1 else None
+        colunas[t.status].append(t)
+    return [{"status": s, "rotulo": s.label, "tarefas": colunas[s]} for s in COLUNAS_QUADRO]
+
+
 def contadores(hoje):
     """Por categoria: tarefas em aberto e quantas estão atrasadas."""
     linhas = (

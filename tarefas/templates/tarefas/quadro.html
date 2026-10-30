@@ -1,0 +1,36 @@
+{% extends "base_app.html" %}
+{% block titulo %}Quadro{% endblock %}
+{% block conteudo %}
+<header class="mb-5 flex flex-wrap items-end justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Quadro</h1>
+    <p class="text-sm text-text-3">Arraste o card para outra coluna, ou use os botões no rodapé dele.</p>
+  </div>
+  <nav class="chips-filtro" aria-label="Filtrar por categoria">
+    <a href="?" class="chip-filtro" {% if not categoria %}aria-current="true"{% endif %}>Todas</a>
+    {% for valor, rotulo in categorias %}
+      <a href="?categoria={{ valor }}" class="chip-filtro" data-cat="{{ valor }}" {% if categoria == valor %}aria-current="true"{% endif %}><i class="dot"></i>{{ rotulo }}</a>
+    {% endfor %}
+  </nav>
+</header>
+
+<div id="quadro" class="quadro" hx-get="{{ request.get_full_path }}" hx-trigger="dadosMudaram from:body delay:400ms"
+     hx-select="#quadro" hx-swap="outerHTML transition:true" hx-disinherit="*">
+  {% for coluna in colunas %}
+    <section class="coluna" data-status="{{ coluna.status }}" aria-label="{{ coluna.rotulo }}">
+      <h2 class="coluna-topo">
+        <span>{{ coluna.rotulo }}</span>
+        <span class="count num" data-contar="col-{{ coluna.status }}">{{ coluna.tarefas|length }}</span>
+        {% if coluna.status == 'concluida' %}<small>últimos {{ dias_concluidas }} dias</small>{% endif %}
+      </h2>
+      <div class="list">
+        {% for t in coluna.tarefas %}
+          {% include "tarefas/_card.html" %}
+        {% empty %}
+          <p class="coluna-vazia">Nada aqui</p>
+        {% endfor %}
+      </div>
+    </section>
+  {% endfor %}
+</div>
+{% endblock %}

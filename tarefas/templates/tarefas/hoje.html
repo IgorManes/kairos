@@ -36,20 +36,20 @@
 {# ===== Painel do dia: o que as ações (HTMX) redesenham ===== #}
 {% partialdef painel %}
 <div id="painel" hx-get="{{ request.get_full_path }}" hx-trigger="dadosMudaram from:body delay:400ms"
-     hx-select="#painel" hx-select-oob="#hero-resumo" hx-swap="outerHTML" hx-disinherit="*">
+     hx-select="#painel" hx-select-oob="#hero-resumo" hx-swap="outerHTML transition:true" hx-disinherit="*">
 {# ===== Contadores (clicar filtra; o filtro fica na URL) ===== #}
 <div class="counters">
   {% for c in contadores %}
     <a class="counter" data-cat="{{ c.categoria }}" href="{% if categoria == c.categoria %}?{% else %}?categoria={{ c.categoria }}{% endif %}"
        {% if categoria == c.categoria %}aria-current="true"{% endif %}>
       <span class="cat"><i class="dot"></i>{{ c.rotulo }}</span>
-      <b class="num">{{ c.total }}</b>
+      <b class="num" data-contar="{{ c.categoria }}">{{ c.total }}</b>
       {% if c.atrasadas %}<small class="hot">{{ c.atrasadas }} atrasada{{ c.atrasadas|pluralize }}</small>{% else %}<small>em dia</small>{% endif %}
     </a>
   {% endfor %}
   <a class="counter" data-cat="reuniao" href="#reunioes">
     <span class="cat"><i class="dot"></i>Reuniões</span>
-    <b class="num">{{ linha.eventos|length }}</b>
+    <b class="num" data-contar="reuniao">{{ linha.eventos|length }}</b>
     <small>{% if linha.proxima %}hoje · próxima {{ linha.proxima.inicio|time:"H:i" }}{% else %}nenhuma restante{% endif %}</small>
   </a>
 </div>

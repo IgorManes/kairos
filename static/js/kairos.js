@@ -26,7 +26,11 @@ function trocarTema(evento) {
   // Círculo que se expande a partir do clique
   const x = evento.clientX || innerWidth / 2, y = evento.clientY || 0;
   const raio = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
-  document.startViewTransition(() => aplicarTema(novo)).ready.then(() => {
+  // Durante a troca de tema, os cards não animam sozinhos (ficariam fora do círculo).
+  document.documentElement.classList.add("tema-trocando");
+  const transicao = document.startViewTransition(() => aplicarTema(novo));
+  transicao.finished.finally(() => document.documentElement.classList.remove("tema-trocando"));
+  transicao.ready.then(() => {
     document.documentElement.animate(
       { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${raio}px at ${x}px ${y}px)`] },
       { duration: 550, easing: "cubic-bezier(.4,0,.2,1)", pseudoElement: "::view-transition-new(root)" },
@@ -137,6 +141,61 @@ document.addEventListener("htmx:responseError", evento => {
   toastErro(evento.detail.xhr.responseText || "Algo deu errado. Tente de novo.");
 });
 document.addEventListener("htmx:sendError", () => toastErro("Sem conexão com o Kairos."));
+
+/* ===== Contadores que "contam" até o valor novo ===== */
+let valoresAntes = {};
+document.addEventListener("htmx:beforeSwap", () => {
+  valoresAntes = {};
+  document.querySelectorAll("[data-contar]").forEach(el => (valoresAntes[el.dataset.contar] = Number(el.textContent)));
+});
+document.addEventListener("htmx:afterSettle", () => {
+  document.querySelectorAll("[data-contar]").forEach(el => {
+    const de = valoresAntes[el.dataset.contar], para = Number(el.textContent);
+    if (de === undefined || de === para || reduzMovimento) return;
+    const inicio = performance.now();
+    const passo = agora => {
+      const p = Math.min((agora - inicio) / 450, 1);
+      el.textContent = Math.round(de + (para - de) * (1 - (1 - p) ** 3));  // desacelera no fim
+      if (p < 1) requestAnimationFrame(passo);
+    };
+    el.textContent = de;
+    requestAnimationFrame(passo);
+  });
+});
+
+/* ===== Quadro: arrastar o card para outra coluna ===== */
+let arrastado = null;
+document.addEventListener("dragstart", evento => {
+  const card = evento.target.closest?.(".task[draggable]");
+  if (!card) return;
+  arrastado = card;
+  evento.dataTransfer.effectAllowed = "move";
+  evento.dataTransfer.setData("text/plain", card.id);
+  requestAnimationFrame(() => card.classList.add("is-arrastando"));
+});
+document.addEventListener("dragend", () => {
+  arrastado?.classList.remove("is-arrastando");
+  document.querySelectorAll(".coluna.is-alvo").forEach(c => c.classList.remove("is-alvo"));
+  arrastado = null;
+});
+document.addEventListener("dragover", evento => {
+  const coluna = evento.target.closest?.(".coluna");
+  if (!arrastado || !coluna) return;
+  evento.preventDefault();  // permite soltar aqui
+  document.querySelectorAll(".coluna.is-alvo").forEach(c => c !== coluna && c.classList.remove("is-alvo"));
+  coluna.classList.toggle("is-alvo", coluna.dataset.status !== arrastado.dataset.status);
+});
+document.addEventListener("drop", evento => {
+  const coluna = evento.target.closest?.(".coluna");
+  if (!arrastado || !coluna) return;
+  evento.preventDefault();
+  const card = arrastado, novo = coluna.dataset.status;
+  if (novo === card.dataset.status) return;
+  coluna.querySelector(".coluna-vazia")?.remove();
+  coluna.querySelector(".list").prepend(card);  // aparece na coluna na hora
+  // Mesma ação dos botões: toast com Desfazer e as telas se atualizam pelo aviso.
+  htmx.ajax("POST", card.dataset.urlStatus, { source: card, values: { status: novo }, swap: "none" });
+});
 
 /* ===== Início ===== */
 document.addEventListener("DOMContentLoaded", () => {

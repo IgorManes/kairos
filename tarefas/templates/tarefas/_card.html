@@ -1,5 +1,7 @@
-{# Card de tarefa (telas Hoje e Tarefas). Espera `t` e `status_menu` no contexto. #}
-<article class="task{% if t.atrasada %} is-late{% endif %}{% if t.status == 'concluida' %} is-done{% endif %}" data-cat="{{ t.categoria }}" id="tarefa-{{ t.pk }}">
+{# Card de tarefa (Hoje, Tarefas e Quadro). Espera `t` e `status_menu`; no Quadro, `no_quadro` e t.anterior/t.proximo. #}
+<article class="task{% if t.atrasada %} is-late{% endif %}{% if t.status == 'concluida' %} is-done{% endif %}" data-cat="{{ t.categoria }}" id="tarefa-{{ t.pk }}"
+         style="view-transition-name: tarefa-{{ t.pk }}"
+         {% if no_quadro %}draggable="true" data-status="{{ t.status }}" data-url-status="{% url 'mudar_status' t.pk %}"{% endif %}>
   <button class="check" aria-label="{% if t.status == 'concluida' %}Reabrir{% else %}Concluir{% endif %}"
           hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{% if t.status == 'concluida' %}a_fazer{% else %}concluida{% endif %}"}'
           hx-swap="none"><svg class="icon"><use href="#i-check"/></svg></button>
@@ -14,16 +16,31 @@
       {% if t.categoria == 'reuniao' and t.inicio %}<span class="time num"><svg class="icon icon-sm"><use href="#i-video"/></svg>{{ t.inicio|date:"d/m H:i" }}</span>{% endif %}
       {% if t.prazo_hora %}<span class="time num"><svg class="icon icon-sm"><use href="#i-clock"/></svg>{{ t.prazo_hora|time:"H:i" }}</span>{% endif %}
       {% if t.atrasada %}<span class="chip chip-late"><svg class="icon icon-sm"><use href="#i-clock"/></svg>Atrasada · {{ t.dias_atraso }} dia{{ t.dias_atraso|pluralize }}</span>{% endif %}
-      {% if t.status == 'em_andamento' %}<span class="chip chip-progress"><i></i>Em andamento</span>{% endif %}
-      {% if t.status == 'aguardando' %}<span class="chip chip-wait"><svg class="icon icon-sm"><use href="#i-hourglass"/></svg>Aguardando</span>{% endif %}
+      {% if not no_quadro %}{# no Quadro a coluna já diz o status #}
+        {% if t.status == 'em_andamento' %}<span class="chip chip-progress"><i></i>Em andamento</span>{% endif %}
+        {% if t.status == 'aguardando' %}<span class="chip chip-wait"><svg class="icon icon-sm"><use href="#i-hourglass"/></svg>Aguardando</span>{% endif %}
+      {% endif %}
       {% if t.origem != 'manual' and t.link_externo %}
         <a class="chip chip-google" href="{{ t.link_externo }}" target="_blank" rel="noopener" title="Abrir no Google"><svg class="icon icon-sm"><use href="#i-external"/></svg>{{ t.get_origem_display|cut:"Google " }}</a>
       {% endif %}
     </div>
+    {% if no_quadro %}
+      <div class="mover">
+        {% if t.anterior %}
+          <button class="btn btn-ghost btn-sm" hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{{ t.anterior }}"}' hx-swap="none"
+                  title="Mover para {{ t.anterior.label }}"><svg class="icon icon-sm"><use href="#i-seta-esq"/></svg>{{ t.anterior.label }}</button>
+        {% endif %}
+        <span class="flex-1"></span>
+        {% if t.proximo %}
+          <button class="btn btn-ghost btn-sm" hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{{ t.proximo }}"}' hx-swap="none"
+                  title="Mover para {{ t.proximo.label }}">{{ t.proximo.label }}<svg class="icon icon-sm"><use href="#i-seta-dir"/></svg></button>
+        {% endif %}
+      </div>
+    {% endif %}
   </div>
   <div class="task-side">
     {% if t.prioridade == 'urgente' or t.prioridade == 'alta' %}
-      <span class="prio prio-{{ t.prioridade }}" title="Prioridade {{ t.get_prioridade_display }}"><svg class="icon icon-sm"><use href="#i-flag"/></svg>{{ t.get_prioridade_display }}</span>
+      <span class="prio prio-{{ t.prioridade }}" title="Prioridade {{ t.get_prioridade_display }}"><svg class="icon icon-sm"><use href="#i-flag"/></svg><span class="prio-texto">{{ t.get_prioridade_display }}</span></span>
     {% endif %}
     <button class="task-menu" popovertarget="menu-{{ t.pk }}" style="anchor-name: --menu-{{ t.pk }}" aria-label="Mais ações"><svg class="icon"><use href="#i-more"/></svg></button>
   </div>

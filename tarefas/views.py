@@ -198,3 +198,17 @@ def tarefas(request):
         "status_menu": STATUS_MENU,
         "mostrar_prazo": True,
     })
+
+
+def quadro(request):
+    """Kanban por status, com botões ← → para mudar de coluna."""
+    categoria = ler_categoria(request.GET.get("categoria"))
+    return render(request, "tarefas/quadro.html", {
+        "colunas": consultas.quadro(categoria),
+        "categoria": categoria,
+        "categorias": [(c.value, c.label) for c in consultas.CATEGORIAS_DE_TAREFA],
+        "dias_concluidas": consultas.DIAS_CONCLUIDAS_NO_QUADRO,
+        "status_menu": STATUS_MENU,
+        "mostrar_prazo": True,
+        "no_quadro": True,
+    })

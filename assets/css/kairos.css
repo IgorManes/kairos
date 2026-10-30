@@ -135,6 +135,9 @@
 
   /* Troca de tema com círculo que se expande (View Transitions) */
   ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+  /* Cards deslizam de onde estavam até onde foram parar (View Transitions) */
+  ::view-transition-group(*) { animation-duration: .42s; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
+  .tema-trocando .task { view-transition-name: none !important; }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -611,6 +614,49 @@
   details > summary::before { content: "▸"; transition: transform .15s; }
   details[open] > summary::before { transform: rotate(90deg); }
 
+  /* Quadro (kanban) */
+  .quadro {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 86%; gap: 12px; align-items: start;
+    overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; margin: 0 -16px; padding-inline: 16px;
+  }
+  .coluna { scroll-snap-align: start; display: grid; gap: 10px; padding: 12px; border-radius: 16px; min-width: 0;
+            background: color-mix(in srgb, var(--surface) 55%, transparent); border: 1px solid var(--border);
+            border-top: 2px solid var(--cor-coluna, var(--border-strong)); }
+  .coluna[data-status="a_fazer"] { --cor-coluna: var(--text-3); }
+  .coluna[data-status="em_andamento"] { --cor-coluna: var(--g1); }
+  .coluna[data-status="aguardando"] { --cor-coluna: var(--wait); }
+  .coluna[data-status="concluida"] { --cor-coluna: var(--c-pessoal); }
+  .coluna-topo { display: flex; align-items: baseline; gap: 8px; font-size: 13px; font-weight: 650; color: var(--text-2); }
+  .coluna-topo .count { color: var(--text-3); font-weight: 500; }
+  .coluna-topo small { margin-left: auto; font-size: 11.5px; font-weight: 400; color: var(--text-3); }
+  .coluna-vazia { padding: 18px 8px; text-align: center; font-size: 13px; color: var(--text-3);
+                  border: 1px dashed var(--border); border-radius: 12px; }
+  .coluna > *, .coluna .list > * { min-width: 0; }  /* sem isso o card não encolhe e vaza da coluna */
+  .coluna .list { grid-template-columns: minmax(0, 1fr); }
+  .coluna .task-meta { gap: 4px 10px; }
+  .main:has(.quadro) { max-width: none; }  /* kanban precisa da largura toda */
+  .coluna .prio-texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }  /* só a bandeira; texto fica para leitor de tela */
+  .mover { display: flex; align-items: center; gap: 4px; margin: 8px -8px -6px; }
+  /* Botões de mudar de coluna: visíveis como botões, com a cor da coluna de destino no hover */
+  .mover .btn { height: 26px; padding: 0 8px; font-size: 12px; white-space: nowrap; color: var(--text-2);
+                background: var(--surface-2); border: 1px solid var(--border); }
+  .mover .btn:hover { color: var(--text); border-color: var(--border-strong); background: var(--surface-hover); }
+  /* Arrastar */
+  .task[draggable] { cursor: grab; }
+  .task[draggable]:active { cursor: grabbing; }
+  .task.is-arrastando { opacity: .35; transform: scale(.98); }
+  .coluna { transition: border-color .15s, box-shadow .2s, background .2s; }
+  .coluna.is-alvo { border-color: var(--cor-coluna); background: color-mix(in srgb, var(--cor-coluna) 8%, transparent);
+                    box-shadow: 0 0 0 1px var(--cor-coluna), 0 0 40px -14px var(--cor-coluna); }
+  .chips-filtro { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip-filtro {
+    display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px;
+    font-size: 13px; text-decoration: none; color: var(--text-2); border: 1px solid var(--border); background: var(--surface-2);
+  }
+  .chip-filtro:hover { color: var(--text); border-color: var(--border-strong); }
+  .chip-filtro[aria-current] { color: var(--text); border-color: var(--c, var(--g2));
+                               background: color-mix(in srgb, var(--c, var(--g2)) var(--tint), transparent); }
+
   /* Tela Tarefas: filtros e paginação */
   .input-sm { height: 34px; font-size: 13.5px; padding: 0 10px; }
   .filtros { display: grid; gap: 12px; margin-bottom: 24px; }
@@ -625,6 +671,8 @@
     .counters { grid-template-columns: repeat(4, 1fr); }
     .quick .cats .label { display: inline; }
   }
+  @container app (min-width: 760px) { .quadro { grid-auto-columns: 48%; } }
+  @container app (min-width: 1100px) { .quadro { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; margin: 0; padding-inline: 0; } }
   @container app (min-width: 760px) { .filtros-grade { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   @container app (min-width: 920px) {
     .content { grid-template-columns: minmax(0, 1fr) 330px; gap: 32px; }
