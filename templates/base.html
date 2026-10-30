@@ -1,0 +1,25 @@
+{% load static tailwind_cli %}<!doctype html>
+<html lang="pt-br" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Kairos{% endblock %} · Kairos</title>
+  {# Aplica o tema salvo antes de desenhar a página (evita "piscar" claro/escuro). #}
+  <script>try{var t=localStorage.getItem("kairos-tema");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+  {% tailwind_css %}
+  <script src="{% static 'js/htmx.min.js' %}" defer></script>
+  <script src="{% static 'js/kairos.js' %}" defer></script>
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  {% include "partials/icones.html" %}
+
+  {% block corpo %}{% endblock %}
+
+  {# Mensagens do Django viram toasts discretos no rodapé. #}
+  <div class="toast-area" id="toasts" aria-live="polite">
+    {% for mensagem in messages %}
+      <div class="toast{% if mensagem.level_tag == 'error' %} is-erro{% endif %}" data-auto>{{ mensagem }}</div>
+    {% endfor %}
+  </div>
+</body>
+</html>

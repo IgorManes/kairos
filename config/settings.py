@@ -67,6 +67,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "axes",
+    "django_tailwind_cli",
+    "template_partials",
     "tarefas",
 ]
 
@@ -158,5 +160,16 @@ USE_TZ = True  # guarda em UTC no banco, mostra no fuso de São Paulo
 # --- Arquivos estáticos ----------------------------------------------------
 
 STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# Tailwind via executável standalone (sem Node). Versão fixa para as duas
+# máquinas gerarem o mesmo CSS. O fonte fica fora de static/ (o pacote exige);
+# o CSS gerado vai para static/css/tailwind.css e não é commitado.
+TAILWIND_CLI_VERSION = "4.3.3"
+TAILWIND_CLI_SRC_CSS = "assets/css/kairos.css"
+TAILWIND_CLI_DIST_CSS = "css/tailwind.css"
+
+# Página mostrada quando o axes bloqueia o login.
+AXES_LOCKOUT_TEMPLATE = "registration/bloqueado.html"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

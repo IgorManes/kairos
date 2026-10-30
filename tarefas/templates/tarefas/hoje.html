@@ -1,19 +1,16 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hoje · Kairos</title>
-</head>
-<body>
-  <!-- Provisório: a tela Hoje de verdade vem na etapa 3. -->
-  <main>
-    <h1>Olá, {{ user.get_username }}</h1>
-    <p>Login funcionando.</p>
-    <form method="post" action="{% url 'logout' %}">
-      {% csrf_token %}
-      <button type="submit">Sair</button>
-    </form>
-  </main>
-</body>
-</html>
+{% extends "base_app.html" %}
+{% block titulo %}Hoje{% endblock %}
+{% block conteudo %}
+<section class="hero borda-gradiente relative mb-5 min-h-[148px] rounded-[20px] border border-border p-5 sm:px-7 sm:py-6">
+  <p class="grad-text text-[11.5px] font-semibold uppercase tracking-[.09em]">Hoje · {{ hoje|date:"l, j \d\e F" }}</p>
+  <h1 class="mt-1.5 mb-1 text-2xl font-semibold tracking-tight sm:text-3xl">{{ saudacao }}, {{ user.get_username }}</h1>
+  <p class="max-w-[44ch] text-sm text-text-2">Visual aplicado. A tela Hoje completa chega na etapa 3.</p>
+  {% include "partials/circuito.html" with classe="hero-circuito" %}
+</section>
+
+<div class="empty">
+  <div class="big">🛠️</div>
+  <strong>Em construção</strong>
+  <span>Lista de atrasadas, tarefas do dia, reuniões e próximos 7 dias vêm na etapa 3.</span>
+</div>
+{% endblock %}

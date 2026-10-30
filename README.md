@@ -4,14 +4,15 @@ App pessoal para organizar, num lugar só, as demandas do trabalho (e quem pediu
 
 Roda localmente no Windows, numa janela própria com ícone na área de trabalho.
 
-> **Status:** em desenvolvimento (etapa 0: preparação do projeto). Veja o plano em [docs/ESPECIFICACAO.md](docs/ESPECIFICACAO.md).
+> **Status:** em desenvolvimento (etapa 2: visual aplicado; telas na etapa 3). Veja o plano em [docs/ESPECIFICACAO.md](docs/ESPECIFICACAO.md).
 
 ## Tecnologias
 
 - Python 3.13
 - Django 5.2 LTS
 - SQLite
-- Templates HTML com Tailwind CSS e HTMX (a partir da etapa 2)
+- Templates HTML com Tailwind CSS 4 (executável standalone) e HTMX 2
+- django-axes (proteção do login)
 
 ## Como rodar (desenvolvimento)
 
@@ -30,9 +31,18 @@ copy .env.example .env
 # gere uma chave e cole em DJANGO_SECRET_KEY:
 python -c "from django.core.management.utils import get_random_secret_key as g; print(g())"
 
-# 4. Conferir se está tudo certo
-python manage.py check
+# 4. Criar o banco e o usuário
+python manage.py migrate
+python manage.py createsuperuser
+
+# 5. Gerar o CSS (baixa o Tailwind na primeira vez; não precisa de Node)
+python manage.py tailwind build
+
+# 6. Rodar (desenvolvimento)
+python manage.py runserver
 ```
+
+Durante o desenvolvimento, `python manage.py tailwind watch` (em outro terminal) regera o CSS a cada mudança nos templates.
 
 Os dados (banco, token do Google, backups) ficam em `%LOCALAPPDATA%\Kairos\`, fora da pasta do código.
 

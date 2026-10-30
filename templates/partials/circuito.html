@@ -1,0 +1,28 @@
+{# Circuito decorativo com pulsos de luz. Aceita classes extras via `classe`. #}
+<svg class="circuit {{ classe }}" viewBox="0 0 430 140" aria-hidden="true">
+  <defs>
+    <linearGradient id="g-circ" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="430" y2="0">
+      <stop offset="0" stop-color="#ec4899"/><stop offset=".5" stop-color="#8b5cf6"/><stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+    <filter id="f-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g>
+    <path class="trace" d="M180 58H150L132 40H64"/><path class="pulse" d="M180 58H150L132 40H64" filter="url(#f-glow)" style="animation-delay:0s"/><circle class="node" cx="64" cy="40" r="2.6" filter="url(#f-glow)"/>
+    <path class="trace" d="M180 70H18"/><path class="pulse" d="M180 70H18" filter="url(#f-glow)" style="animation-delay:.53s"/><circle class="node" cx="18" cy="70" r="2.6" filter="url(#f-glow)"/>
+    <path class="trace" d="M180 82H142L124 100H76"/><path class="pulse" d="M180 82H142L124 100H76" filter="url(#f-glow)" style="animation-delay:1.06s"/><circle class="node" cx="76" cy="100" r="2.6" filter="url(#f-glow)"/>
+    <path class="trace" d="M244 58H274L292 40H372"/><path class="pulse" d="M244 58H274L292 40H372" filter="url(#f-glow)" style="animation-delay:1.59s"/><circle class="node" cx="372" cy="40" r="2.6" filter="url(#f-glow)"/>
+    <path class="trace" d="M244 70H414"/><path class="pulse" d="M244 70H414" filter="url(#f-glow)" style="animation-delay:2.12s"/><circle class="node" cx="414" cy="70" r="2.6" filter="url(#f-glow)"/>
+    <path class="trace" d="M244 82H284L302 100H352"/><path class="pulse" d="M244 82H284L302 100H352" filter="url(#f-glow)" style="animation-delay:2.65s"/><circle class="node" cx="352" cy="100" r="2.6" filter="url(#f-glow)"/>
+    <path class="trace" d="M200 94V122H160"/><path class="pulse" d="M200 94V122H160" filter="url(#f-glow)" style="animation-delay:3.18s"/><circle class="node" cx="160" cy="122" r="2.6" filter="url(#f-glow)"/>
+    <path class="trace" d="M224 94V130"/><path class="pulse" d="M224 94V130" filter="url(#f-glow)" style="animation-delay:.31s"/><circle class="node" cx="224" cy="130" r="2.6" filter="url(#f-glow)"/>
+    <path class="trace" d="M212 46V18H250"/><path class="pulse" d="M212 46V18H250" filter="url(#f-glow)" style="animation-delay:.84s"/><circle class="node" cx="250" cy="18" r="2.6" filter="url(#f-glow)"/>
+  </g>
+  <g filter="url(#f-glow)">
+    <rect class="chip-c" x="180" y="46" width="64" height="48" rx="11"/>
+    <rect x="192" y="56" width="40" height="28" rx="5" fill="none" stroke="url(#g-circ)" stroke-width="1.4"/>
+    <circle cx="198" cy="62" r="1.6" class="node"/><circle cx="203" cy="62" r="1.6" class="node"/><circle cx="208" cy="62" r="1.6" class="node"/>
+  </g>
+</svg>

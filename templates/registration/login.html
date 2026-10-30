@@ -1,30 +1,36 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Entrar · Kairos</title>
-</head>
-<body>
-  <!-- Provisório: o visual vem na etapa 2. -->
-  <main>
-    <h1>Kairos</h1>
-    {% if form.errors %}
-      <p role="alert">Usuário ou senha incorretos.</p>
-    {% endif %}
-    <form method="post">
-      {% csrf_token %}
-      <p>
-        <label for="id_username">Usuário</label>
-        <input id="id_username" name="username" autocomplete="username" required autofocus>
-      </p>
-      <p>
-        <label for="id_password">Senha</label>
-        <input id="id_password" name="password" type="password" autocomplete="current-password" required>
-      </p>
-      <input type="hidden" name="next" value="{{ next }}">
-      <button type="submit">Entrar</button>
-    </form>
-  </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block titulo %}Entrar{% endblock %}
+{% block corpo %}
+<main class="ambiente grid min-h-screen place-items-center px-4 py-10">
+  <div class="w-full max-w-[380px]">
+    <div class="pointer-events-none mx-auto -mb-6 w-[300px] opacity-80">
+      {% include "partials/circuito.html" %}
+    </div>
+
+    <section class="vidro borda-gradiente rounded-[20px] p-6 shadow-[var(--shadow-md)] sm:p-8">
+      <div class="mb-6 text-center">
+        <span class="logo justify-center text-xl"><svg><use href="#i-logo"/></svg>Kairos</span>
+        <p class="mt-1.5 text-sm text-text-3">O momento certo para cada tarefa.</p>
+      </div>
+
+      {% if form.errors %}
+        <p role="alert" class="chip chip-late mb-4 h-auto w-full justify-center py-2 text-[13px]">Usuário ou senha incorretos.</p>
+      {% endif %}
+
+      <form method="post" class="grid gap-4">
+        {% csrf_token %}
+        <label class="field">
+          <span>Usuário</span>
+          <input class="input" name="username" value="{{ form.username.value|default:'' }}" autocomplete="username" required autofocus>
+        </label>
+        <label class="field">
+          <span>Senha</span>
+          <input class="input" name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit" class="btn btn-primary mt-2 h-11 w-full">Entrar</button>
+      </form>
+    </section>
+  </div>
+</main>
+{% endblock %}

@@ -1,6 +1,11 @@
 asgiref==3.13.0
+click==8.5.0
 Django==5.2.18
 django-axes==8.3.1
+django-click==2.5.0
+django-tailwind-cli==4.8.2
+django-template-partials==25.3
 python-dotenv==1.2.4
+semver==3.1.0
 sqlparse==0.6.0
 tzdata==2026.6

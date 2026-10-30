@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{# Estrutura das telas logadas: barra lateral (desktop), barra superior e navegação inferior (celular). #}
+{% block corpo %}
+{% with atual=request.resolver_match.url_name %}
+<div class="shell ambiente">
+  <div class="app">
+
+    <nav class="sidebar" aria-label="Principal">
+      <a class="logo px-2.5 pt-1 pb-4" href="{% url 'hoje' %}"><svg><use href="#i-logo"/></svg>Kairos</a>
+      <a class="nav-item" href="{% url 'hoje' %}" {% if atual == 'hoje' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-sun"/></svg>Hoje</a>
+      <span class="nav-item" aria-disabled="true" title="Em breve (etapa 3)"><svg class="icon"><use href="#i-list"/></svg>Tarefas</span>
+      <span class="nav-item" aria-disabled="true" title="Em breve (etapa 3)"><svg class="icon"><use href="#i-board"/></svg>Quadro</span>
+      <span class="nav-item" aria-disabled="true" title="Em breve (etapa 3)"><svg class="icon"><use href="#i-users"/></svg>Pessoas</span>
+      <span class="nav-item" aria-disabled="true" title="Em breve (etapa 3)"><svg class="icon"><use href="#i-folder"/></svg>Projetos</span>
+      <span class="nav-item" aria-disabled="true" title="Em breve (etapa 5.1)"><svg class="icon"><use href="#i-report"/></svg>Relatórios</span>
+      <div class="flex-1"></div>
+      <span class="nav-item" aria-disabled="true" title="Em breve"><svg class="icon"><use href="#i-sliders"/></svg>Configurações</span>
+      <button class="nav-item" data-action="tema"><svg class="icon"><use href="#i-sun"/></svg><span>Modo claro</span></button>
+      <div class="mt-1.5 flex items-center gap-2.5 border-t border-border px-2.5 pt-3 text-[13px] text-text-2">
+        <span class="avatar" style="--p:#a3e635">{{ user.get_username|slice:":2"|upper }}</span>
+        <span class="truncate">{{ user.get_username }}</span>
+        <form method="post" action="{% url 'logout' %}" class="ml-auto">
+          {% csrf_token %}
+          <button class="btn btn-ghost btn-sm" title="Sair" aria-label="Sair"><svg class="icon icon-sm"><use href="#i-logout"/></svg></button>
+        </form>
+      </div>
+    </nav>
+
+    <header class="topbar-m">
+      <a class="logo" href="{% url 'hoje' %}"><svg><use href="#i-logo"/></svg>Kairos</a>
+      <span class="flex-1"></span>
+      <button class="btn btn-ghost btn-icon" data-action="tema" aria-label="Alternar tema"><svg class="icon"><use href="#i-sun"/></svg></button>
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button class="btn btn-ghost btn-icon" aria-label="Sair"><svg class="icon"><use href="#i-logout"/></svg></button>
+      </form>
+    </header>
+
+    <main class="main">
+      {% block conteudo %}{% endblock %}
+    </main>
+
+    <nav class="bottomnav" aria-label="Principal">
+      <a href="{% url 'hoje' %}" {% if atual == 'hoje' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-sun"/></svg>Hoje</a>
+      <a aria-disabled="true" class="opacity-45"><svg class="icon"><use href="#i-list"/></svg>Tarefas</a>
+      <a aria-disabled="true" class="opacity-45"><svg class="icon"><use href="#i-board"/></svg>Quadro</a>
+      <a aria-disabled="true" class="opacity-45"><svg class="icon"><use href="#i-more"/></svg>Mais</a>
+    </nav>
+  </div>
+</div>
+{% endwith %}
+{% endblock %}

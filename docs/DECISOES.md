@@ -43,3 +43,14 @@ Formato: contexto → escolha → motivo.
 - **Semana atual exportável como "parcial"** → dá para mandar o relatório na sexta, antes de a semana congelar.
 - **Observações no PDF** → **só se marcar na exportação** (desmarcado por padrão) → evita mandar anotação privada sem querer.
 - **Semana** → **segunda a domingo** → padrão de trabalho (ISO).
+
+## Etapa 2: Visual aplicado ao app (2026-10-29)
+
+- **Tailwind sem Node** → **django-tailwind-cli 4.8.2 com o executável standalone do Tailwind 4.3.3 (versão fixa)** → nada de Node.js nas duas máquinas; versão fixa para as duas gerarem o mesmo CSS (o padrão "latest" mudaria sem aviso).
+- **CSS gerado fora do Git** → **`static/css/tailwind.css` e o executável no `.gitignore`**; cada máquina roda `tailwind build` → evita commits de arquivo gerado e conflitos; custo: um comando a mais ao clonar (documentado no README).
+- **Classes utilitárias x componentes** → **utilitárias para layout e espaçamento; classes próprias (`@layer components`) para peças repetidas com efeitos** (card, botão, chip, vidro, circuito) → efeitos do protótipo em utilitárias viravam 30 classes ilegíveis repetidas em cada card; assim o app fica idêntico ao protótipo aprovado.
+- **Tokens de cor** → **variáveis CSS trocadas por `data-theme` + `@theme inline` do Tailwind** → as mesmas classes (`bg-surface`, `text-trabalho`) funcionam nos dois temas.
+- **Tema salvo** → **`localStorage` + script mínimo no `<head>`** antes de desenhar a página → não "pisca" o tema errado ao abrir; preferência por aparelho, suficiente para um usuário.
+- **HTMX** → **arquivo local em `static/js/` (2.0.11)** → funciona offline.
+- **Menu com telas futuras** → **itens esmaecidos com "Em breve"** em vez de links quebrados.
+- **Página de bloqueio do axes** → **template próprio** (o padrão é texto puro) e explica como liberar.

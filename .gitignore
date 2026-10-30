@@ -29,3 +29,7 @@ dist/
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Tailwind (executável baixado e CSS gerado)
+.django_tailwind_cli/
+static/css/tailwind.css

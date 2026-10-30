@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block titulo %}Acesso bloqueado{% endblock %}
+{% block corpo %}
+<main class="ambiente grid min-h-screen place-items-center px-4">
+  <section class="vidro borda-gradiente w-full max-w-[380px] rounded-[20px] p-8 text-center shadow-[var(--shadow-md)]">
+    <svg class="icon mx-auto mb-3 size-8 text-danger"><use href="#i-lock"/></svg>
+    <h1 class="text-lg font-semibold">Muitas tentativas</h1>
+    <p class="mt-2 text-sm text-text-2">Por segurança, o login foi bloqueado por 1 hora após várias senhas erradas.</p>
+    <p class="mt-4 text-xs text-text-3">Para liberar antes: <code>python manage.py axes_reset</code></p>
+  </section>
+</main>
+{% endblock %}
