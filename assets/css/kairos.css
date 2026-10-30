@@ -216,6 +216,10 @@
     border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text);
     transition: border-color .15s, box-shadow .15s;
   }
+  /* Lista de opções do <select>: o sistema não lida com fundo translúcido e cai
+     no branco; fundo sólido do tema mantém o texto legível nos dois temas. */
+  select.input option, select.input optgroup { background-color: var(--surface-solid); color: var(--text); }
+  select.input option:checked { background-color: color-mix(in srgb, var(--g2) 35%, var(--surface-solid)); }
   .input:focus {
     border-color: color-mix(in srgb, var(--g2) 70%, transparent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--g2) 22%, transparent);
