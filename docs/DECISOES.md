@@ -91,3 +91,15 @@ Formato: contexto → escolha → motivo.
 - **Erro de validação no painel** → **o servidor responde com `HX-Retarget`** para redesenhar o formulário no painel em vez de trocar o `#painel` → o mesmo formulário serve para sucesso e erro sem JS extra.
 - **Filtro nas ações renomeado para `filtro`** → evitava conflito com o campo `categoria` da tarefa.
 - **Classes utilitárias x componentes (de novo)** → utilitárias de display (`grid`) vencem regras de componente; em elementos que o CSS precisa esconder, só classes de componente → o print pegou o bug.
+
+## Etapa 3, bloco 4: Tela Tarefas (2026-10-30)
+
+- **Ações em mais de uma tela** → **as ações só avisam "tarefasMudaram" (`HX-Trigger`) e cada tela escuta e se recarrega pela própria URL** em vez de cada ação saber em que tela está e devolver o pedaço certo → ações desacopladas das telas; tela nova só precisa escutar o aviso. Custo: uma requisição a mais por ação (imperceptível num app local).
+- **Criação rápida fora do painel que recarrega** → o campo não perde o foco nem a categoria; só o título é limpo após criar.
+- **Herança de atributos do HTMX** → **`hx-disinherit="*"`** nas áreas que se recarregam → os botões de dentro não herdam o `hx-select` da área.
+- **Filtros na URL** → **`Form` do Django validando o GET**; valor inválido é descartado individualmente → a página nunca quebra por URL editada à mão e os outros filtros continuam valendo.
+- **Atualização dos filtros** → **`hx-get` + `hx-push-url`** (busca espera 350 ms sem digitar) → só a lista muda, o endereço acompanha (voltar e favoritos funcionam).
+- **Busca sem acento** → **função `sem_acento()` em Python registrada no SQLite** a cada conexão → o SQLite sozinho só ignora maiúsculas em letras sem acento ("RELATÓRIO" não achava "relatório"); sem coluna extra no banco.
+- **Paginação** → **50 por página, links mantêm os filtros** → lista continua rápida com o tempo.
+- **Card compartilhado** → **`_card.html`** usado por Hoje e Tarefas; fora da Hoje mostra a data do prazo.
+- **Sem JS, ações voltam sempre para a tela Hoje** → usar a página de origem informada pelo navegador permitiria redirecionar para fora do app.

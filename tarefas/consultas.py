@@ -6,10 +6,12 @@ nos próximos 7 dias") fica num lugar só, para as telas e os testes usarem igua
 from datetime import timedelta
 from itertools import groupby
 
-from django.db.models import Case, Count, F, IntegerField, Q, Value, When
+from django.db.models import Case, Count, F, Func, IntegerField, Q, TextField, Value, When
+from django.db.models.functions import Concat
 from django.utils import timezone
 
 from .models import Categoria, Prioridade, Status, Tarefa
+from .texto import sem_acento
 
 ENCERRADAS = [Status.CONCLUIDA, Status.CANCELADA]
 CATEGORIAS_DE_TAREFA = [Categoria.TRABALHO, Categoria.FACULDADE, Categoria.PESSOAL]
@@ -56,6 +58,42 @@ def secoes_hoje(hoje, categoria=None):
     )
     proximos = [(dia, list(itens)) for dia, itens in groupby(semana, key=lambda t: t.prazo)]
     return {"atrasadas": list(atrasadas), "hoje": list(de_hoje), "proximos": proximos}
+
+
+def listar_tarefas(filtros):
+    """
+    Tela Tarefas. `filtros` vem do FiltroTarefasForm (só valores válidos).
+    Cada filtro presente acrescenta uma condição; o banco executa tudo de uma vez.
+    """
+    qs = Tarefa.objects.select_related("solicitante", "projeto", "disciplina").annotate(
+        peso=PESO_PRIORIDADE, feita=CONCLUIDA_POR_ULTIMO
+    )
+
+    status = filtros.get("status", "")
+    if status == "":  # padrão: só as abertas
+        qs = qs.exclude(status__in=ENCERRADAS)
+    elif status != "todas":
+        qs = qs.filter(status=status)
+
+    for campo in ("categoria", "prioridade", "solicitante", "projeto", "disciplina"):
+        if campo in filtros:
+            qs = qs.filter(**{campo: filtros[campo]})
+
+    if busca := sem_acento(filtros.get("q", "").strip()):
+        # Compara sem acento e sem maiúsculas: "relatorio" acha "Relatório".
+        # (O SQLite sozinho só ignora maiúsculas em letras sem acento.)
+        texto = Concat("titulo", Value(" "), "observacoes", Value(" "), "descricao_externa", output_field=TextField())
+        qs = qs.annotate(texto_busca=Func(texto, function="sem_acento", output_field=TextField())).filter(
+            texto_busca__contains=busca
+        )
+
+    prazo = F("prazo").asc(nulls_last=True)
+    ordem = filtros.get("ordem", "prazo")
+    if ordem == "prioridade":
+        return qs.order_by("feita", "-peso", prazo, "-criado_em")
+    if ordem == "recentes":
+        return qs.order_by("-criado_em")
+    return qs.order_by("feita", prazo, "-peso", "-criado_em")
 
 
 def contadores(hoje):

@@ -1,7 +1,7 @@
 from django import forms
 from django.db.models import Q
 
-from .models import Categoria, Disciplina, Origem, Pessoa, Projeto, Status, Tarefa
+from .models import Categoria, Disciplina, Origem, Pessoa, Prioridade, Projeto, Status, Tarefa
 
 FORMATO_DATA_HORA = "%Y-%m-%dT%H:%M"  # formato do <input type="datetime-local">
 
@@ -12,6 +12,45 @@ CAMPOS_DO_GOOGLE = ["titulo", "categoria", "prazo", "prazo_hora", "disciplina", 
 def pessoa_eu():
     """A Pessoa que representa o dono (decisão: "Eu" como solicitante das próprias demandas)."""
     return Pessoa.objects.filter(nome__iexact="Eu").first()
+
+
+class FiltroTarefasForm(forms.Form):
+    """
+    Filtros da tela Tarefas, lidos da URL (?categoria=trabalho&q=...).
+    Valor inválido é descartado (vira "sem filtro") em vez de quebrar a página.
+    """
+
+    STATUS_ABERTAS, STATUS_TODAS = "", "todas"
+    ORDENS = [("prazo", "Prazo"), ("prioridade", "Prioridade"), ("recentes", "Mais recentes")]
+
+    q = forms.CharField(required=False, max_length=100, label="Buscar")
+    categoria = forms.ChoiceField(required=False, label="Categoria", choices=[("", "Todas as categorias"), *Categoria.choices])
+    status = forms.ChoiceField(required=False, label="Status",
+                               choices=[(STATUS_ABERTAS, "Abertas"), (STATUS_TODAS, "Todas"), *Status.choices])
+    prioridade = forms.ChoiceField(required=False, label="Prioridade",
+                                   choices=[("", "Qualquer prioridade"), *Prioridade.choices])
+    solicitante = forms.ModelChoiceField(Pessoa.objects.all(), required=False, empty_label="Qualquer solicitante")
+    projeto = forms.ModelChoiceField(Projeto.objects.all(), required=False, empty_label="Qualquer projeto")
+    disciplina = forms.ModelChoiceField(Disciplina.objects.all(), required=False, empty_label="Qualquer disciplina")
+    ordem = forms.ChoiceField(required=False, label="Ordenar por", choices=ORDENS)
+
+    def __init__(self, dados, *args, **kwargs):
+        super().__init__(dados, *args, **kwargs)
+        for nome, campo in self.fields.items():
+            campo.widget.attrs["class"] = "input input-sm"
+        self.fields["q"].widget.attrs.update({"placeholder": "Buscar no título e nas observações…", "type": "search"})
+
+    def filtros(self):
+        """Só os filtros válidos. Os inválidos somem, cada um isoladamente."""
+        self.is_valid()
+        validos = {}
+        for nome in self.fields:
+            if nome in self.errors:
+                continue
+            valor = self.cleaned_data.get(nome)
+            if valor not in (None, ""):
+                validos[nome] = valor
+        return validos
 
 
 class TarefaForm(forms.ModelForm):

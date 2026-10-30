@@ -1,8 +1,7 @@
 {# Painel lateral de criar/editar tarefa (carregado pelo HTMX dentro do <dialog id="drawer">). #}
 <form class="drawer-form" hx-post="{% if tarefa.pk %}{% url 'editar_tarefa' tarefa.pk %}{% else %}{% url 'nova_tarefa' %}{% endif %}"
-      hx-target="#painel" hx-swap="outerHTML" novalidate>
+      hx-swap="none" novalidate>
   {% csrf_token %}
-  <input type="hidden" name="filtro" value="{{ filtro|default:'' }}">
 
   <header>
     <h2 id="drawer-titulo">{% if tarefa.pk %}Editar tarefa{% else %}Nova tarefa{% endif %}</h2>
@@ -60,10 +59,9 @@
     {% if tarefa.pk %}
       {% if google %}
         <button type="button" class="btn btn-danger" data-fechar-painel hx-post="{% url 'mudar_status' tarefa.pk %}"
-                hx-vals='{"status": "cancelada", "filtro": "{{ filtro|default:'' }}"}'><svg class="icon icon-sm"><use href="#i-ban"/></svg>Cancelar tarefa</button>
+                hx-vals='{"status": "cancelada"}'><svg class="icon icon-sm"><use href="#i-ban"/></svg>Cancelar tarefa</button>
       {% else %}
-        <button type="button" class="btn btn-danger" data-fechar-painel hx-post="{% url 'excluir' tarefa.pk %}"
-                hx-vals='{"filtro": "{{ filtro|default:'' }}"}'><svg class="icon icon-sm"><use href="#i-trash"/></svg>Excluir</button>
+        <button type="button" class="btn btn-danger" data-fechar-painel hx-post="{% url 'excluir' tarefa.pk %}"><svg class="icon icon-sm"><use href="#i-trash"/></svg>Excluir</button>
       {% endif %}
     {% endif %}
     <span class="flex-1"></span>

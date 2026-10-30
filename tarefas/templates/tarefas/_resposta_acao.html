@@ -1,10 +1,9 @@
-{# Resposta das ações da tela Hoje: painel redesenhado + toast (fora do painel, via hx-swap-oob). #}
-{% include "tarefas/hoje.html#painel" %}
+{# Resposta das ações: só o toast (colocado na área de toasts via hx-swap-oob). A tela se redesenha sozinha. #}
 <div id="toasts" hx-swap-oob="beforeend">
   <div class="toast" data-auto{% if toast.desfazer_url %}="6000"{% endif %}>
     <span>{{ toast.mensagem }}</span>
     {% if toast.desfazer_url %}
-      <button data-desfazer hx-post="{{ toast.desfazer_url }}" hx-vals="{{ toast.desfazer_vals }}" hx-target="#painel" hx-swap="outerHTML">
+      <button data-desfazer hx-post="{{ toast.desfazer_url }}" hx-vals="{{ toast.desfazer_vals }}" hx-swap="none">
         Desfazer <kbd>Ctrl Z</kbd>
       </button>
       <i class="bar"></i>

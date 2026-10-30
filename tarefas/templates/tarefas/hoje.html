@@ -2,59 +2,12 @@
 {% load partials %}
 {% block titulo %}Hoje{% endblock %}
 
-{# ===== Card de tarefa (reutilizado nas seções; o HTMX vai pedir só este pedaço) ===== #}
-{% partialdef card %}
-<article class="task{% if t.atrasada %} is-late{% endif %}{% if t.status == 'concluida' %} is-done{% endif %}" data-cat="{{ t.categoria }}" id="tarefa-{{ t.pk }}">
-  <button class="check" aria-label="{% if t.status == 'concluida' %}Reabrir{% else %}Concluir{% endif %}"
-          hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{% if t.status == 'concluida' %}a_fazer{% else %}concluida{% endif %}"}'
-          hx-target="#painel" hx-swap="outerHTML swap:450ms"><svg class="icon"><use href="#i-check"/></svg></button>
-  <div class="task-body">
-    <button class="task-title" hx-get="{% url 'editar_tarefa' t.pk %}" hx-target="#drawer-conteudo"><s>{{ t.titulo }}</s></button>
-    <div class="task-meta">
-      <span class="cat"><i class="dot"></i>{% if t.disciplina %}{{ t.disciplina.nome }}{% elif t.projeto %}{{ t.projeto.nome }}{% else %}{{ t.get_categoria_display }}{% endif %}</span>
-      {% if t.solicitante %}
-        <span class="person"><span class="avatar" style="--p:{{ t.solicitante.cor|default:'#94a3b8' }}">{{ t.solicitante.nome|slice:":2"|upper }}</span>{{ t.solicitante.nome }}</span>
-      {% endif %}
-      {% if t.prazo_hora %}<span class="time num"><svg class="icon icon-sm"><use href="#i-clock"/></svg>{{ t.prazo_hora|time:"H:i" }}</span>{% endif %}
-      {% if t.atrasada %}<span class="chip chip-late"><svg class="icon icon-sm"><use href="#i-clock"/></svg>Atrasada · {{ t.dias_atraso }} dia{{ t.dias_atraso|pluralize }}</span>{% endif %}
-      {% if t.status == 'em_andamento' %}<span class="chip chip-progress"><i></i>Em andamento</span>{% endif %}
-      {% if t.status == 'aguardando' %}<span class="chip chip-wait"><svg class="icon icon-sm"><use href="#i-hourglass"/></svg>Aguardando</span>{% endif %}
-      {% if t.origem != 'manual' and t.link_externo %}
-        <a class="chip chip-google" href="{{ t.link_externo }}" target="_blank" rel="noopener" title="Abrir no Google"><svg class="icon icon-sm"><use href="#i-external"/></svg>{{ t.get_origem_display|cut:"Google " }}</a>
-      {% endif %}
-    </div>
-  </div>
-  <div class="task-side">
-    {% if t.prioridade == 'urgente' or t.prioridade == 'alta' %}
-      <span class="prio prio-{{ t.prioridade }}" title="Prioridade {{ t.get_prioridade_display }}"><svg class="icon icon-sm"><use href="#i-flag"/></svg>{{ t.get_prioridade_display }}</span>
-    {% endif %}
-    <button class="task-menu" popovertarget="menu-{{ t.pk }}" style="anchor-name: --menu-{{ t.pk }}" aria-label="Mais ações"><svg class="icon"><use href="#i-more"/></svg></button>
-  </div>
-  <div class="menu" id="menu-{{ t.pk }}" popover style="position-anchor: --menu-{{ t.pk }}" hx-target="#painel" hx-swap="outerHTML">
-    <button hx-get="{% url 'editar_tarefa' t.pk %}" hx-target="#drawer-conteudo"><svg class="icon"><use href="#i-pencil"/></svg>Editar</button>
-    {% for valor, rotulo, icone in status_menu %}{% if valor != t.status %}
-      <button hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{{ valor }}"}'><svg class="icon"><use href="#i-{{ icone }}"/></svg>{{ rotulo }}</button>
-    {% endif %}{% endfor %}
-    <hr>
-    {% if t.origem == 'manual' %}
-      <button class="danger" hx-post="{% url 'excluir' t.pk %}"><svg class="icon"><use href="#i-trash"/></svg>Excluir</button>
-    {% else %}
-      <button class="danger" hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "cancelada"}'><svg class="icon"><use href="#i-ban"/></svg><span>Cancelar tarefa<small>Vem do Google: não é apagada</small></span></button>
-    {% endif %}
-  </div>
-</article>
-{% endpartialdef %}
-
-{% block conteudo %}{% partial painel %}{% endblock %}
-
-{# ===== Painel do dia: o que as ações (HTMX) redesenham ===== #}
-{% partialdef painel %}
-<div id="painel" hx-vals='{"filtro": "{{ categoria|default:'' }}"}'>
+{% block conteudo %}
 {# ===== Topo ===== #}
 <section class="hero borda-gradiente relative mb-4 min-h-[148px] rounded-[20px] border border-border p-5 sm:px-7 sm:py-6">
   <p class="grad-text text-[11.5px] font-semibold uppercase tracking-[.09em]">Hoje · {{ hoje|date:"l, j \d\e F" }}</p>
   <h1 class="mt-1.5 mb-1 text-2xl font-semibold tracking-tight sm:text-3xl">{{ saudacao }}, {{ user.get_username }}</h1>
-  <p class="hero-resumo max-w-[44ch] text-sm text-text-2">
+  <p class="hero-resumo max-w-[44ch] text-sm text-text-2" id="hero-resumo">
     Você tem
     {% if total_atrasadas %}<b class="hot">{{ total_atrasadas }} atrasada{{ total_atrasadas|pluralize }}</b>,{% endif %}
     <b>{{ pendentes_hoje }} tarefa{{ pendentes_hoje|pluralize }}</b> para hoje e
@@ -64,18 +17,26 @@
 </section>
 
 {# ===== Criação rápida (tecla N foca o campo) ===== #}
-<form class="quick" hx-post="{% url 'criar_rapida' %}" hx-target="#painel" hx-swap="outerHTML">
+<form class="quick" hx-post="{% url 'criar_rapida' %}" hx-swap="none"
+      hx-on::after-request="if (event.detail.successful) this.titulo.value = ''">
   <svg class="icon"><use href="#i-plus"/></svg>
   <label class="sr-only" for="quick-input">Nova tarefa para hoje</label>
-  <input id="quick-input" name="titulo" placeholder="Adicionar tarefa para hoje…" autocomplete="off" maxlength="200" required{% if focar_rapida %} data-focar{% endif %}>
+  <input id="quick-input" name="titulo" placeholder="Adicionar tarefa para hoje…" autocomplete="off" maxlength="200" required>
   <div class="cats" role="radiogroup" aria-label="Categoria">
     {% for valor, rotulo in categorias_rapidas %}
-      <label data-cat="{{ valor }}"><input type="radio" name="cat_rapida" value="{{ valor }}" class="sr-only"{% if valor == cat_rapida %} checked{% endif %}><i class="dot"></i><span class="label">{{ rotulo }}</span></label>
+      <label data-cat="{{ valor }}"><input type="radio" name="cat_rapida" value="{{ valor }}" class="sr-only"{% if forloop.first %} checked{% endif %}><i class="dot"></i><span class="label">{{ rotulo }}</span></label>
     {% endfor %}
   </div>
   <kbd title="Atalho: tecla N">N</kbd>
 </form>
 
+{% partial painel %}
+{% endblock %}
+
+{# ===== Painel do dia: o que as ações (HTMX) redesenham ===== #}
+{% partialdef painel %}
+<div id="painel" hx-get="{{ request.get_full_path }}" hx-trigger="tarefasMudaram from:body delay:400ms"
+     hx-select="#painel" hx-select-oob="#hero-resumo" hx-swap="outerHTML" hx-disinherit="*">
 {# ===== Contadores (clicar filtra; o filtro fica na URL) ===== #}
 <div class="counters">
   {% for c in contadores %}
@@ -102,7 +63,7 @@
     <section class="{% if secoes.atrasadas %}panel-late{% endif %}">
       <h2 class="section-head">{% if secoes.atrasadas %}<i class="live-dot"></i>{% endif %}Atrasadas <span class="count num">{{ secoes.atrasadas|length|default:"" }}</span></h2>
       <div class="list">
-        {% for t in secoes.atrasadas %}{% partial card %}{% empty %}
+        {% for t in secoes.atrasadas %}{% include "tarefas/_card.html" %}{% empty %}
           <div class="empty"><div class="big">🎉</div><strong>Nada atrasado</strong><span>Tudo em dia. Aproveite o momento.</span></div>
         {% endfor %}
       </div>
@@ -112,7 +73,7 @@
     <section>
       <h2 class="section-head">Para hoje</h2>
       <div class="list">
-        {% for t in secoes.hoje %}{% partial card %}{% empty %}
+        {% for t in secoes.hoje %}{% include "tarefas/_card.html" %}{% empty %}
           <div class="empty"><div class="big">🌤️</div><strong>Nada para hoje</strong>
             <span>{% if categoria %}Nenhuma tarefa desta categoria hoje.{% else %}Dia livre por enquanto.{% endif %}</span></div>
         {% endfor %}
@@ -124,7 +85,7 @@
       <h2 class="section-head">Próximos 7 dias</h2>
       {% for dia, itens in secoes.proximos %}
         <p class="day-label">{% if dia == amanha %}Amanhã{% else %}{{ dia|date:"l"|capfirst }}{% endif %} <span>· {{ dia|date:"d/m" }}</span></p>
-        <div class="list">{% for t in itens %}{% partial card %}{% endfor %}</div>
+        <div class="list">{% for t in itens %}{% include "tarefas/_card.html" %}{% endfor %}</div>
       {% empty %}
         <div class="empty"><div class="big">🗓️</div><strong>Semana livre</strong><span>Nada com prazo nos próximos 7 dias.</span></div>
       {% endfor %}

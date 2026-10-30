@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
@@ -36,12 +38,6 @@ class CriacaoRapidaTests(TestCase):
         self.assertEqual(resposta.status_code, 400)
         self.assertFalse(Tarefa.objects.exists())
 
-    def test_campo_volta_focado_com_a_mesma_categoria(self):
-        resposta = self.client.post("/tarefas/rapida/", {"titulo": "X", "cat_rapida": "faculdade"}, **HTMX)
-        html = resposta.content.decode()
-        self.assertIn("data-focar", html)
-        self.assertIn('value="faculdade" class="sr-only" checked', html)
-
 
 class PainelTarefaTests(TestCase):
     def setUp(self):
@@ -55,7 +51,7 @@ class PainelTarefaTests(TestCase):
 
     def test_salvar_cria_e_pede_para_fechar_o_painel(self):
         resposta = self.client.post("/tarefas/nova/", dados_form(titulo="Estudar"), **HTMX)
-        self.assertEqual(resposta["HX-Trigger"], "fecharPainel")
+        self.assertEqual(set(json.loads(resposta["HX-Trigger"])), {"tarefasMudaram", "fecharPainel"})
         self.assertTrue(Tarefa.objects.filter(titulo="Estudar").exists())
 
     def test_regra_do_modelo_aparece_como_erro_no_formulario(self):

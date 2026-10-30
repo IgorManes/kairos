@@ -2,6 +2,7 @@ import json
 from datetime import timedelta
 
 from django.core import serializers, signing
+from django.core.paginator import Paginator
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -9,6 +10,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from . import consultas
+from . import forms as forms_filtro
 from .forms import TarefaForm, pessoa_eu
 from .models import Categoria, Origem, Pessoa, Status, Tarefa
 
@@ -56,7 +58,6 @@ def contexto_hoje(categoria):
         "pendentes_hoje": consultas.tarefas_visiveis().filter(prazo=dia).exclude(status=Status.CONCLUIDA).count(),
         "linha": consultas.linha_do_tempo(consultas.reunioes_do_dia(dia), agora),
         "status_menu": STATUS_MENU,
-        "cat_rapida": Categoria.TRABALHO,
         "categorias_rapidas": [(c.value, c.label) for c in consultas.CATEGORIAS_DE_TAREFA],
     }
 
@@ -65,24 +66,24 @@ def hoje(request):
     return render(request, "tarefas/hoje.html", contexto_hoje(ler_categoria(request.GET.get("categoria"))))
 
 
-# ===== Ações (chamadas pelo HTMX; respondem com o painel atualizado + toast) =====
+# ===== Ações (chamadas pelo HTMX; respondem com um toast e o aviso "tarefasMudaram") =====
 
-def responder_acao(request, mensagem, desfazer=None, extra=None):
+def responder_acao(request, mensagem, desfazer=None, gatilhos=()):
     """
-    Devolve o painel do dia redesenhado e um toast. `desfazer` é (url, dados)
-    para o botão "Desfazer" do toast. O filtro ativo chega como `filtro`.
+    Resposta das ações: só um toast + o aviso "tarefasMudaram". Cada tela escuta
+    o aviso e se redesenha sozinha (com os próprios filtros), então as ações não
+    precisam saber em que tela estão. `desfazer` é (url, dados) do botão do toast.
     """
     if not request.headers.get("HX-Request"):
-        return redirect("hoje")  # sem JS: volta para a página
-    filtro = ler_categoria(request.POST.get("filtro"))
-    contexto = contexto_hoje(filtro)
-    contexto.update(extra or {})
-    contexto["toast"] = {"mensagem": mensagem}
+        return redirect("hoje")  # sem JS: volta para a tela inicial
+    toast = {"mensagem": mensagem}
     if desfazer:
         url, dados = desfazer
-        contexto["toast"]["desfazer_url"] = url
-        contexto["toast"]["desfazer_vals"] = json.dumps({**dados, "filtro": filtro or ""})
-    return render(request, "tarefas/_resposta_acao.html", contexto)
+        toast["desfazer_url"] = url
+        toast["desfazer_vals"] = json.dumps(dados)
+    resposta = render(request, "tarefas/_resposta_acao.html", {"toast": toast})
+    resposta["HX-Trigger"] = json.dumps({nome: True for nome in ("tarefasMudaram", *gatilhos)})
+    return resposta
 
 
 @require_POST
@@ -150,15 +151,11 @@ def criar_rapida(request):
         tarefa.solicitante = pessoa_eu() or Pessoa.objects.create(nome="Eu", cor="#a3e635")
     tarefa.full_clean()
     tarefa.save()
-    return responder_acao(
-        request, "Tarefa criada para hoje", (reverse("excluir", args=[tarefa.pk]), {}),
-        extra={"cat_rapida": categoria, "focar_rapida": True},
-    )
+    return responder_acao(request, "Tarefa criada para hoje", (reverse("excluir", args=[tarefa.pk]), {}))
 
 
-def contexto_form(form, tarefa, filtro):
-    return {"form": form, "tarefa": tarefa, "filtro": filtro,
-            "google": bool(tarefa.pk and tarefa.origem != Origem.MANUAL)}
+def contexto_form(form, tarefa):
+    return {"form": form, "tarefa": tarefa, "google": bool(tarefa.pk and tarefa.origem != Origem.MANUAL)}
 
 
 def tarefa_form(request, pk=None):
@@ -167,20 +164,37 @@ def tarefa_form(request, pk=None):
         tarefa = get_object_or_404(Tarefa, pk=pk)
     else:
         tarefa = Tarefa(categoria=Categoria.TRABALHO, prazo=timezone.localdate(), solicitante=pessoa_eu())
-    filtro = ler_categoria(request.GET.get("filtro") or request.POST.get("filtro"))
 
     if request.method == "POST":
         form = TarefaForm(request.POST, instance=tarefa)
         if form.is_valid():
             form.save()
-            resposta = responder_acao(request, "Alterações salvas" if pk else "Tarefa criada")
-            resposta["HX-Trigger"] = "fecharPainel"  # o JS fecha o painel lateral
-            return resposta
-        # Com erros: redesenha o formulário dentro do painel, em vez de trocar o #painel.
-        resposta = render(request, "tarefas/_painel_tarefa.html", contexto_form(form, tarefa, filtro))
+            # "fecharPainel": o JS fecha o painel lateral
+            return responder_acao(request, "Alterações salvas" if pk else "Tarefa criada", gatilhos=["fecharPainel"])
+        # Com erros: redesenha o formulário dentro do painel lateral.
+        resposta = render(request, "tarefas/_painel_tarefa.html", contexto_form(form, tarefa))
         resposta["HX-Retarget"] = "#drawer-conteudo"
         resposta["HX-Reswap"] = "innerHTML"
         return resposta
 
     form = TarefaForm(instance=tarefa)
-    return render(request, "tarefas/_painel_tarefa.html", contexto_form(form, tarefa, filtro))
+    return render(request, "tarefas/_painel_tarefa.html", contexto_form(form, tarefa))
+
+
+def tarefas(request):
+    """Lista com filtros combináveis (na URL) e ordenação."""
+    form = forms_filtro.FiltroTarefasForm(request.GET or None)
+    filtros = form.filtros() if request.GET else {}
+    pagina = Paginator(consultas.listar_tarefas(filtros), 50).get_page(request.GET.get("pagina"))
+
+    # Links de paginação mantêm os filtros atuais.
+    parametros = request.GET.copy()
+    parametros.pop("pagina", None)
+    return render(request, "tarefas/tarefas.html", {
+        "form": form,
+        "pagina": pagina,
+        "tem_filtro": any(k != "ordem" for k in filtros),
+        "query_sem_pagina": parametros.urlencode(),
+        "status_menu": STATUS_MENU,
+        "mostrar_prazo": True,
+    })

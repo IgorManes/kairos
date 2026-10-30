@@ -1,0 +1,42 @@
+{# Card de tarefa (telas Hoje e Tarefas). Espera `t` e `status_menu` no contexto. #}
+<article class="task{% if t.atrasada %} is-late{% endif %}{% if t.status == 'concluida' %} is-done{% endif %}" data-cat="{{ t.categoria }}" id="tarefa-{{ t.pk }}">
+  <button class="check" aria-label="{% if t.status == 'concluida' %}Reabrir{% else %}Concluir{% endif %}"
+          hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{% if t.status == 'concluida' %}a_fazer{% else %}concluida{% endif %}"}'
+          hx-swap="none"><svg class="icon"><use href="#i-check"/></svg></button>
+  <div class="task-body">
+    <button class="task-title" hx-get="{% url 'editar_tarefa' t.pk %}" hx-target="#drawer-conteudo"><s>{{ t.titulo }}</s></button>
+    <div class="task-meta">
+      <span class="cat"><i class="dot"></i>{% if t.disciplina %}{{ t.disciplina.nome }}{% elif t.projeto %}{{ t.projeto.nome }}{% else %}{{ t.get_categoria_display }}{% endif %}</span>
+      {% if t.solicitante %}
+        <span class="person"><span class="avatar" style="--p:{{ t.solicitante.cor|default:'#94a3b8' }}">{{ t.solicitante.nome|slice:":2"|upper }}</span>{{ t.solicitante.nome }}</span>
+      {% endif %}
+      {% if mostrar_prazo and t.prazo %}<span class="time num"><svg class="icon icon-sm"><use href="#i-calendar"/></svg>{{ t.prazo|date:"d/m" }}</span>{% endif %}
+      {% if t.categoria == 'reuniao' and t.inicio %}<span class="time num"><svg class="icon icon-sm"><use href="#i-video"/></svg>{{ t.inicio|date:"d/m H:i" }}</span>{% endif %}
+      {% if t.prazo_hora %}<span class="time num"><svg class="icon icon-sm"><use href="#i-clock"/></svg>{{ t.prazo_hora|time:"H:i" }}</span>{% endif %}
+      {% if t.atrasada %}<span class="chip chip-late"><svg class="icon icon-sm"><use href="#i-clock"/></svg>Atrasada · {{ t.dias_atraso }} dia{{ t.dias_atraso|pluralize }}</span>{% endif %}
+      {% if t.status == 'em_andamento' %}<span class="chip chip-progress"><i></i>Em andamento</span>{% endif %}
+      {% if t.status == 'aguardando' %}<span class="chip chip-wait"><svg class="icon icon-sm"><use href="#i-hourglass"/></svg>Aguardando</span>{% endif %}
+      {% if t.origem != 'manual' and t.link_externo %}
+        <a class="chip chip-google" href="{{ t.link_externo }}" target="_blank" rel="noopener" title="Abrir no Google"><svg class="icon icon-sm"><use href="#i-external"/></svg>{{ t.get_origem_display|cut:"Google " }}</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="task-side">
+    {% if t.prioridade == 'urgente' or t.prioridade == 'alta' %}
+      <span class="prio prio-{{ t.prioridade }}" title="Prioridade {{ t.get_prioridade_display }}"><svg class="icon icon-sm"><use href="#i-flag"/></svg>{{ t.get_prioridade_display }}</span>
+    {% endif %}
+    <button class="task-menu" popovertarget="menu-{{ t.pk }}" style="anchor-name: --menu-{{ t.pk }}" aria-label="Mais ações"><svg class="icon"><use href="#i-more"/></svg></button>
+  </div>
+  <div class="menu" id="menu-{{ t.pk }}" popover style="position-anchor: --menu-{{ t.pk }}" hx-swap="none">
+    <button hx-get="{% url 'editar_tarefa' t.pk %}" hx-target="#drawer-conteudo"><svg class="icon"><use href="#i-pencil"/></svg>Editar</button>
+    {% for valor, rotulo, icone in status_menu %}{% if valor != t.status %}
+      <button hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{{ valor }}"}'><svg class="icon"><use href="#i-{{ icone }}"/></svg>{{ rotulo }}</button>
+    {% endif %}{% endfor %}
+    <hr>
+    {% if t.origem == 'manual' %}
+      <button class="danger" hx-post="{% url 'excluir' t.pk %}"><svg class="icon"><use href="#i-trash"/></svg>Excluir</button>
+    {% else %}
+      <button class="danger" hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "cancelada"}'><svg class="icon"><use href="#i-ban"/></svg><span>Cancelar tarefa<small>Vem do Google: não é apagada</small></span></button>
+    {% endif %}
+  </div>
+</article>

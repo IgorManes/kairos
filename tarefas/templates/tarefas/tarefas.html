@@ -1,0 +1,54 @@
+{% extends "base_app.html" %}
+{% block titulo %}Tarefas{% endblock %}
+{% block conteudo %}
+<header class="mb-5 flex items-end justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Tarefas</h1>
+    <p class="text-sm text-text-3">Todas as tarefas, com filtros que você pode combinar.</p>
+  </div>
+</header>
+
+{# Filtros: cada mudança atualiza só a lista e o endereço (dá para favoritar um filtro). #}
+<form id="filtros" class="filtros" action="{% url 'tarefas' %}" method="get"
+      hx-get="{% url 'tarefas' %}" hx-trigger="change, keyup changed delay:350ms from:#id_q, submit"
+      hx-target="#lista" hx-select="#lista" hx-swap="outerHTML" hx-push-url="true">
+  <label class="busca">
+    <svg class="icon"><use href="#i-search"/></svg>
+    <span class="sr-only">Buscar</span>
+    {{ form.q }}
+  </label>
+  <div class="filtros-grade">
+    {% for campo in form %}{% if campo.name != "q" %}
+      <label class="field"><span>{{ campo.label }}</span>{{ campo }}</label>
+    {% endif %}{% endfor %}
+  </div>
+</form>
+
+<section id="lista" hx-get="{{ request.get_full_path }}" hx-trigger="tarefasMudaram from:body delay:400ms"
+         hx-select="#lista" hx-swap="outerHTML" hx-disinherit="*">
+  <h2 class="section-head">
+    {{ pagina.paginator.count }} tarefa{{ pagina.paginator.count|pluralize }}
+    {% if tem_filtro %}<a class="btn btn-ghost btn-sm normal-case tracking-normal" href="{% url 'tarefas' %}"><svg class="icon icon-sm"><use href="#i-x"/></svg>Limpar filtros</a>{% endif %}
+  </h2>
+
+  <div class="list">
+    {% for t in pagina %}
+      {% include "tarefas/_card.html" %}
+    {% empty %}
+      <div class="empty">
+        <div class="big">🔎</div>
+        <strong>{% if tem_filtro %}Nada com esses filtros{% else %}Nenhuma tarefa aberta{% endif %}</strong>
+        <span>{% if tem_filtro %}Tente tirar algum filtro.{% else %}Crie uma pelo botão "Nova tarefa" ou na tela Hoje.{% endif %}</span>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if pagina.has_other_pages %}
+    <nav class="paginacao" aria-label="Páginas">
+      {% if pagina.has_previous %}<a class="btn btn-secondary btn-sm" href="?{{ query_sem_pagina }}&pagina={{ pagina.previous_page_number }}">Anterior</a>{% endif %}
+      <span class="num">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+      {% if pagina.has_next %}<a class="btn btn-secondary btn-sm" href="?{{ query_sem_pagina }}&pagina={{ pagina.next_page_number }}">Próxima</a>{% endif %}
+    </nav>
+  {% endif %}
+</section>
+{% endblock %}

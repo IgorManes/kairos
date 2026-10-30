@@ -116,12 +116,6 @@ document.addEventListener("click", evento => {
   if (opcao) opcao.closest("[popover]").hidePopover();
 });
 
-// Depois de criar pela criação rápida, o campo volta focado para a próxima.
-document.addEventListener("htmx:afterSettle", () => {
-  const focar = document.querySelector("[data-focar]");
-  if (focar) { focar.removeAttribute("data-focar"); focar.focus(); }
-});
-
 /* ===== Atalhos: N = nova tarefa rápida, Ctrl+Z = desfazer ===== */
 document.addEventListener("keydown", evento => {
   const digitando = evento.target.closest?.("input, textarea, select, [contenteditable]");

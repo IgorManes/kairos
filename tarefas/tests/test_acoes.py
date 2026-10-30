@@ -28,14 +28,15 @@ class AcoesTests(TestCase):
         return bruto.group(1), json.loads(vals)
 
     # --- Status ---
-    def test_concluir_responde_painel_e_toast_com_desfazer(self):
+    def test_concluir_responde_toast_e_avisa_que_as_tarefas_mudaram(self):
         resposta = self.post(f"/tarefas/{self.tarefa.pk}/status/", {"status": "concluida"})
         self.tarefa.refresh_from_db()
         self.assertEqual(self.tarefa.status, Status.CONCLUIDA)
         self.assertIsNotNone(self.tarefa.concluida_em)
+        self.assertIn("tarefasMudaram", json.loads(resposta["HX-Trigger"]))  # cada tela se redesenha
         html = resposta.content.decode()
-        self.assertIn('id="painel"', html)
         self.assertIn("Tarefa concluída", html)
+        self.assertNotIn('id="painel"', html)  # a ação não conhece as telas
 
     def test_desfazer_status_volta_ao_anterior(self):
         resposta = self.post(f"/tarefas/{self.tarefa.pk}/status/", {"status": "aguardando"})
@@ -51,10 +52,6 @@ class AcoesTests(TestCase):
     def test_get_nao_altera_nada(self):
         resposta = self.client.get(f"/tarefas/{self.tarefa.pk}/status/?status=concluida")
         self.assertEqual(resposta.status_code, 405)
-
-    def test_filtro_ativo_continua_depois_da_acao(self):
-        resposta = self.post(f"/tarefas/{self.tarefa.pk}/status/", {"status": "concluida", "filtro": "pessoal"})
-        self.assertIn("Mostrando só", resposta.content.decode())
 
     def test_sem_htmx_volta_para_a_pagina(self):
         resposta = self.client.post(f"/tarefas/{self.tarefa.pk}/status/", {"status": "concluida"})

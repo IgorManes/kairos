@@ -581,10 +581,21 @@
   .drawer-form:has(input[name="categoria"][value="reuniao"]:checked) [data-so="reuniao"] { display: grid; }
   .drawer-form:has(input[name="categoria"][value="reuniao"]:checked) [data-nao="reuniao"] { display: none; }
 
+  /* Tela Tarefas: filtros e paginação */
+  .input-sm { height: 34px; font-size: 13.5px; padding: 0 10px; }
+  .filtros { display: grid; gap: 12px; margin-bottom: 24px; }
+  .filtros .busca { position: relative; display: block; }
+  .filtros .busca .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-3); pointer-events: none; }
+  .filtros .busca .input { height: 42px; padding-left: 38px; font-size: 14.5px; }
+  .filtros-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .filtros-grade .field > span { font-size: 11.5px; }
+  .paginacao { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; font-size: 13px; color: var(--text-2); }
+
   @container app (min-width: 560px) {
     .counters { grid-template-columns: repeat(4, 1fr); }
     .quick .cats .label { display: inline; }
   }
+  @container app (min-width: 760px) { .filtros-grade { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   @container app (min-width: 920px) {
     .content { grid-template-columns: minmax(0, 1fr) 330px; gap: 32px; }
     .content aside { position: sticky; top: 24px; }
