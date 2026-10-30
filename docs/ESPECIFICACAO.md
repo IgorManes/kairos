@@ -106,7 +106,9 @@ Interações importantes:
 - `credentials.json` e `token.json` ficam em `%LOCALAPPDATA%\Kairos\`, nunca no repositório.
 - Bibliotecas: `google-api-python-client`, `google-auth-oauthlib`.
 - Sincronização **somente leitura (Google → app)**. O app nunca altera nada no Google.
-- Execução: comando `python manage.py sincronizar` + sync automático a cada 15 min enquanto o app está aberto + botão "Sincronizar agora". Registrar data/hora e erros do último sync.
+- Execução: comando `python manage.py sincronizar` + botão "Sincronizar agora" + sync automático enquanto o app está aberto: **Agenda a cada 1 min** (incremental com `syncToken`: o Google devolve só o que mudou) e **ao abrir/voltar para o app**; **Classroom a cada 5 min** (não tem consulta incremental). Registrar data/hora e erros do último sync.
+- Tempo real por aviso do Google (push/webhook) **não** é usado: exige endereço público com HTTPS, e o app roda em `127.0.0.1`.
+- **Custo zero:** projeto do Google Cloud **sem conta de faturamento** (sem cartão); assim o Google não tem como cobrar. Uso estimado: Agenda ~2.900 req/dia (limite gratuito 1.000.000/dia), Classroom ~3.700 req/dia (limite 4.000.000/dia). Se a cota estourar, a API recusa (429) e o app espera e tenta de novo com intervalo crescente (backoff exponencial).
 
 ### Google Agenda
 - Agendas sincronizadas (fixas, configuradas no `.env`), janela de 7 dias para trás até 60 dias para frente:

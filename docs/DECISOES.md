@@ -124,3 +124,8 @@ Formato: contexto → escolha → motivo.
 - **Movimento dos cards** (protótipo aprovado tinha; o app só "pulava") → **View Transitions do navegador via `hx-swap="... transition:true"`**, com `view-transition-name` por card → o navegador anima cada card da posição antiga até a nova, inclusive entre colunas, sem calcular posições em JS. Na troca de tema os nomes são desligados (senão os cards ficariam fora do efeito de círculo).
 - **Contadores** → **animam do valor antigo ao novo** (JS anota antes da troca e anima depois).
 - **Animação do circuito parada** → a animação se chamava `pulse`, mesmo nome de uma animação embutida do Tailwind, que substituiu a nossa → renomeada para `circuito-pulso`. Lição: nomes de `@keyframes` próprios com prefixo do projeto.
+
+## Etapa 4: Google Agenda (2026-10-30)
+
+- **Frequência do sync** (especificação dizia 15 min; o dono queria menos atraso) → **Agenda a cada 1 min com sync incremental (`syncToken`) + ao abrir/voltar para o app + botão; Classroom a cada 5 min** → praticamente tempo real com custo desprezível. Aviso em tempo real do Google (webhook) exigiria endereço público com HTTPS; o app roda local.
+- **Custo** → **projeto do Google Cloud sem conta de faturamento** → sem cartão o Google não tem como cobrar; uso estimado é ~0,3% (Agenda) e ~0,1% (Classroom) dos limites gratuitos diários. Estouro de cota vira erro 429, tratado com espera crescente (backoff exponencial).
