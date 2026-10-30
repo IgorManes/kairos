@@ -1,0 +1,1528 @@
+<!doctype html>
+<html lang="pt-br" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kairos · Protótipo visual</title>
+<!--
+  Protótipo visual do Kairos (etapa 2).
+  Abra direto no navegador. Nada aqui é usado pelo app ainda:
+  depois de aprovado, os tokens de cor e os componentes viram a
+  configuração do Tailwind e os templates do Django. O JS daqui só
+  simula o comportamento; no app, a maior parte vira HTMX.
+
+  Atalhos no endereço: #claro  #celular  #componentes  #paleta
+-->
+<style>
+/* ===== Fonte (arquivo local, funciona offline) ===== */
+@font-face {
+  font-family: "Inter";
+  src: url("../static/fonts/InterVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+/* ===== Tokens: modo escuro (padrão) ===== */
+:root { --proto-h: 61px; }
+:root, [data-theme="dark"] {
+  --bg: #07080f;
+  --bg-sunken: #04050a;
+  --surface: rgb(19 21 35 / .72);
+  --surface-solid: #11131f;
+  --surface-2: rgb(255 255 255 / .05);
+  --surface-hover: rgb(255 255 255 / .075);
+  --border: rgb(255 255 255 / .08);
+  --border-strong: rgb(255 255 255 / .15);
+  --text: #eef0ff;
+  --text-2: #a9afcc;
+  --text-3: #6f7595;
+  --grid: rgb(255 255 255 / .035);
+
+  /* Marca: gradiente azul → violeta → rosa */
+  --g1: #3b82f6;
+  --g2: #8b5cf6;
+  --g3: #ec4899;
+  --grad: linear-gradient(135deg, var(--g1), var(--g2) 55%, var(--g3));
+
+  --c-trabalho: #4f9dff;
+  --c-faculdade: #b16cff;
+  --c-pessoal: #2ee6a6;
+  --c-reuniao: #ff5cc8;
+
+  --danger: #ff4d6d;
+  --warn: #ffb020;
+  --wait: #8f9bbd;
+
+  --tint: 16%;
+  --glow-a: 55%;   /* força do brilho */
+  --amb-a: 24%;    /* força dos brilhos de fundo */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / .4);
+  --shadow-md: 0 18px 44px -18px rgb(0 0 0 / .85);
+  color-scheme: dark;
+}
+
+/* ===== Tokens: modo claro ===== */
+[data-theme="light"] {
+  --bg: #f3f4fb;
+  --bg-sunken: #e8eaf5;
+  --surface: rgb(255 255 255 / .82);
+  --surface-solid: #ffffff;
+  --surface-2: rgb(20 24 60 / .045);
+  --surface-hover: rgb(20 24 60 / .07);
+  --border: rgb(20 24 60 / .09);
+  --border-strong: rgb(20 24 60 / .17);
+  --text: #12142b;
+  --text-2: #4d5373;
+  --text-3: #858aa6;
+  --grid: rgb(20 24 60 / .05);
+
+  --g1: #2563eb;
+  --g2: #7c3aed;
+  --g3: #db2777;
+
+  --c-trabalho: #2563eb;
+  --c-faculdade: #8b3ff0;
+  --c-pessoal: #059f6e;
+  --c-reuniao: #d6339f;
+
+  --danger: #e11d48;
+  --warn: #d97706;
+  --wait: #64748b;
+
+  --tint: 10%;
+  --glow-a: 22%;
+  --amb-a: 13%;
+  --shadow-sm: 0 1px 2px rgb(16 24 40 / .06);
+  --shadow-md: 0 16px 40px -18px rgb(30 30 80 / .28);
+  color-scheme: light;
+}
+
+/* ===== Base ===== */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--bg-sunken);
+  color: var(--text);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: inherit; }
+.num { font-variant-numeric: tabular-nums; }
+.icon { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none;
+        stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.icon-sm { width: 14px; height: 14px; }
+:focus-visible { outline: 2px solid color-mix(in srgb, var(--g2) 80%, transparent);
+                 outline-offset: 2px; border-radius: 6px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.grad-text { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Categoria → cor (bolinhas, faixas, filtros) */
+[data-cat="trabalho"]  { --c: var(--c-trabalho); }
+[data-cat="faculdade"] { --c: var(--c-faculdade); }
+[data-cat="pessoal"]   { --c: var(--c-pessoal); }
+[data-cat="reuniao"]   { --c: var(--c-reuniao); }
+
+/* Troca de tema com círculo que se expande */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+
+/* ===== Barra do protótipo (fora do app) ===== */
+.proto-bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px);
+}
+.proto-bar strong { font-weight: 600; margin-right: auto; }
+.proto-bar small { color: var(--text-3); font-weight: 400; margin-left: 6px; }
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px;
+       background: var(--surface-2); border: 1px solid var(--border); }
+.seg button { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent;
+              padding: 5px 12px; border-radius: 7px; font-size: 13px; color: var(--text-2);
+              transition: background .15s, color .15s; }
+.seg button[aria-pressed="true"] { background: var(--surface-solid); color: var(--text); box-shadow: var(--shadow-sm); }
+.seg button:disabled { cursor: not-allowed; opacity: .55; }
+
+.view { display: none; }
+.view.is-active { display: block; }
+#view-componentes, #view-paleta { background: var(--bg); }
+
+/* ===== Botões e chips ===== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 14px;
+  border-radius: 10px; border: 1px solid transparent; font-size: 14px; font-weight: 500; text-decoration: none;
+  transition: background .15s, border-color .15s, transform .1s, box-shadow .2s, filter .15s;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary {
+  background: var(--grad); color: #fff; border-color: rgb(255 255 255 / .12);
+  box-shadow: 0 8px 22px -8px color-mix(in srgb, var(--g2) var(--glow-a), transparent), inset 0 1px 0 rgb(255 255 255 / .22);
+}
+.btn-primary:hover { filter: brightness(1.12);
+  box-shadow: 0 10px 30px -8px color-mix(in srgb, var(--g2) calc(var(--glow-a) + 15%), transparent), inset 0 1px 0 rgb(255 255 255 / .25); }
+.btn-secondary { background: var(--surface-2); border-color: var(--border-strong); }
+.btn-secondary:hover { background: var(--surface-hover); }
+.btn-ghost { background: transparent; color: var(--text-2); }
+.btn-ghost:hover { background: var(--surface-hover); color: var(--text); }
+.btn-danger { background: color-mix(in srgb, var(--danger) var(--tint), transparent); color: var(--danger); }
+.btn-danger:hover { background: color-mix(in srgb, var(--danger) calc(var(--tint) + 8%), transparent); }
+.btn-sm { height: 28px; padding: 0 10px; font-size: 13px; border-radius: 8px; gap: 6px; }
+.btn-icon { width: 36px; padding: 0; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px;
+  border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap;
+  background: var(--surface-2); color: var(--text-2);
+}
+.chip-late { background: color-mix(in srgb, var(--danger) var(--tint), transparent); color: var(--danger); }
+.chip-wait { background: transparent; color: var(--wait);
+             border: 1px dashed color-mix(in srgb, var(--wait) 70%, transparent); }
+.chip-progress { color: color-mix(in srgb, var(--g1) 75%, var(--text));
+                 background: color-mix(in srgb, var(--g1) var(--tint), transparent); }
+.chip-progress i { width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+                   box-shadow: 0 0 8px currentColor; animation: blink 1.6s ease-in-out infinite; }
+.chip-google { background: transparent; color: var(--text-3); padding: 0 4px; text-decoration: none; }
+.chip-google:hover { color: var(--text); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none;
+       box-shadow: 0 0 8px color-mix(in srgb, var(--c) var(--glow-a), transparent); }
+.cat { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); }
+.avatar {
+  display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; flex: none;
+  font-size: 10px; font-weight: 650; color: color-mix(in srgb, var(--p) 72%, var(--text));
+  background: color-mix(in srgb, var(--p) 20%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--p) 35%, transparent);
+}
+.person { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); }
+kbd {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px;
+  font: 500 11px/1 "Inter", sans-serif; color: var(--text-3);
+  border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 5px;
+}
+@keyframes blink { 50% { opacity: .35; } }
+
+/* ===== Card de tarefa ===== */
+.task {
+  position: relative; display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 10px 12px 16px; border-radius: 12px;
+  background: var(--surface); backdrop-filter: blur(10px);
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s ease, border-color .2s, opacity .3s, background .25s;
+}
+.task::before { /* faixa da categoria */
+  content: ""; position: absolute; left: -1px; top: 10px; bottom: 10px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--c);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--c) var(--glow-a), transparent);
+}
+.task:hover {
+  border-color: color-mix(in srgb, var(--c) 45%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 16%, transparent),
+              0 14px 34px -16px color-mix(in srgb, var(--c) var(--glow-a), transparent);
+}
+.task-body { flex: 1; min-width: 0; }
+.task-title {
+  display: block; width: 100%; padding: 0; border: 0; background: none; text-align: left;
+  font-weight: 500; line-height: 1.35; overflow-wrap: anywhere; transition: color .3s;
+}
+.task-title s { text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 55% / 0 1.5px no-repeat;
+                transition: background-size .35s ease; }
+.task-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
+             margin-top: 6px; font-size: 13px; color: var(--text-3); }
+.task-meta .time { display: inline-flex; align-items: center; gap: 5px; }
+.task-side { display: flex; align-items: center; gap: 2px; flex: none; }
+.prio { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600;
+        white-space: nowrap; padding: 0 4px; }
+.prio-alta { color: var(--warn); }
+.prio-urgente { color: var(--danger); text-shadow: 0 0 12px color-mix(in srgb, var(--danger) var(--glow-a), transparent); }
+.prio-urgente .icon { fill: currentColor; }
+.task-menu {
+  display: grid; place-items: center; width: 28px; height: 28px; margin-top: -3px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--text-3); opacity: 0; transition: opacity .15s, background .15s, color .15s;
+}
+.task:hover .task-menu, .task:focus-within .task-menu, .task-menu[aria-expanded="true"] { opacity: 1; }
+.task-menu:hover, .task-menu[aria-expanded="true"] { background: var(--surface-hover); color: var(--text); }
+@media (hover: none) { .task-menu { opacity: 1; } }
+
+/* Atrasada: salta aos olhos sem poluir */
+.task.is-late {
+  border-color: color-mix(in srgb, var(--danger) 38%, var(--border));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--danger) 9%, transparent), transparent 65%), var(--surface);
+}
+
+/* Círculo de concluir */
+.check {
+  flex: none; display: grid; place-items: center; width: 20px; height: 20px; margin-top: 1px;
+  border-radius: 50%; border: 1.75px solid color-mix(in srgb, var(--c) 80%, var(--text-3));
+  background: transparent; padding: 0; transition: background .2s, border-color .2s, transform .15s, box-shadow .2s;
+}
+.check .icon { width: 12px; height: 12px; stroke-width: 3; stroke: #fff;
+               stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset .3s ease .05s; }
+.check:hover { background: color-mix(in srgb, var(--c) 20%, transparent); transform: scale(1.1);
+               box-shadow: 0 0 12px color-mix(in srgb, var(--c) var(--glow-a), transparent); }
+.task.is-done .check { background: var(--c); border-color: var(--c); animation: pop .35s ease;
+                       box-shadow: 0 0 14px color-mix(in srgb, var(--c) var(--glow-a), transparent); }
+.task.is-done .check .icon { stroke-dashoffset: 0; }
+.task.is-done { opacity: .55; box-shadow: none; }
+.task.is-done .task-title { color: var(--text-3); }
+.task.is-done .task-title s { background-size: 100% 1.5px; }
+.task.is-done.is-late { background: var(--surface); border-color: var(--border); }
+@keyframes pop { 50% { transform: scale(1.22); } }
+.spark { position: fixed; z-index: 60; width: 5px; height: 5px; border-radius: 50%; pointer-events: none; }
+
+/* ===== Menu de ações do card ===== */
+.menu {
+  position: fixed; z-index: 40; min-width: 220px; padding: 6px; border-radius: 12px;
+  background: var(--surface-solid); border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-md); animation: menu-in .14s ease-out;
+}
+.menu button {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px;
+  background: transparent; font-size: 13.5px; text-align: left; color: var(--text-2);
+}
+.menu button:hover, .menu button:focus-visible { background: var(--surface-hover); color: var(--text); outline: 0; }
+.menu button small { display: block; font-size: 11.5px; color: var(--text-3); }
+.menu .danger { color: var(--danger); }
+.menu .danger:hover, .menu .danger:focus-visible { background: color-mix(in srgb, var(--danger) var(--tint), transparent); color: var(--danger); }
+.menu hr { border: 0; border-top: 1px solid var(--border); margin: 6px 4px; }
+@keyframes menu-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
+
+/* ===== Estado vazio ===== */
+.empty {
+  display: grid; justify-items: center; gap: 4px; padding: 26px 16px; text-align: center;
+  border: 1px dashed var(--border-strong); border-radius: 14px; color: var(--text-2);
+  background: color-mix(in srgb, var(--surface) 50%, transparent);
+}
+.empty .big { font-size: 26px; line-height: 1; margin-bottom: 6px; }
+.empty strong { color: var(--text); font-weight: 600; }
+.empty span { font-size: 13px; color: var(--text-3); }
+
+/* ===== Toast ===== */
+.toast-area { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+              display: grid; gap: 8px; z-index: 50; width: max-content; max-width: calc(100vw - 32px); }
+.toast {
+  position: relative; overflow: hidden; display: flex; align-items: center; gap: 12px;
+  padding: 10px 10px 10px 16px; border-radius: 12px; font-size: 14px;
+  background: var(--surface-solid); color: var(--text); border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-md), 0 0 30px -12px color-mix(in srgb, var(--g2) var(--glow-a), transparent);
+  animation: toast-in .25s ease;
+}
+.toast::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--grad); }
+.toast .bar { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--grad); opacity: .7;
+              animation: shrink 5s linear forwards; }
+.toast button { display: inline-flex; align-items: center; gap: 8px; border: 0; background: var(--surface-2);
+                color: var(--text); font-weight: 600; font-size: 13px; padding: 4px 6px 4px 10px; border-radius: 7px; }
+.toast button:hover { background: var(--surface-hover); }
+.toast.is-leaving { animation: toast-out .2s ease forwards; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+@keyframes toast-out { to { opacity: 0; transform: translateY(6px); } }
+@keyframes shrink { from { width: 100%; } to { width: 0; } }
+
+/* ===== Painel de edição (lateral; no celular vira folha de baixo) ===== */
+.drawer {
+  width: min(460px, 100vw); max-width: 100vw; height: 100dvh; max-height: 100dvh;
+  margin: 0 0 0 auto; padding: 0; border: 0; border-left: 1px solid var(--border-strong);
+  background: var(--surface-solid); color: var(--text);
+  box-shadow: -30px 0 60px -24px rgb(0 0 0 / .6);
+}
+.drawer[open] { animation: drawer-in .32s cubic-bezier(.2, .8, .2, 1); }
+.drawer.is-sheet { margin: auto auto 0; width: 390px; height: 88vh; border: 1px solid var(--border-strong);
+                   border-radius: 22px 22px 0 0; }
+.drawer.is-sheet[open] { animation: sheet-in .32s cubic-bezier(.2, .8, .2, 1); }
+.drawer::backdrop { background: rgb(4 5 14 / .55); backdrop-filter: blur(4px); }
+@keyframes drawer-in { from { transform: translateX(40px); opacity: 0; } }
+@keyframes sheet-in { from { transform: translateY(40px); opacity: 0; } }
+.drawer form { display: flex; flex-direction: column; height: 100%; }
+.drawer header { position: relative; display: flex; align-items: center; justify-content: space-between;
+                 padding: 16px 16px 16px 22px; }
+.drawer header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--grad); opacity: .5; }
+.drawer h2 { margin: 0; font-size: 17px; font-weight: 650; }
+.drawer-body { flex: 1; overflow: auto; padding: 20px 22px; display: grid; gap: 16px; align-content: start; }
+.drawer footer { display: flex; gap: 8px; padding: 14px 22px; border-top: 1px solid var(--border); }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field > span { font-size: 12.5px; font-weight: 500; color: var(--text-2); }
+.field > span small { color: var(--text-3); font-weight: 400; margin-left: 4px; }
+.field input, .field select, .field textarea {
+  width: 100%; height: 38px; padding: 0 12px; border-radius: 10px; outline: 0;
+  border: 1px solid var(--border-strong); background: var(--surface-2);
+  transition: border-color .15s, box-shadow .15s;
+}
+.field textarea { height: auto; padding: 10px 12px; resize: vertical; }
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: color-mix(in srgb, var(--g2) 70%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--g2) 22%, transparent);
+}
+.field input[readonly], .field select:disabled { opacity: .7; cursor: not-allowed; border-style: dashed; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field .seg { width: 100%; }
+.field .seg button { flex: 1; justify-content: center; }
+.google-box {
+  display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px; font-size: 13px; color: var(--text-2);
+  border: 1px solid color-mix(in srgb, var(--g1) 32%, var(--border));
+  background: color-mix(in srgb, var(--g1) 8%, transparent);
+}
+.google-box b { color: var(--text); }
+.google-box .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* ===== Moldura do app (a largura simula desktop/celular) ===== */
+.frame { container: app / inline-size; margin: 0 auto; }
+.frame.is-phone {
+  width: 390px; max-width: calc(100vw - 32px); height: 800px; max-height: calc(100vh - 100px);
+  margin: 24px auto; overflow: auto; border-radius: 28px;
+  border: 1px solid var(--border-strong); box-shadow: var(--shadow-md);
+}
+.frame.is-phone .topbar-m { top: 0; }
+
+/* ===== App: celular primeiro ===== */
+.app {
+  position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: 100%;
+  background:
+    radial-gradient(800px 480px at 88% -8%, color-mix(in srgb, var(--g2) var(--amb-a), transparent), transparent 65%),
+    radial-gradient(640px 420px at 12% -12%, color-mix(in srgb, var(--g1) var(--amb-a), transparent), transparent 65%),
+    radial-gradient(720px 520px at 60% 118%, color-mix(in srgb, var(--g3) calc(var(--amb-a) * .6), transparent), transparent 65%),
+    var(--bg);
+}
+.app::before { /* grade sutil */
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 45% at 60% 0%, #000 15%, transparent 75%);
+          mask-image: radial-gradient(ellipse 85% 45% at 60% 0%, #000 15%, transparent 75%);
+}
+.frame:not(.is-phone) .app { min-height: calc(100vh - var(--proto-h)); }
+.sidebar { display: none; }
+
+.topbar-m {
+  position: sticky; top: var(--proto-h); z-index: 5; display: flex; align-items: center; gap: 6px;
+  padding: 10px 12px 10px 16px; background: color-mix(in srgb, var(--bg) 75%, transparent);
+  backdrop-filter: blur(14px); border-bottom: 1px solid var(--border);
+}
+.bottomnav {
+  position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr);
+  padding: 6px 8px 8px; background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(14px); border-top: 1px solid var(--border); margin-top: auto;
+}
+.bottomnav a { position: relative; display: grid; justify-items: center; gap: 2px; padding: 6px 0; font-size: 11px;
+               text-decoration: none; color: var(--text-3); border-radius: 10px; }
+.bottomnav a[aria-current] { color: var(--text); }
+.bottomnav a[aria-current]::before { content: ""; position: absolute; top: -7px; width: 24px; height: 2px;
+                                     border-radius: 2px; background: var(--grad); box-shadow: 0 0 10px var(--g2); }
+
+.logo { display: inline-flex; align-items: center; gap: 9px; font-weight: 650; font-size: 16px;
+        letter-spacing: -.01em; text-decoration: none; }
+.logo svg { width: 24px; height: 24px; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--g2) var(--glow-a), transparent)); }
+
+.main { flex: 1; padding: 16px 16px 28px; min-width: 0; }
+
+/* Hero com circuito */
+.hero {
+  position: relative; overflow: hidden; isolation: isolate; padding: 20px; margin-bottom: 16px;
+  border-radius: 20px; border: 1px solid var(--border);
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--g1) 14%, transparent),
+                    color-mix(in srgb, var(--g2) 12%, transparent) 50%,
+                    color-mix(in srgb, var(--g3) 10%, transparent)),
+    var(--surface);
+  backdrop-filter: blur(14px);
+}
+.hero::before { /* borda em gradiente */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: var(--grad); opacity: .45;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.hero .eyebrow { font-size: 11.5px; letter-spacing: .09em; text-transform: uppercase; font-weight: 650; }
+.hero h1 { margin: 6px 0 4px; font-size: 24px; line-height: 1.15; font-weight: 650; letter-spacing: -.02em; }
+.hero p { margin: 0; color: var(--text-2); max-width: 44ch; font-size: 14px; }
+.hero p b { color: var(--text); font-weight: 600; }
+.hero p b.hot { color: var(--danger); }
+.circuit {
+  position: absolute; z-index: -1; right: -120px; top: 50%; width: 430px; transform: translateY(-50%);
+  opacity: .35; pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 40%); mask-image: linear-gradient(90deg, transparent, #000 40%);
+}
+.circuit .trace { fill: none; stroke: url(#g-circ); stroke-width: 1.3; opacity: .5; }
+.circuit .pulse { fill: none; stroke: url(#g-circ); stroke-width: 2.2; stroke-linecap: round;
+                  stroke-dasharray: 14 420; animation: pulse 3.8s linear infinite; }
+.circuit .node { fill: url(#g-circ); }
+.circuit .chip { fill: var(--surface-solid); stroke: url(#g-circ); stroke-width: 1.6; }
+@keyframes pulse { to { stroke-dashoffset: -434; } }
+
+/* Criação rápida */
+.quick {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; margin-bottom: 16px;
+  border-radius: 14px; background: var(--surface); backdrop-filter: blur(10px);
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .2s;
+}
+.quick:focus-within {
+  border-color: color-mix(in srgb, var(--g2) 65%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--g2) 16%, transparent),
+              0 12px 32px -14px color-mix(in srgb, var(--g2) var(--glow-a), transparent);
+}
+.quick > .icon { color: var(--text-3); }
+.quick input { flex: 1 1 140px; min-width: 0; height: 36px; border: 0; outline: 0; background: transparent; }
+.quick input::placeholder { color: var(--text-3); }
+.quick .cats { display: flex; gap: 2px; }
+.quick .cats button {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 9px;
+  border: 1px solid transparent; background: transparent; border-radius: 8px; font-size: 12.5px; color: var(--text-3);
+}
+.quick .cats button[aria-pressed="true"] {
+  color: var(--text); background: color-mix(in srgb, var(--c) var(--tint), transparent);
+  border-color: color-mix(in srgb, var(--c) 40%, transparent);
+}
+.quick .cats .label { display: none; }
+.quick kbd { margin-right: 6px; }
+
+/* Contadores por categoria (clique filtra) */
+.counters { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 22px; }
+.counter {
+  position: relative; overflow: hidden; display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px;
+  text-align: left; background: var(--surface); backdrop-filter: blur(10px); border: 1px solid var(--border);
+  transition: border-color .2s, transform .15s, box-shadow .2s;
+}
+.counter::after { content: ""; position: absolute; right: -34px; top: -34px; width: 100px; height: 100px; border-radius: 50%;
+                  background: radial-gradient(circle, color-mix(in srgb, var(--c) 35%, transparent), transparent 70%);
+                  opacity: .55; transition: opacity .2s; pointer-events: none; }
+.counter:hover { border-color: color-mix(in srgb, var(--c) 45%, var(--border)); transform: translateY(-1px); }
+.counter:hover::after, .counter[aria-pressed="true"]::after { opacity: 1; }
+.counter[aria-pressed="true"] { border-color: var(--c);
+  box-shadow: 0 0 0 1px var(--c), 0 10px 30px -12px color-mix(in srgb, var(--c) var(--glow-a), transparent); }
+.counter .cat { font-size: 13px; }
+.counter b { font-size: 26px; font-weight: 650; letter-spacing: -.02em; line-height: 1.2; }
+.counter small { font-size: 12px; color: var(--text-3); }
+.counter small.hot { color: var(--danger); }
+.filter-info { display: flex; align-items: center; gap: 8px; margin: -8px 0 18px; font-size: 13px; color: var(--text-2); }
+
+/* Seções */
+.content { display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.stack { display: grid; gap: 28px; min-width: 0; }
+.section-head { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 12.5px;
+                font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+.section-head .count { font-weight: 500; }
+.list { display: grid; gap: 8px; }
+.panel-late { padding: 14px; border-radius: 16px;
+              background: color-mix(in srgb, var(--danger) 5%, transparent);
+              border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+              box-shadow: 0 0 40px -18px color-mix(in srgb, var(--danger) var(--glow-a), transparent); }
+.panel-late .section-head { color: var(--danger); }
+.live-dot { display: none; width: 7px; height: 7px; border-radius: 50%; background: var(--danger);
+            box-shadow: 0 0 10px var(--danger); animation: blink 1.6s ease-in-out infinite; }
+.panel-late .live-dot { display: inline-block; }
+.day-label { margin: 14px 0 8px; font-size: 13px; color: var(--text-2); font-weight: 500; }
+.day-label:first-child { margin-top: 0; }
+.day-label span { color: var(--text-3); font-weight: 400; }
+
+/* Linha do tempo das reuniões */
+.timeline-card { padding: 16px 14px 14px; border-radius: 16px; background: var(--surface);
+                 backdrop-filter: blur(10px); border: 1px solid var(--border); transition: box-shadow .3s; }
+.timeline-card.is-flash { box-shadow: 0 0 0 1px var(--c-reuniao), 0 0 40px -10px var(--c-reuniao); }
+.timeline { --h: 58px; position: relative; height: calc(var(--h) * 10); margin-left: 44px; }
+.timeline .hour { position: absolute; left: -44px; right: 0; height: 0; border-top: 1px solid var(--border);
+                  font-size: 11px; color: var(--text-3); }
+.timeline .hour span { position: absolute; top: -8px; left: 0; padding-right: 6px; background: var(--surface-solid); }
+[data-theme="dark"] .timeline .hour span { background: #12131f; }
+.timeline .now { position: absolute; left: -6px; right: 0; height: 0; z-index: 2;
+                 border-top: 2px solid var(--danger); box-shadow: 0 0 10px var(--danger); }
+.timeline .now::before { content: ""; position: absolute; left: -4px; top: -5px; width: 8px; height: 8px;
+                         border-radius: 50%; background: var(--danger); box-shadow: 0 0 0 0 var(--danger);
+                         animation: ring 2s ease-out infinite; }
+.timeline .now span { position: absolute; right: 0; top: -9px; padding: 0 5px; border-radius: 4px;
+                      font-size: 10px; font-weight: 600; color: #fff; background: var(--danger); }
+@keyframes ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 70%, transparent); }
+                  100% { box-shadow: 0 0 0 10px transparent; } }
+.event {
+  position: absolute; left: 8px; right: 0; padding: 6px 8px 6px 10px; border-radius: 10px; overflow: hidden;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; font-size: 13px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 24%, transparent), color-mix(in srgb, var(--c) 7%, transparent));
+  border-left: 2px solid var(--c);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 22%, transparent),
+              0 0 20px -8px color-mix(in srgb, var(--c) var(--glow-a), transparent);
+  transition: transform .15s;
+}
+.event:hover { transform: translateX(2px); }
+.event > div { min-width: 0; }
+.event b { display: block; font-weight: 600; line-height: 1.25; }
+.event small { color: var(--text-2); }
+.event.is-past { opacity: .45; box-shadow: none; }
+.event.is-short { align-items: center; padding-top: 0; padding-bottom: 0; }
+.event.is-short b { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.event.is-short small { display: none; }
+.event .btn { flex: none; height: 24px; padding: 0 8px; font-size: 12px; }
+
+/* ===== Layouts maiores ===== */
+@container app (min-width: 560px) {
+  .counters { grid-template-columns: repeat(4, 1fr); }
+  .quick .cats .label { display: inline; }
+}
+@container app (min-width: 640px) {
+  .hero { padding: 26px 28px; min-height: 148px; }
+  .hero h1 { font-size: 30px; }
+  .circuit { right: -10px; opacity: 1; }
+}
+@container app (min-width: 920px) {
+  .app { display: grid; grid-template-columns: 236px minmax(0, 1fr); }
+  .topbar-m, .bottomnav { display: none; }
+  .sidebar {
+    display: flex; flex-direction: column; gap: 4px; position: sticky; top: var(--proto-h); align-self: start;
+    height: calc(100vh - var(--proto-h)); padding: 20px 14px;
+    border-right: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 55%, transparent);
+    backdrop-filter: blur(14px);
+  }
+  .sidebar .logo { padding: 4px 10px 16px; }
+  .sidebar .btn-primary { margin: 0 0 14px; }
+  .nav-item {
+    position: relative; display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 9px;
+    color: var(--text-2); text-decoration: none; font-size: 14px; font-weight: 500;
+    border: 0; background: transparent; width: 100%; text-align: left;
+    transition: background .15s, color .15s;
+  }
+  .nav-item:hover { background: var(--surface-hover); color: var(--text); }
+  .nav-item[aria-current] { color: var(--text);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--g2) 22%, transparent), color-mix(in srgb, var(--g2) 4%, transparent)); }
+  .nav-item[aria-current]::before { content: ""; position: absolute; left: -14px; top: 8px; bottom: 8px; width: 3px;
+    border-radius: 0 3px 3px 0; background: var(--grad); box-shadow: 0 0 12px var(--g2); }
+  .nav-item .badge { margin-left: auto; min-width: 20px; height: 20px; display: grid; place-items: center; padding: 0 6px;
+    border-radius: 999px; font-size: 11.5px; font-weight: 650; color: #fff; background: var(--danger);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--danger) var(--glow-a), transparent); }
+  .nav-item .badge:empty { display: none; }
+  .sidebar .spacer { flex: 1; }
+  .user { display: flex; align-items: center; gap: 10px; padding: 12px 10px 0; margin-top: 6px;
+          border-top: 1px solid var(--border); font-size: 13px; color: var(--text-2); }
+  .user small { margin-left: auto; font-size: 12px; color: var(--text-3); display: inline-flex; align-items: center; gap: 6px; }
+  .user small i { width: 6px; height: 6px; border-radius: 50%; background: var(--c-pessoal); box-shadow: 0 0 8px var(--c-pessoal); }
+  .main { padding: 32px 44px 48px; max-width: 1200px; }
+  .content { grid-template-columns: minmax(0, 1fr) 330px; gap: 32px; }
+  .content aside { position: sticky; top: calc(var(--proto-h) + 24px); }
+}
+
+/* ===== Páginas de referência (componentes / paleta) ===== */
+.ref { max-width: 1040px; margin: 0 auto; padding: 32px 20px 80px; min-height: calc(100vh - var(--proto-h)); }
+.ref h2 { font-size: 20px; font-weight: 650; letter-spacing: -.01em; margin: 40px 0 6px; }
+.ref h2:first-child { margin-top: 0; }
+.ref .lead { color: var(--text-2); margin: 0 0 16px; font-size: 14px; max-width: 72ch; }
+.ref .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ref .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 12px; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.swatch { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: var(--surface-solid); }
+.swatch i { display: block; height: 56px; background: var(--s); border-bottom: 1px solid var(--border); }
+.swatch div { padding: 8px 10px; font-size: 12px; }
+.swatch b { display: block; font-weight: 600; font-size: 13px; }
+.swatch code { color: var(--text-3); font-size: 11.5px; }
+.type-row { display: grid; grid-template-columns: 130px 1fr; gap: 16px; align-items: baseline;
+            padding: 12px 0; border-bottom: 1px solid var(--border); }
+.type-row small { color: var(--text-3); font-size: 12px; }
+.note { padding: 12px 14px; border-radius: 12px; background: var(--surface-solid); border: 1px solid var(--border);
+        font-size: 14px; color: var(--text-2); }
+.note b { color: var(--text); }
+
+@media (max-width: 760px) {
+  :root { --proto-h: 0px; }
+  .proto-bar { position: static; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- Ícones (estilo Lucide; usados com <use href="#i-...">) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11z"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r=".6"/><circle cx="4.5" cy="12" r=".6"/><circle cx="4.5" cy="18" r=".6"/></symbol>
+  <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18M15 3v18"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c2 .7 3.2 2.5 3.6 5.2"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10.5l6-3.5v10l-6-3.5"/></symbol>
+  <symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M6 3h12M6 21h12M7 3v3.5L12 12l5-5.5V3M7 21v-3.5L12 12l5 5.5V21"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+  <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></symbol>
+  <symbol id="i-report" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 17v-3M12 17v-6M16 17v-2"/></symbol>
+  <symbol id="i-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></symbol>
+  <symbol id="i-logo" viewBox="0 0 24 24">
+    <defs>
+      <linearGradient id="g-logo" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#3b82f6"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/>
+      </linearGradient>
+    </defs>
+    <circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="2"/>
+    <path d="M12 12V2.5A9.5 9.5 0 0 1 20.23 7.25Z" fill="url(#g-logo)"/>
+    <circle cx="12" cy="12" r="2" fill="currentColor"/>
+  </symbol>
+</svg>
+
+<!-- Barra do protótipo (não faz parte do app) -->
+<header class="proto-bar">
+  <strong>Kairos · protótipo visual <small>etapa 2, para aprovação</small></strong>
+  <div class="seg" role="group" aria-label="Seção">
+    <button data-view="hoje" aria-pressed="true">Tela Hoje</button>
+    <button data-view="componentes" aria-pressed="false">Componentes</button>
+    <button data-view="paleta" aria-pressed="false">Paleta e tipografia</button>
+  </div>
+  <div class="seg" role="group" aria-label="Largura" id="width-toggle">
+    <button data-width="desktop" aria-pressed="true">Desktop</button>
+    <button data-width="phone" aria-pressed="false">Celular</button>
+  </div>
+  <button class="btn btn-secondary btn-sm" data-action="theme">
+    <svg class="icon icon-sm"><use href="#i-sun"/></svg><span>Modo claro</span>
+  </button>
+</header>
+
+<!-- ============ TELA HOJE ============ -->
+<section class="view is-active" id="view-hoje">
+  <div class="frame" id="frame">
+    <div class="app">
+
+      <!-- Barra lateral (desktop) -->
+      <nav class="sidebar" aria-label="Principal">
+        <a class="logo" href="#"><svg><use href="#i-logo"/></svg>Kairos</a>
+        <button class="btn btn-primary" data-novo><svg class="icon icon-sm"><use href="#i-plus"/></svg>Nova tarefa</button>
+        <a class="nav-item" href="#" aria-current="page"><svg class="icon"><use href="#i-sun"/></svg>Hoje<span class="badge num nav-badge"></span></a>
+        <a class="nav-item" href="#"><svg class="icon"><use href="#i-list"/></svg>Tarefas</a>
+        <a class="nav-item" href="#"><svg class="icon"><use href="#i-board"/></svg>Quadro</a>
+        <a class="nav-item" href="#"><svg class="icon"><use href="#i-users"/></svg>Pessoas</a>
+        <a class="nav-item" href="#"><svg class="icon"><use href="#i-folder"/></svg>Projetos</a>
+        <a class="nav-item" href="#"><svg class="icon"><use href="#i-report"/></svg>Relatórios</a>
+        <div class="spacer"></div>
+        <a class="nav-item" href="#"><svg class="icon"><use href="#i-sliders"/></svg>Configurações</a>
+        <button class="nav-item" data-action="theme"><svg class="icon"><use href="#i-sun"/></svg><span>Modo claro</span></button>
+        <div class="user"><span class="avatar" style="--p: #a3e635">IG</span>Igor<small><i></i>sync há 3 min</small></div>
+      </nav>
+
+      <!-- Barra superior (celular) -->
+      <header class="topbar-m">
+        <a class="logo" href="#"><svg><use href="#i-logo"/></svg>Kairos</a>
+        <span style="flex:1"></span>
+        <button class="btn btn-ghost btn-icon" data-action="theme" aria-label="Alternar tema"><svg class="icon"><use href="#i-sun"/></svg></button>
+        <button class="btn btn-primary btn-icon" data-novo aria-label="Nova tarefa"><svg class="icon"><use href="#i-plus"/></svg></button>
+      </header>
+
+      <main class="main">
+        <section class="hero">
+          <div class="eyebrow grad-text" id="hero-data"></div>
+          <h1 id="hero-saudacao"></h1>
+          <p id="hero-resumo"></p>
+          <svg class="circuit" viewBox="0 0 430 140" aria-hidden="true">
+            <defs>
+              <linearGradient id="g-circ" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="430" y2="0">
+                <stop offset="0" stop-color="#ec4899"/><stop offset=".5" stop-color="#8b5cf6"/><stop offset="1" stop-color="#3b82f6"/>
+              </linearGradient>
+              <filter id="f-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="2.4" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <g id="trilhas"></g>
+            <g filter="url(#f-glow)">
+              <rect class="chip" x="180" y="46" width="64" height="48" rx="11"/>
+              <rect x="192" y="56" width="40" height="28" rx="5" fill="none" stroke="url(#g-circ)" stroke-width="1.4"/>
+              <circle cx="198" cy="62" r="1.6" class="node"/><circle cx="203" cy="62" r="1.6" class="node"/><circle cx="208" cy="62" r="1.6" class="node"/>
+            </g>
+          </svg>
+        </section>
+
+        <form class="quick" id="quick">
+          <svg class="icon"><use href="#i-plus"/></svg>
+          <label class="sr-only" for="quick-input">Nova tarefa para hoje</label>
+          <input id="quick-input" placeholder="Adicionar tarefa para hoje…" autocomplete="off" maxlength="200">
+          <div class="cats" role="group" aria-label="Categoria">
+            <button type="button" data-cat="trabalho" aria-pressed="true"><i class="dot"></i><span class="label">Trabalho</span></button>
+            <button type="button" data-cat="faculdade" aria-pressed="false"><i class="dot"></i><span class="label">Faculdade</span></button>
+            <button type="button" data-cat="pessoal" aria-pressed="false"><i class="dot"></i><span class="label">Pessoal</span></button>
+          </div>
+          <kbd title="Atalho: tecla N">N</kbd>
+        </form>
+
+        <div class="counters">
+          <button class="counter" data-cat="trabalho" aria-pressed="false"><span class="cat"><i class="dot"></i>Trabalho</span><b class="num">0</b><small></small></button>
+          <button class="counter" data-cat="faculdade" aria-pressed="false"><span class="cat"><i class="dot"></i>Faculdade</span><b class="num">0</b><small></small></button>
+          <button class="counter" data-cat="pessoal" aria-pressed="false"><span class="cat"><i class="dot"></i>Pessoal</span><b class="num">0</b><small></small></button>
+          <button class="counter" data-cat="reuniao" aria-pressed="false"><span class="cat"><i class="dot"></i>Reuniões</span><b class="num">0</b><small></small></button>
+        </div>
+        <div class="filter-info" id="filter-info" hidden>
+          Mostrando só <b id="filter-nome"></b>
+          <button class="btn btn-ghost btn-sm" id="limpar-filtro"><svg class="icon icon-sm"><use href="#i-x"/></svg>Limpar</button>
+        </div>
+
+        <div class="content">
+          <div class="stack">
+            <section id="sec-late">
+              <h2 class="section-head"><i class="live-dot"></i>Atrasadas <span class="count num" id="count-late"></span></h2>
+              <div class="list" id="list-late"></div>
+            </section>
+            <section>
+              <h2 class="section-head">Para hoje <span class="count num" id="count-today"></span></h2>
+              <div class="list" id="list-today"></div>
+            </section>
+            <section>
+              <h2 class="section-head">Próximos 7 dias</h2>
+              <div id="list-week"></div>
+            </section>
+          </div>
+
+          <aside>
+            <h2 class="section-head"><svg class="icon icon-sm"><use href="#i-calendar"/></svg>Reuniões de hoje</h2>
+            <div class="timeline-card" id="timeline-card">
+              <div class="timeline" id="timeline"></div>
+            </div>
+          </aside>
+        </div>
+      </main>
+
+      <!-- Navegação inferior (celular) -->
+      <nav class="bottomnav" aria-label="Principal">
+        <a href="#" aria-current="page"><svg class="icon"><use href="#i-sun"/></svg>Hoje</a>
+        <a href="#"><svg class="icon"><use href="#i-list"/></svg>Tarefas</a>
+        <a href="#"><svg class="icon"><use href="#i-board"/></svg>Quadro</a>
+        <a href="#"><svg class="icon"><use href="#i-more"/></svg>Mais</a>
+      </nav>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMPONENTES ============ -->
+<section class="view" id="view-componentes">
+  <div class="ref">
+    <h2>Card de tarefa</h2>
+    <p class="lead">A faixa à esquerda e a bolinha usam a cor da categoria e brilham no hover. Prioridade só aparece quando é <b>alta</b> (âmbar) ou <b>urgente</b> (vermelho); média e baixa ficam sem marca, para o destaque não virar ruído. Na tela Hoje, o botão <b>⋯</b> abre Editar / mudar status / Excluir.</p>
+    <div class="grid-cards" id="cards-demo"></div>
+
+    <h2>Botões</h2>
+    <div class="row">
+      <button class="btn btn-primary"><svg class="icon icon-sm"><use href="#i-plus"/></svg>Nova tarefa</button>
+      <button class="btn btn-secondary">Cancelar</button>
+      <button class="btn btn-ghost">Mais opções</button>
+      <button class="btn btn-danger"><svg class="icon icon-sm"><use href="#i-trash"/></svg>Excluir</button>
+      <button class="btn btn-secondary btn-sm"><svg class="icon icon-sm"><use href="#i-video"/></svg>Entrar</button>
+    </div>
+
+    <h2>Etiquetas</h2>
+    <div class="row">
+      <span class="cat" data-cat="trabalho"><i class="dot"></i>Trabalho</span>
+      <span class="cat" data-cat="faculdade"><i class="dot"></i>Faculdade</span>
+      <span class="cat" data-cat="pessoal"><i class="dot"></i>Pessoal</span>
+      <span class="cat" data-cat="reuniao"><i class="dot"></i>Reunião</span>
+      <span class="prio prio-alta"><svg class="icon icon-sm"><use href="#i-flag"/></svg>Alta</span>
+      <span class="prio prio-urgente"><svg class="icon icon-sm"><use href="#i-flag"/></svg>Urgente</span>
+      <span class="chip chip-late"><svg class="icon icon-sm"><use href="#i-clock"/></svg>Atrasada · 2 dias</span>
+      <span class="chip chip-progress"><i></i>Em andamento</span>
+      <span class="chip chip-wait"><svg class="icon icon-sm"><use href="#i-hourglass"/></svg>Aguardando</span>
+      <a class="chip chip-google" href="#"><svg class="icon icon-sm"><use href="#i-external"/></svg>Classroom</a>
+      <span class="person"><span class="avatar" style="--p:#f59e0b">AN</span>Ana</span>
+      <kbd>N</kbd>
+    </div>
+
+    <h2>Estados vazios</h2>
+    <p class="lead">Nunca uma tela em branco.</p>
+    <div class="grid-cards">
+      <div class="empty"><div class="big">🎉</div><strong>Nada atrasado</strong><span>Tudo em dia. Aproveite o momento.</span></div>
+      <div class="empty"><div class="big">☕</div><strong>Nenhuma reunião hoje</strong><span>Dia livre para trabalho focado.</span></div>
+    </div>
+
+    <h2>Toast</h2>
+    <p class="lead">Mensagem discreta no rodapé; a barrinha mostra o tempo para desfazer (5 s). <kbd>Ctrl</kbd> <kbd>Z</kbd> também desfaz.</p>
+    <div class="row"><button class="btn btn-secondary" id="demo-toast">Mostrar toast</button></div>
+  </div>
+</section>
+
+<!-- ============ PALETA E TIPOGRAFIA ============ -->
+<section class="view" id="view-paleta">
+  <div class="ref">
+    <h2>Marca</h2>
+    <p class="lead">Gradiente azul → violeta → rosa: logo, botão principal, item ativo do menu, foco e o circuito do topo.</p>
+    <div class="swatches" id="sw-brand"></div>
+
+    <h2>Neutros</h2>
+    <p class="lead">Escuro é o padrão. As superfícies são levemente translúcidas (efeito vidro) para o brilho do fundo aparecer.</p>
+    <div class="swatches" id="sw-neutral"></div>
+
+    <h2>Categorias</h2>
+    <p class="lead">Uma cor por categoria, usada só em bolinhas, faixas, filtros e brilhos, nunca como fundo inteiro.</p>
+    <div class="swatches" id="sw-cat"></div>
+
+    <h2>Sinais</h2>
+    <p class="lead">Vermelho é reservado para <b>urgente</b>, <b>atrasada</b> e o "agora"; por isso continua chamando atenção.</p>
+    <div class="swatches" id="sw-signal"></div>
+
+    <h2>Tipografia: Inter</h2>
+    <p class="lead">Fonte variável (um arquivo, todos os pesos), carregada de <code>static/fonts/</code>; funciona offline. Números com largura fixa em horários e contadores.</p>
+    <div class="type-row"><small>Título da tela<br>30 / 650</small><span style="font-size:30px;font-weight:650;letter-spacing:-.02em;line-height:1.15">Boa tarde, Igor</span></div>
+    <div class="type-row"><small>Sobretítulo<br>11.5 / 650</small><span class="grad-text" style="font-size:11.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase">Hoje · quinta-feira, 29 de outubro</span></div>
+    <div class="type-row"><small>Texto<br>15 / 400–500</small><span>Enviar relatório de indicadores para a diretoria</span></div>
+    <div class="type-row"><small>Detalhe<br>13 / 400</small><span style="font-size:13px;color:var(--text-2)">Pedido por Ana · prazo ontem</span></div>
+    <div class="type-row"><small>Números<br>tabular</small><span class="num" style="font-size:20px;font-weight:600">09:30 · 14:00 · 16:30 · 29/10</span></div>
+
+    <h2>Cantos, brilho e movimento</h2>
+    <div class="note">Cantos de <b>8–20px</b>. Brilho na cor da categoria só no hover, no foco e em sinais (urgente, atrasada, agora); o texto nunca brilha, para continuar legível. Animações curtas (<b>150–400ms</b>): card brilha no hover, círculo "estoura" com faíscas e o risco atravessa o título ao concluir, cards deslizam para a nova posição. No modo claro o brilho cai para menos da metade. Quem ativa "reduzir movimento" no Windows fica sem animações.</div>
+  </div>
+</section>
+
+<!-- Menu de ações do card (um só, reposicionado ao abrir) -->
+<div class="menu" id="menu" role="menu" hidden></div>
+
+<!-- Painel de criar/editar tarefa -->
+<dialog class="drawer" id="drawer" aria-labelledby="drawer-titulo">
+  <form method="dialog" id="form-tarefa">
+    <header>
+      <h2 id="drawer-titulo">Editar tarefa</h2>
+      <button class="btn btn-ghost btn-icon" value="fechar" formnovalidate aria-label="Fechar"><svg class="icon"><use href="#i-x"/></svg></button>
+    </header>
+    <div class="drawer-body">
+      <div class="google-box" id="google-box" hidden>
+        <div class="row"><span>Vem do <b id="google-origem"></b> · sincronizado há 3 min</span>
+          <a class="btn btn-secondary btn-sm" href="#"><svg class="icon icon-sm"><use href="#i-external"/></svg>Abrir</a></div>
+        <div id="google-desc"></div>
+        <small style="color:var(--text-3)">Título, prazo e categoria vêm do Google (somente leitura). Status, prioridade, projeto e observações são seus.</small>
+      </div>
+      <label class="field"><span>Título</span><input name="titulo" required maxlength="200"></label>
+      <div class="field"><span>Categoria</span>
+        <input type="hidden" name="categoria">
+        <div class="seg" id="f-cat" role="group" aria-label="Categoria">
+          <button type="button" data-cat="trabalho"><i class="dot"></i>Trabalho</button>
+          <button type="button" data-cat="faculdade"><i class="dot"></i>Faculdade</button>
+          <button type="button" data-cat="pessoal"><i class="dot"></i>Pessoal</button>
+        </div>
+      </div>
+      <label class="field" id="f-solic"><span>Solicitante <small>quem pediu</small></span><select name="solicitante"></select></label>
+      <label class="field" id="f-disc"><span>Disciplina</span><select name="disciplina"></select></label>
+      <label class="field"><span>Projeto</span><select name="projeto"></select></label>
+      <div class="field-row">
+        <label class="field"><span>Status</span><select name="status"></select></label>
+        <label class="field"><span>Prioridade</span><select name="prioridade"></select></label>
+      </div>
+      <div class="field-row">
+        <label class="field"><span>Prazo</span><input type="date" name="prazo"></label>
+        <label class="field"><span>Hora <small>opcional</small></span><input type="time" name="prazo_hora"></label>
+      </div>
+      <label class="field"><span>Observações <small>só no Kairos, o sync nunca mexe</small></span><textarea name="observacoes" rows="4"></textarea></label>
+    </div>
+    <footer>
+      <button type="button" class="btn btn-danger" id="btn-excluir"></button>
+      <span style="flex:1"></span>
+      <button class="btn btn-secondary" value="fechar" formnovalidate>Cancelar</button>
+      <button class="btn btn-primary" value="salvar">Salvar</button>
+    </footer>
+  </form>
+</dialog>
+
+<div class="toast-area" id="toasts" aria-live="polite"></div>
+
+<script>
+"use strict";
+/*
+  Organização: os dados ficam em `tarefas` (o "estado"). Toda mudança
+  altera o estado e chama render(), que redesenha a tela a partir dele.
+  No app real o estado é o banco, e o Django/HTMX faz o papel do render().
+*/
+
+/* ===== Utilitários ===== */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const reduzMov = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ico = (id, cls = "icon icon-sm") => `<svg class="${cls}"><use href="#i-${id}"/></svg>`;
+const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+/* ===== Datas (relativas a hoje, para o protótipo parecer vivo) ===== */
+const HOJE = new Date(); HOJE.setHours(0, 0, 0, 0);
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const diaMais = n => { const d = new Date(HOJE); d.setDate(d.getDate() + n); return iso(d); };
+const deIso = s => { const [a, m, d] = s.split("-").map(Number); return new Date(a, m - 1, d); };
+const difDias = s => Math.round((deIso(s) - HOJE) / 864e5);
+const fmtSemana = new Intl.DateTimeFormat("pt-BR", { weekday: "long" });
+const fmtDM = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" });
+const fmtLongo = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+const fmtHora = h => `${String(Math.floor(h)).padStart(2, "0")}:${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
+
+/* ===== Cadastros ===== */
+const PESSOAS = {
+  eu: { nome: "Eu", cor: "#a3e635" }, ana: { nome: "Ana", cor: "#f59e0b" },
+  bruno: { nome: "Bruno", cor: "#22d3ee" }, carla: { nome: "Carla", cor: "#f472b6" },
+};
+const DISCIPLINAS = { calc: "Cálculo II", es: "Engenharia de Software", bd: "Banco de Dados" };
+const PROJETOS = { kairos: "Kairos", viagem: "Viagem de dezembro" };
+const CATEGORIA = { trabalho: "Trabalho", faculdade: "Faculdade", pessoal: "Pessoal", reuniao: "Reunião" };
+const STATUS = { a_fazer: "A fazer", em_andamento: "Em andamento", aguardando: "Aguardando", concluida: "Concluída", cancelada: "Cancelada" };
+const PRIORIDADE = { baixa: "Baixa", media: "Média", alta: "Alta", urgente: "Urgente" };
+const ORIGEM = { google_classroom: "Classroom", google_agenda: "Google Agenda" };
+const PESO = { urgente: 3, alta: 2, media: 1, baixa: 0 };
+const ICONE_STATUS = { a_fazer: "circle", em_andamento: "play", aguardando: "hourglass" };
+
+/* ===== Estado ===== */
+function novaTarefa(campos) {
+  return { status: "a_fazer", prioridade: "media", origem: "manual", observacoes: "", descricao_externa: "",
+           solicitante: null, disciplina: null, projeto: null, prazo: "", prazo_hora: "", ...campos };
+}
+let proxId = 1;
+let tarefas = [
+  { titulo: "Enviar relatório de indicadores para a diretoria", categoria: "trabalho", solicitante: "ana", prioridade: "urgente", prazo: -1, observacoes: "Usar os números fechados de setembro." },
+  { titulo: "Lista de exercícios 3", categoria: "faculdade", disciplina: "calc", prazo: -2, prazo_hora: "23:59", origem: "google_classroom", descricao_externa: "Resolver os exercícios 1 a 15 do capítulo 3 e enviar em PDF." },
+  { titulo: "Revisar PR da integração de pagamentos", categoria: "trabalho", solicitante: "bruno", prioridade: "alta", prazo: 0, prazo_hora: "18:00", status: "em_andamento" },
+  { titulo: "Ajustar planilha de custos do projeto", categoria: "trabalho", solicitante: "carla", prazo: 0, status: "aguardando", observacoes: "Esperando a Carla mandar os valores do fornecedor." },
+  { titulo: "Resumo do capítulo 4", categoria: "faculdade", disciplina: "es", prazo: 0, prazo_hora: "23:59", origem: "google_classroom", descricao_externa: "Resumo de 1 página sobre requisitos não funcionais." },
+  { titulo: "Comprar presente de aniversário da mãe", categoria: "pessoal", prazo: 0 },
+  { titulo: "Pagar boleto da internet", categoria: "pessoal", prazo: 0, status: "concluida" },
+  { titulo: "Preparar apresentação de resultados do trimestre", categoria: "trabalho", solicitante: "ana", prioridade: "alta", prazo: 1 },
+  { titulo: "Propor automação do relatório semanal", categoria: "trabalho", solicitante: "eu", prazo: 1 },
+  { titulo: "Comprar ingresso da trilha", categoria: "pessoal", projeto: "viagem", prazo: 2 },
+  { titulo: "Prova de Banco de Dados", categoria: "faculdade", disciplina: "bd", prioridade: "urgente", prazo: 5, prazo_hora: "19:00", origem: "google_classroom", descricao_externa: "Conteúdo: modelagem, SQL e normalização." },
+  { titulo: "Kairos: aprovar protótipo visual", categoria: "pessoal", projeto: "kairos", prazo: 5 },
+  { titulo: "Atualizar documentação da API", categoria: "trabalho", solicitante: "bruno", prazo: 12 },
+].map(t => novaTarefa({ ...t, id: proxId++, prazo: diaMais(t.prazo) }));
+
+const reunioes = [
+  { titulo: "Daily do time", ini: 9.5, fim: 9.75 },
+  { titulo: "Revisão da sprint", ini: 14, fim: 15 },
+  { titulo: "Orientação do TCC", ini: 16.5, fim: 17 },
+];
+let filtro = null;
+const porId = id => tarefas.find(t => t.id === Number(id));
+const encerrada = t => t.status === "concluida" || t.status === "cancelada";
+const atrasada = t => !!t.prazo && !encerrada(t) && difDias(t.prazo) < 0;
+const doGoogle = t => t.origem !== "manual";
+
+/* "Agora": hora real se estiver no horário comercial; senão 11:10 de exemplo */
+function agora() {
+  const d = new Date(), h = d.getHours() + d.getMinutes() / 60;
+  return h >= 8 && h < 18 ? h : 11 + 10 / 60;
+}
+
+/* ===== Seções da tela Hoje (calculadas do estado) ===== */
+function secoes() {
+  const vis = tarefas.filter(t => t.status !== "cancelada" && (!filtro || t.categoria === filtro));
+  const ordem = (a, b) =>
+    (a.status === "concluida") - (b.status === "concluida") ||
+    PESO[b.prioridade] - PESO[a.prioridade] ||
+    (a.prazo_hora || "99").localeCompare(b.prazo_hora || "99");
+  const late = vis.filter(atrasada).sort((a, b) => a.prazo.localeCompare(b.prazo) || ordem(a, b));
+  const hoje = vis.filter(t => t.prazo && difDias(t.prazo) === 0).sort(ordem);
+  const semana = vis.filter(t => t.prazo && difDias(t.prazo) >= 1 && difDias(t.prazo) <= 7)
+                    .sort((a, b) => a.prazo.localeCompare(b.prazo) || ordem(a, b));
+  const dias = [];
+  for (const t of semana) {
+    if (dias.at(-1)?.prazo !== t.prazo) dias.push({ prazo: t.prazo, itens: [] });
+    dias.at(-1).itens.push(t);
+  }
+  return { late, hoje, dias };
+}
+
+/* ===== Card de tarefa (mesma estrutura que vai para o template do Django) ===== */
+function card(t, { demo = false } = {}) {
+  const late = atrasada(t);
+  const meta = [];
+  const nome = t.disciplina ? DISCIPLINAS[t.disciplina] : t.projeto ? PROJETOS[t.projeto] : CATEGORIA[t.categoria];
+  meta.push(`<span class="cat"><i class="dot"></i>${esc(nome)}</span>`);
+  if (t.solicitante) {
+    const p = PESSOAS[t.solicitante];
+    meta.push(`<span class="person"><span class="avatar" style="--p:${p.cor}">${esc(p.nome.slice(0, 2).toUpperCase())}</span>${esc(p.nome)}</span>`);
+  }
+  if (t.prazo_hora) meta.push(`<span class="time num">${ico("clock")}${esc(t.prazo_hora)}</span>`);
+  if (late) meta.push(`<span class="chip chip-late">${ico("clock")}Atrasada · ${plural(-difDias(t.prazo), "dia", "dias")}</span>`);
+  if (t.status === "em_andamento") meta.push(`<span class="chip chip-progress"><i></i>Em andamento</span>`);
+  if (t.status === "aguardando") meta.push(`<span class="chip chip-wait">${ico("hourglass")}Aguardando</span>`);
+  if (doGoogle(t)) meta.push(`<a class="chip chip-google" href="#" title="Abrir no Google">${ico("external")}${ORIGEM[t.origem]}</a>`);
+
+  const prio = PESO[t.prioridade] >= 2
+    ? `<span class="prio prio-${t.prioridade}" title="Prioridade ${PRIORIDADE[t.prioridade]}">${ico("flag")}${PRIORIDADE[t.prioridade]}</span>` : "";
+  const feita = t.status === "concluida";
+  const cls = ["task", late && "is-late", feita && "is-done"].filter(Boolean).join(" ");
+  return `<article class="${cls}" data-cat="${t.categoria}" ${demo ? "" : `data-id="${t.id}"`}>
+    <button class="check" aria-label="${feita ? "Reabrir" : "Concluir"}">${ico("check", "icon")}</button>
+    <div class="task-body">
+      <button class="task-title" ${demo ? "" : "data-edit"}><s>${esc(t.titulo)}</s></button>
+      <div class="task-meta">${meta.join("")}</div>
+    </div>
+    <div class="task-side">${prio}${demo ? "" : `<button class="task-menu" aria-label="Mais ações" aria-haspopup="menu" aria-expanded="false">${ico("more", "icon")}</button>`}</div>
+  </article>`;
+}
+const vazio = (emoji, titulo, texto) => `<div class="empty"><div class="big">${emoji}</div><strong>${titulo}</strong><span>${texto}</span></div>`;
+
+/* ===== Render ===== */
+function render() {
+  const raiz = $("#view-hoje");
+  // Guarda a posição de cada card antes de redesenhar (para animar o movimento).
+  const antes = new Map($$(".task[data-id]", raiz).map(el => [el.dataset.id, el.getBoundingClientRect()]));
+  const s = secoes();
+
+  $("#sec-late").classList.toggle("panel-late", s.late.length > 0);
+  $("#count-late").textContent = s.late.length || "";
+  $("#list-late").innerHTML = s.late.length ? s.late.map(t => card(t)).join("")
+    : vazio("🎉", "Nada atrasado", "Tudo em dia. Aproveite o momento.");
+
+  $("#count-today").textContent = s.hoje.filter(t => !encerrada(t)).length || "";
+  $("#list-today").innerHTML = s.hoje.length ? s.hoje.map(t => card(t)).join("")
+    : vazio("🌤️", "Nada para hoje", filtro ? "Nenhuma tarefa desta categoria hoje." : "Use o campo acima ou a tecla N para adicionar.");
+
+  $("#list-week").innerHTML = s.dias.length ? s.dias.map(d => {
+    const n = difDias(d.prazo);
+    const rotulo = n === 1 ? "Amanhã" : cap(fmtSemana.format(deIso(d.prazo)));
+    return `<p class="day-label">${rotulo} <span>· ${fmtDM.format(deIso(d.prazo))}</span></p><div class="list">${d.itens.map(t => card(t)).join("")}</div>`;
+  }).join("") : vazio("🗓️", "Semana livre", "Nada com prazo nos próximos 7 dias.");
+
+  $("#filter-info").hidden = !filtro;
+  $("#filter-nome").textContent = filtro ? CATEGORIA[filtro] : "";
+
+  renderHero();
+  renderContadores();
+  animarMovimento(raiz, antes);
+}
+
+/* Técnica FLIP: compara posição antiga x nova e anima a diferença */
+function animarMovimento(raiz, antes) {
+  if (reduzMov || !antes.size) return;
+  for (const el of $$(".task[data-id]", raiz)) {
+    const r0 = antes.get(el.dataset.id), r1 = el.getBoundingClientRect();
+    if (!r0) {
+      el.animate([{ opacity: 0, transform: "translateY(-8px) scale(.98)" }, { opacity: 1, transform: "none" }],
+                 { duration: 340, easing: "cubic-bezier(.2,.8,.2,1)" });
+      continue;
+    }
+    const dx = r0.left - r1.left, dy = r0.top - r1.top;
+    if (dx || dy) el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }],
+                             { duration: 420, easing: "cubic-bezier(.2,.8,.2,1)" });
+  }
+}
+
+function renderHero() {
+  const h = new Date().getHours();
+  $("#hero-saudacao").textContent = `${h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"}, Igor`;
+  $("#hero-data").textContent = `Hoje · ${fmtLongo.format(HOJE)}`;
+  const late = tarefas.filter(atrasada).length;
+  const hoje = tarefas.filter(t => t.prazo && difDias(t.prazo) === 0 && !encerrada(t)).length;
+  const reun = reunioes.filter(r => r.fim > agora()).length;
+  const partes = [];
+  if (late) partes.push(`<b class="hot">${plural(late, "atrasada", "atrasadas")}</b>`);
+  partes.push(`<b>${plural(hoje, "tarefa", "tarefas")}</b> para hoje`);
+  partes.push(`<b>${plural(reun, "reunião", "reuniões")}</b> pela frente`);
+  const ultima = partes.pop();
+  $("#hero-resumo").innerHTML = `Você tem ${partes.join(", ")} e ${ultima}.`;
+  $$(".nav-badge").forEach(b => (b.textContent = late || ""));
+}
+
+function renderContadores() {
+  for (const cat of ["trabalho", "faculdade", "pessoal"]) {
+    const el = $(`.counter[data-cat="${cat}"]`);
+    const abertas = tarefas.filter(t => t.categoria === cat && !encerrada(t));
+    const at = abertas.filter(atrasada).length;
+    animarNumero($("b", el), abertas.length);
+    const sm = $("small", el);
+    sm.textContent = at ? plural(at, "atrasada", "atrasadas") : "em dia";
+    sm.classList.toggle("hot", at > 0);
+    el.setAttribute("aria-pressed", String(filtro === cat));
+  }
+  const el = $('.counter[data-cat="reuniao"]');
+  const prox = reunioes.find(r => r.ini > agora());
+  animarNumero($("b", el), reunioes.length);
+  $("small", el).textContent = prox ? `hoje · próxima ${fmtHora(prox.ini)}` : "nenhuma restante";
+}
+
+function animarNumero(el, para) {
+  const de = Number(el.textContent) || 0;
+  if (!el.dataset.pronto || de === para || reduzMov) { el.textContent = para; el.dataset.pronto = "1"; return; }
+  const t0 = performance.now();
+  const passo = t => {
+    const p = Math.min((t - t0) / 450, 1);
+    el.textContent = Math.round(de + (para - de) * (1 - (1 - p) ** 3));
+    if (p < 1) requestAnimationFrame(passo);
+  };
+  requestAnimationFrame(passo);
+}
+
+function renderTimeline() {
+  const h0 = 8, ag = agora();
+  let html = "";
+  for (let h = h0; h <= 18; h++) html += `<div class="hour num" style="top:calc(var(--h) * ${h - h0})"><span>${String(h).padStart(2, "0")}:00</span></div>`;
+  html += `<div class="now" style="top:calc(var(--h) * ${ag - h0})"><span class="num">${fmtHora(ag)}</span></div>`;
+  for (const r of reunioes) {
+    const curta = r.fim - r.ini <= 0.5, passada = r.fim <= ag, txt = `${fmtHora(r.ini)} – ${fmtHora(r.fim)}`;
+    html += `<div class="event ${passada ? "is-past" : ""} ${curta ? "is-short" : ""}" data-cat="reuniao" title="${r.titulo} · ${txt}"
+      style="top:calc(var(--h) * ${r.ini - h0} + 1px); height:calc(var(--h) * ${Math.max(r.fim - r.ini, 0.45)} - 3px)">
+      <div><b>${r.titulo}</b><small class="num">${txt}</small></div>
+      ${passada ? "" : `<a class="btn btn-secondary btn-sm" href="#">${ico("video")}Entrar</a>`}
+    </div>`;
+  }
+  $("#timeline").innerHTML = html;
+}
+
+/* Circuito do topo: trilhas + pulsos de luz que correm por elas */
+function renderCircuito() {
+  const trilhas = [
+    "M180 58H150L132 40H64", "M180 70H18", "M180 82H142L124 100H76",
+    "M244 58H274L292 40H372", "M244 70H414", "M244 82H284L302 100H352",
+    "M200 94V122H160", "M224 94V130", "M212 46V18H250",
+  ];
+  const ultimo = p => { // último ponto da trilha (para a bolinha)
+    const cmds = p.match(/[MHVL][^MHVL]*/g); let x = 0, y = 0;
+    for (const c of cmds) {
+      const v = c.slice(1).trim().split(/[\s,]+/).map(Number);
+      if (c[0] === "M" || c[0] === "L") [x, y] = v; else if (c[0] === "H") x = v[0]; else y = v[0];
+    }
+    return [x, y];
+  };
+  $("#trilhas").innerHTML = trilhas.map((d, i) => {
+    const [x, y] = ultimo(d);
+    return `<path class="trace" d="${d}"/>
+      <path class="pulse" d="${d}" filter="url(#f-glow)" style="animation-delay:${(i * 0.53) % 3.8}s"/>
+      <circle class="node" cx="${x}" cy="${y}" r="2.6" filter="url(#f-glow)"/>`;
+  }).join("");
+}
+
+/* ===== Toast com desfazer (Ctrl+Z desfaz o último) ===== */
+let desfazerAtual = null;
+function toast(msg, desfazer) {
+  const area = $("#toasts");
+  while (area.children.length >= 3) area.firstElementChild.remove();
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.innerHTML = `<span>${esc(msg)}</span>${desfazer ? `<button>Desfazer <kbd>Ctrl Z</kbd></button><i class="bar"></i>` : ""}`;
+  area.append(el);
+  const fechar = () => {
+    if (desfazerAtual === acao) desfazerAtual = null;
+    el.classList.add("is-leaving"); setTimeout(() => el.remove(), 200);
+  };
+  const timer = setTimeout(fechar, desfazer ? 5000 : 2800);
+  const acao = () => { clearTimeout(timer); desfazer(); fechar(); };
+  if (desfazer) { desfazerAtual = acao; $("button", el).addEventListener("click", acao); }
+}
+
+/* ===== Ações ===== */
+function alternarConcluida(btn) {
+  const el = btn.closest(".task");
+  const t = el.dataset.id ? porId(el.dataset.id) : null;
+  const concluir = !el.classList.contains("is-done");
+  el.classList.toggle("is-done", concluir);
+  btn.setAttribute("aria-label", concluir ? "Reabrir" : "Concluir");
+  if (concluir) faiscas(btn);
+  if (!t) return; // card de demonstração
+  const anterior = t.status;
+  setTimeout(() => { t.status = concluir ? "concluida" : "a_fazer"; render(); }, reduzMov ? 0 : 480);
+  if (concluir) toast("Tarefa concluída", () => { t.status = anterior; render(); });
+}
+
+function faiscas(btn) {
+  if (reduzMov) return;
+  const r = btn.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const cor = getComputedStyle(btn).getPropertyValue("--c").trim() || "#8b5cf6";
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement("i");
+    s.className = "spark";
+    Object.assign(s.style, { left: cx + "px", top: cy + "px", background: cor, boxShadow: `0 0 8px ${cor}` });
+    document.body.append(s);
+    const a = (i / 14) * Math.PI * 2 + Math.random() * 0.5, d = 16 + Math.random() * 18;
+    s.animate([
+      { transform: "translate(-50%, -50%) scale(1)", opacity: 1 },
+      { transform: `translate(calc(-50% + ${Math.cos(a) * d}px), calc(-50% + ${Math.sin(a) * d}px)) scale(.2)`, opacity: 0 },
+    ], { duration: 500 + Math.random() * 250, easing: "cubic-bezier(.2,.7,.3,1)" }).onfinish = () => s.remove();
+  }
+}
+
+function mudarStatus(id, status) {
+  const t = porId(id), anterior = t.status;
+  t.status = status; render();
+  toast(`Marcada como "${STATUS[status]}"`, () => { t.status = anterior; render(); });
+}
+
+function excluir(id) {
+  const i = tarefas.findIndex(t => t.id === Number(id));
+  if (i < 0) return;
+  const t = tarefas[i];
+  const remover = () => {
+    tarefas.splice(i, 1); render();
+    toast("Tarefa excluída", () => { tarefas.splice(Math.min(i, tarefas.length), 0, t); render(); });
+  };
+  const el = $(`.task[data-id="${id}"]`);
+  if (!el || reduzMov) return remover();
+  const h = el.offsetHeight;
+  el.style.overflow = "hidden";
+  el.animate([
+    { opacity: 1, transform: "none", height: h + "px" },
+    { opacity: 0, transform: "translateX(28px)", height: h + "px", offset: 0.45 },
+    { opacity: 0, transform: "translateX(28px)", height: "0px", paddingTop: "0px", paddingBottom: "0px", marginTop: "-8px", borderWidth: "0px" },
+  ], { duration: 420, easing: "ease-in-out" }).onfinish = remover;
+}
+
+function cancelar(id) {
+  const t = porId(id), anterior = t.status;
+  t.status = "cancelada"; render();
+  toast("Tarefa cancelada (continua no Google)", () => { t.status = anterior; render(); });
+}
+
+/* ===== Menu ⋯ do card ===== */
+const menu = $("#menu");
+let menuId = null, menuBtn = null;
+function abrirMenu(btn) {
+  const id = Number(btn.closest(".task").dataset.id);
+  if (menuId === id && !menu.hidden) return fecharMenu();
+  fecharMenu();
+  const t = porId(id);
+  menuId = id; menuBtn = btn;
+  const opcoes = ["em_andamento", "aguardando", "a_fazer"].filter(s => s !== t.status);
+  menu.innerHTML = `
+    <button role="menuitem" data-acao="editar">${ico("pencil", "icon")}Editar</button>
+    ${opcoes.map(s => `<button role="menuitem" data-acao="status" data-status="${s}">${ico(ICONE_STATUS[s], "icon")}${STATUS[s]}</button>`).join("")}
+    <hr>
+    ${doGoogle(t)
+      ? `<button role="menuitem" data-acao="cancelar" class="danger">${ico("ban", "icon")}<span>Cancelar tarefa<small>Vem do Google: não é apagada</small></span></button>`
+      : `<button role="menuitem" data-acao="excluir" class="danger">${ico("trash", "icon")}Excluir</button>`}`;
+  menu.hidden = false;
+  const r = btn.getBoundingClientRect(), w = menu.offsetWidth, h = menu.offsetHeight;
+  const top = r.bottom + 6 + h > innerHeight - 8 ? r.top - h - 6 : r.bottom + 6;
+  menu.style.top = top + "px";
+  menu.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + "px";
+  btn.setAttribute("aria-expanded", "true");
+  $("button", menu).focus();
+}
+function fecharMenu() {
+  if (menu.hidden) return;
+  menu.hidden = true;
+  menuBtn?.setAttribute("aria-expanded", "false");
+  menuId = null; menuBtn = null;
+}
+menu.addEventListener("click", e => {
+  const b = e.target.closest("[data-acao]");
+  if (!b) return;
+  const id = menuId;
+  fecharMenu();
+  ({ editar: () => abrirEditor(id), status: () => mudarStatus(id, b.dataset.status),
+     excluir: () => excluir(id), cancelar: () => cancelar(id) })[b.dataset.acao]();
+});
+document.addEventListener("scroll", fecharMenu, true);
+addEventListener("resize", fecharMenu);
+
+/* ===== Painel de criar/editar ===== */
+const dlg = $("#drawer"), form = $("#form-tarefa"), F = n => form.elements[n];
+let editId = null;
+const opcoes = (obj, vazio) => (vazio ? `<option value="">${vazio}</option>` : "") +
+  Object.entries(obj).map(([v, r]) => `<option value="${v}">${esc(typeof r === "string" ? r : r.nome)}</option>`).join("");
+F("solicitante").innerHTML = opcoes(PESSOAS);
+F("disciplina").innerHTML = opcoes(DISCIPLINAS, "Nenhuma");
+F("projeto").innerHTML = opcoes(PROJETOS, "Nenhum");
+F("status").innerHTML = opcoes(Object.fromEntries(Object.entries(STATUS).filter(([s]) => s !== "cancelada")));
+F("prioridade").innerHTML = opcoes(PRIORIDADE);
+
+function escolherCategoria(cat) {
+  F("categoria").value = cat;
+  $$("#f-cat button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cat === cat)));
+  $("#f-solic").hidden = cat !== "trabalho";   // solicitante só em Trabalho
+  $("#f-disc").hidden = cat !== "faculdade";   // disciplina só em Faculdade
+}
+$$("#f-cat button").forEach(b => b.addEventListener("click", () => escolherCategoria(b.dataset.cat)));
+
+function abrirEditor(id) {
+  fecharMenu();
+  const t = id ? porId(id) : novaTarefa({ titulo: "", categoria: "trabalho", solicitante: "eu", prazo: diaMais(0) });
+  editId = id || null;
+  const google = doGoogle(t);
+  $("#drawer-titulo").textContent = id ? "Editar tarefa" : "Nova tarefa";
+  F("titulo").value = t.titulo;
+  escolherCategoria(t.categoria);
+  F("solicitante").value = t.solicitante || "eu";  // "Eu" pré-selecionado
+  F("disciplina").value = t.disciplina || "";
+  F("projeto").value = t.projeto || "";
+  F("status").value = t.status === "cancelada" ? "a_fazer" : t.status;
+  F("prioridade").value = t.prioridade;
+  F("prazo").value = t.prazo;
+  F("prazo_hora").value = t.prazo_hora;
+  F("observacoes").value = t.observacoes;
+  // Campos que vêm do Google ficam somente leitura
+  ["titulo", "prazo", "prazo_hora"].forEach(n => (F(n).readOnly = google));
+  $$("#f-cat button").forEach(b => (b.disabled = google));
+  F("disciplina").disabled = google;
+  $("#google-box").hidden = !google;
+  if (google) { $("#google-origem").textContent = ORIGEM[t.origem]; $("#google-desc").textContent = t.descricao_externa || "Sem descrição."; }
+  const bx = $("#btn-excluir");
+  bx.hidden = !id;
+  bx.innerHTML = google ? `${ico("ban")}Cancelar tarefa` : `${ico("trash")}Excluir`;
+  dlg.classList.toggle("is-sheet", $("#frame").classList.contains("is-phone") || innerWidth < 560);
+  dlg.showModal();
+  if (!google) F("titulo").focus();
+}
+
+form.addEventListener("submit", e => {
+  if (e.submitter?.value !== "salvar") return;
+  const cat = F("categoria").value;
+  const dados = {
+    titulo: F("titulo").value.trim(), categoria: cat, status: F("status").value, prioridade: F("prioridade").value,
+    prazo: F("prazo").value, prazo_hora: F("prazo_hora").value, observacoes: F("observacoes").value,
+    solicitante: cat === "trabalho" ? F("solicitante").value : null,
+    disciplina: cat === "faculdade" ? F("disciplina").value || null : null,
+    projeto: F("projeto").value || null,
+  };
+  if (editId) {
+    const t = porId(editId);
+    if (doGoogle(t)) ["titulo", "categoria", "prazo", "prazo_hora", "disciplina", "solicitante"].forEach(k => delete dados[k]);
+    Object.assign(t, dados);
+    toast("Alterações salvas");
+  } else {
+    tarefas.push(novaTarefa({ ...dados, id: proxId++ }));
+    toast("Tarefa criada");
+  }
+  render();
+});
+$("#btn-excluir").addEventListener("click", () => {
+  const t = porId(editId);
+  dlg.close();
+  doGoogle(t) ? cancelar(t.id) : excluir(t.id);
+});
+dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); }); // clique fora fecha
+
+/* ===== Criação rápida ===== */
+let catRapida = "trabalho";
+$$(".quick .cats button").forEach(b => b.addEventListener("click", () => {
+  $$(".quick .cats button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  catRapida = b.dataset.cat;
+}));
+$("#quick").addEventListener("submit", e => {
+  e.preventDefault();
+  const input = $("#quick-input"), titulo = input.value.trim();
+  if (!titulo) return;
+  const t = novaTarefa({ id: proxId++, titulo, categoria: catRapida, prazo: diaMais(0),
+                         solicitante: catRapida === "trabalho" ? "eu" : null });
+  tarefas.push(t);
+  if (filtro && filtro !== catRapida) filtro = null;
+  render();
+  input.value = "";
+  toast("Tarefa criada para hoje", () => { tarefas = tarefas.filter(x => x !== t); render(); });
+});
+
+/* ===== Cliques gerais ===== */
+document.addEventListener("click", e => {
+  const alvo = e.target;
+  if (!alvo.closest("#menu, .task-menu")) fecharMenu();
+  if (alvo.closest('[data-action="theme"]')) return trocarTema(e);
+  if (alvo.closest(".check")) return alternarConcluida(alvo.closest(".check"));
+  if (alvo.closest(".task-menu")) return abrirMenu(alvo.closest(".task-menu"));
+  if (alvo.closest("[data-edit]")) return abrirEditor(Number(alvo.closest(".task").dataset.id));
+  if (alvo.closest("[data-novo]")) return abrirEditor(null);
+  if (alvo.closest("#limpar-filtro")) { filtro = null; return render(); }
+  const c = alvo.closest(".counter");
+  if (c) {
+    if (c.dataset.cat === "reuniao") {
+      const card = $("#timeline-card");
+      card.scrollIntoView({ behavior: reduzMov ? "auto" : "smooth", block: "center" });
+      card.classList.add("is-flash"); setTimeout(() => card.classList.remove("is-flash"), 900);
+      return;
+    }
+    filtro = filtro === c.dataset.cat ? null : c.dataset.cat;
+    render();
+  }
+  if (alvo.closest('a[href="#"]')) e.preventDefault();
+});
+
+/* ===== Teclado: N = nova, Esc = fechar, Ctrl+Z = desfazer ===== */
+document.addEventListener("keydown", e => {
+  if (dlg.open) return; // o painel trata o próprio Esc
+  const digitando = e.target.closest?.("input, textarea, select, [contenteditable]");
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !digitando && desfazerAtual) {
+    e.preventDefault(); desfazerAtual(); return;
+  }
+  if (e.key === "Escape") {
+    if (!menu.hidden) { const b = menuBtn; fecharMenu(); b?.focus(); return; }
+    if (digitando) e.target.blur();
+    return;
+  }
+  if (digitando || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key.toLowerCase() === "n" && $("#view-hoje").classList.contains("is-active")) {
+    e.preventDefault(); $("#quick-input").focus();
+  }
+});
+
+/* ===== Tema (escuro padrão, preferência salva, transição em círculo) ===== */
+function aplicarTema(tema) {
+  document.documentElement.dataset.theme = tema;
+  const claro = tema === "light";
+  $$('[data-action="theme"]').forEach(b => {
+    $("use", b).setAttribute("href", claro ? "#i-moon" : "#i-sun");
+    const s = $("span", b);
+    if (s) s.textContent = claro ? "Modo escuro" : "Modo claro";
+  });
+  preencherAmostras();
+}
+function trocarTema(e) {
+  const novo = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  try { localStorage.setItem("kairos-tema", novo); } catch {}
+  if (!document.startViewTransition || reduzMov) return aplicarTema(novo);
+  const x = e.clientX || innerWidth / 2, y = e.clientY || 0;
+  const raio = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+  document.startViewTransition(() => aplicarTema(novo)).ready.then(() => {
+    document.documentElement.animate(
+      { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${raio}px at ${x}px ${y}px)`] },
+      { duration: 550, easing: "cubic-bezier(.4,0,.2,1)", pseudoElement: "::view-transition-new(root)" });
+  });
+}
+
+/* ===== Abas e largura do protótipo ===== */
+function grupo(seletor, attr, aoEscolher) {
+  $$(seletor).forEach(b => b.addEventListener("click", () => {
+    $$(seletor).forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    aoEscolher(b.dataset[attr]);
+  }));
+}
+grupo("[data-view]", "view", v => {
+  $$(".view").forEach(s => s.classList.toggle("is-active", s.id === "view-" + v));
+  $("#width-toggle").style.visibility = v === "hoje" ? "visible" : "hidden";
+  fecharMenu();
+});
+grupo("[data-width]", "width", w => { $("#frame").classList.toggle("is-phone", w === "phone"); fecharMenu(); });
+
+/* ===== Componentes e paleta ===== */
+$("#cards-demo").innerHTML = [
+  novaTarefa({ titulo: "Normal: trabalho pedido por Bruno", categoria: "trabalho", solicitante: "bruno", prazo_hora: "15:00" }),
+  novaTarefa({ titulo: "Urgente", categoria: "trabalho", solicitante: "ana", prioridade: "urgente", prazo_hora: "17:00" }),
+  novaTarefa({ titulo: "Atrasada", categoria: "pessoal", prazo: diaMais(-3) }),
+  novaTarefa({ titulo: "Em andamento", categoria: "trabalho", solicitante: "eu", status: "em_andamento" }),
+  novaTarefa({ titulo: "Aguardando outra pessoa", categoria: "trabalho", solicitante: "carla", status: "aguardando" }),
+  novaTarefa({ titulo: "Vinda do Classroom", categoria: "faculdade", disciplina: "calc", prioridade: "alta", prazo_hora: "23:59", origem: "google_classroom" }),
+  novaTarefa({ titulo: "Concluída", categoria: "pessoal", status: "concluida" }),
+].map(t => card(t, { demo: true })).join("");
+$("#demo-toast").addEventListener("click", () => toast("Tarefa concluída", () => toast("Desfeito")));
+
+const AMOSTRAS = {
+  "sw-brand": [["--g1", "Azul"], ["--g2", "Violeta"], ["--g3", "Rosa"], ["--grad", "Gradiente"]],
+  "sw-neutral": [["--bg", "Fundo"], ["--surface-solid", "Superfície"], ["--surface", "Vidro"], ["--border-strong", "Borda"],
+                 ["--text", "Texto"], ["--text-2", "Texto secundário"], ["--text-3", "Texto discreto"]],
+  "sw-cat": [["--c-trabalho", "Trabalho"], ["--c-faculdade", "Faculdade"], ["--c-pessoal", "Pessoal"], ["--c-reuniao", "Reunião"]],
+  "sw-signal": [["--danger", "Urgente / atrasada"], ["--warn", "Alta"], ["--wait", "Aguardando"]],
+};
+function preencherAmostras() {
+  const css = getComputedStyle(document.documentElement);
+  for (const [id, lista] of Object.entries(AMOSTRAS)) {
+    $("#" + id).innerHTML = lista.map(([v, nome]) => {
+      const valor = v === "--grad" ? "g1 → g2 → g3" : css.getPropertyValue(v).trim();
+      return `<div class="swatch"><i style="--s:var(${v})"></i><div><b>${nome}</b><code>${v} ${esc(valor)}</code></div></div>`;
+    }).join("");
+  }
+}
+
+/* ===== Início ===== */
+let temaSalvo = null;
+try { temaSalvo = localStorage.getItem("kairos-tema"); } catch {}
+const hash = location.hash;
+aplicarTema(hash.includes("claro") ? "light" : temaSalvo === "light" ? "light" : "dark");
+renderCircuito();
+renderTimeline();
+render();
+setInterval(() => { renderTimeline(); renderContadores(); renderHero(); }, 60_000);
+if (hash.includes("celular")) $('[data-width="phone"]').click();
+if (hash.includes("componentes")) $('[data-view="componentes"]').click();
+if (hash.includes("paleta")) $('[data-view="paleta"]').click();
+</script>
+</body>
+</html>
