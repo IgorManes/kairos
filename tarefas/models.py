@@ -321,3 +321,24 @@ class Notificacao(models.Model):
 
     def __str__(self):
         return self.chave
+
+
+class AssinaturaPush(models.Model):
+    """
+    Um aparelho que aceitou receber avisos (Web Push). O navegador do aparelho entrega
+    um endereço no serviço de push (Apple, Google...) e duas chaves para criptografar.
+    """
+
+    endpoint = models.URLField("endereço de entrega", max_length=1000, unique=True)
+    p256dh = models.CharField("chave pública do aparelho", max_length=200)
+    auth = models.CharField("segredo de autenticação", max_length=100)
+    aparelho = models.CharField(max_length=60, blank=True)  # "iPhone", "Windows"...
+    criada_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["criada_em"]
+        verbose_name = "assinatura de push"
+        verbose_name_plural = "assinaturas de push"
+
+    def __str__(self):
+        return self.aparelho or self.endpoint[:60]

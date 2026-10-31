@@ -197,6 +197,74 @@ document.addEventListener("drop", evento => {
   htmx.ajax("POST", card.dataset.urlStatus, { source: card, values: { status: novo }, swap: "none" });
 });
 
+/* ===== Notificações no celular (Web Push), na tela de Configurações ===== */
+function chaveEmBytes(texto) {
+  const base64 = (texto + "=".repeat((4 - texto.length % 4) % 4)).replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(atob(base64), letra => letra.charCodeAt(0));
+}
+
+// Decide o que mostrar: botão "Ativar", "este aparelho já recebe" ou uma dica.
+async function prepararPush(secao) {
+  const botao = secao.querySelector('[data-action="ativar-push"]');
+  const dica = secao.querySelector("[data-push-dica]");
+  const mostrarDica = texto => { dica.textContent = texto; dica.hidden = false; };
+  if (["127.0.0.1", "localhost"].includes(location.hostname)) {
+    return mostrarDica("Neste PC os avisos já aparecem pelo Windows. Ative no iPhone, abrindo o Kairos pelo app instalado.");
+  }
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    return mostrarDica("No iPhone, os avisos só funcionam no app instalado: no Safari, Compartilhar → Adicionar à Tela de Início, e abra o Kairos por lá.");
+  }
+  if (Notification.permission === "denied") {
+    return mostrarDica("As notificações do Kairos estão bloqueadas neste aparelho. No iPhone: Ajustes → Notificações → Kairos.");
+  }
+  const registro = await navigator.serviceWorker.register("/sw.js");
+  const assinatura = await registro.pushManager.getSubscription();
+  const linha = assinatura && [...secao.querySelectorAll("[data-endpoint]")].find(l => l.dataset.endpoint === assinatura.endpoint);
+  if (linha) {
+    linha.querySelector("[data-este]").hidden = false;
+  } else {
+    botao.hidden = false;
+  }
+}
+
+async function ativarPush(botao) {
+  const secao = botao.closest("#config-push");
+  botao.disabled = true;
+  try {
+    // Primeiro a permissão: o iOS só pergunta se for logo após um toque.
+    if (await Notification.requestPermission() !== "granted") {
+      toastErro("Sem permissão, o Kairos não consegue avisar neste aparelho.");
+      return;
+    }
+    const registro = await navigator.serviceWorker.register("/sw.js");
+    await navigator.serviceWorker.ready;
+    // Assinatura antiga que o Kairos não conhece (ex.: removida): troca por uma nova.
+    await (await registro.pushManager.getSubscription())?.unsubscribe();
+    const assinatura = await registro.pushManager.subscribe({
+      userVisibleOnly: true,  // todo push vira aviso visível (exigência dos navegadores)
+      applicationServerKey: chaveEmBytes(secao.dataset.pushChave),
+    });
+    const { endpoint, keys } = assinatura.toJSON();
+    htmx.ajax("POST", secao.dataset.urlAssinar, {
+      source: botao, values: { endpoint, p256dh: keys.p256dh, auth: keys.auth }, swap: "none",
+    });
+  } catch (erro) {
+    toastErro(`Não deu para ativar os avisos: ${erro.message}`);
+  } finally {
+    botao.disabled = false;
+  }
+}
+
+document.addEventListener("click", evento => {
+  const botao = evento.target.closest('[data-action="ativar-push"]');
+  if (botao) ativarPush(botao);
+});
+// Ao abrir a tela e sempre que a seção é redesenhada (após ativar ou remover).
+document.addEventListener("htmx:load", evento => {
+  const secao = evento.detail.elt.closest?.("#config-push") || evento.detail.elt.querySelector?.("#config-push");
+  if (secao) prepararPush(secao).catch(erro => console.error(erro));
+});
+
 /* ===== Início ===== */
 document.addEventListener("DOMContentLoaded", () => {
   aplicarTema(document.documentElement.dataset.theme || "dark");

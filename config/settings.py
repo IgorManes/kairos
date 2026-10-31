@@ -200,6 +200,12 @@ TAILWIND_CLI_DIST_CSS = "css/tailwind.css"
 GOOGLE_CREDENCIAIS = DATA_DIR / "credentials.json"
 GOOGLE_TOKEN = DATA_DIR / "token.json"
 
+# Notificações no iPhone (Web Push): chave privada VAPID, gerada sozinha no 1º uso.
+# Quem tiver esta chave consegue mandar avisos aos aparelhos assinados: fica fora do repositório.
+VAPID_ARQUIVO = DATA_DIR / "vapid.pem"
+
+TEST_RUNNER = "config.test_runner.ExecutorKairos"  # testes nunca criam arquivos na pasta real
+
 
 def ler_agendas_extras(texto):
     """'Invoga=a@b.com, Outra=c@d.com' → [("Invoga", "a@b.com"), ("Outra", "c@d.com")]."""

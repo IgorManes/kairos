@@ -12,8 +12,9 @@ from django.views.decorators.http import require_POST
 from .forms import PreferenciasNotificacaoForm
 from .google.credenciais import escopos_faltando, obter_credenciais
 from .google.servico import sincronizar_tudo, ultimo_sync
-from .models import EstadoSync, Preferencias
+from .models import AssinaturaPush, EstadoSync, Preferencias
 from .periodico import rodar_periodicos
+from .push import chave_publica_b64
 from .windows import definir_inicializacao, inicializacao_ativa
 
 
@@ -92,6 +93,8 @@ def configuracoes(request):
             "tem_credenciais": settings.GOOGLE_CREDENCIAIS.exists(),
             "conectando": _conectando.is_set(),
             "erro_conexao": _erro_conexao["mensagem"],
+            "assinaturas": AssinaturaPush.objects.all(),
+            "chave_push": chave_publica_b64(),
         },
     )
 

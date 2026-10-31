@@ -101,4 +101,41 @@
   </label>
 </section>
 {% endwith %}
+
+{% comment %}
+  Notificações no celular (Web Push). O kairos.js decide o que mostrar neste aparelho:
+  botão "Ativar", a marca "este aparelho" ou uma dica (PC, Safari sem instalar, bloqueado).
+{% endcomment %}
+<section id="config-push" class="config-secao mt-5" hx-get="{% url 'configuracoes' %}" hx-trigger="dadosMudaram from:body delay:300ms"
+         hx-select="#config-push" hx-swap="outerHTML" hx-disinherit="*"
+         data-push-chave="{{ chave_push }}" data-url-assinar="{% url 'push_assinar' %}">
+  <div class="config-topo">
+    <div>
+      <h2 class="text-lg font-semibold">Notificações no celular</h2>
+      <p class="text-sm text-text-3">Os mesmos avisos acima, no iPhone, mesmo com o app fechado. Saem do PC: ele precisa estar ligado, com o Kairos aberto.</p>
+    </div>
+    <div class="config-acoes">
+      <button class="btn btn-primary" data-action="ativar-push" hidden><svg class="icon icon-sm"><use href="#i-bell"/></svg>Ativar neste aparelho</button>
+      {% if assinaturas %}
+        <button class="btn btn-secondary" hx-post="{% url 'push_testar' %}" hx-swap="none">Enviar teste</button>
+      {% endif %}
+    </div>
+  </div>
+  <p class="text-sm text-text-2" data-push-dica hidden></p>
+
+  {% if assinaturas %}
+    <div class="config-tabela">
+      {% for assinatura in assinaturas %}
+        <div class="config-linha" data-endpoint="{{ assinatura.endpoint }}">
+          <div>
+            <b>{{ assinatura.aparelho|default:"Aparelho" }}</b>
+            <span class="text-[12.5px] text-pessoal" data-este hidden>· este aparelho</span>
+            <small>recebe avisos desde {{ assinatura.criada_em|date:"d/m/Y" }}</small>
+          </div>
+          <button class="btn btn-ghost btn-sm" hx-post="{% url 'push_remover' assinatura.pk %}" hx-swap="none">Remover</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>
 {% endblock %}

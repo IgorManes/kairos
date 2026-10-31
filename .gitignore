@@ -15,6 +15,7 @@ media/
 credentials.json
 token.json
 client_secret*.json
+*.pem
 
 # Backups e builds
 backups/

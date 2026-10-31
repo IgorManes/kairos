@@ -1,6 +1,6 @@
 from django.urls import path, re_path
 
-from . import views, views_google, views_relatorios
+from . import views, views_google, views_push, views_relatorios
 from . import views_cadastros as cad
 
 urlpatterns = [
@@ -26,6 +26,10 @@ urlpatterns = [
     path("preferencias/concluir-ao-entregar/", views_google.preferencia_concluir_ao_entregar, name="pref_concluir"),
     path("preferencias/notificacoes/", views_google.preferencias_notificacoes, name="pref_notificacoes"),
     path("preferencias/inicializacao/", views_google.preferencia_inicializacao, name="pref_inicializacao"),
+    path("sw.js", views_push.service_worker, name="service_worker"),
+    path("push/assinar/", views_push.assinar, name="push_assinar"),
+    path("push/<int:pk>/remover/", views_push.remover, name="push_remover"),
+    path("push/testar/", views_push.testar, name="push_testar"),
     # Só "pessoa" ou "projeto"; qualquer outra coisa é 404.
     re_path(r"^(?P<tipo>pessoa|projeto)/novo/$", cad.formulario, name="novo_cadastro"),
     re_path(r"^(?P<tipo>pessoa|projeto)/(?P<pk>\d+)/editar/$", cad.formulario, name="editar_cadastro"),

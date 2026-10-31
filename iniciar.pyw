@@ -14,7 +14,7 @@ Ordem:
   7. Janela (pywebview, motor do Edge) + ícone na bandeja. Fechar a janela só a esconde;
      "Sair" na bandeja encerra tudo.
   8. Relógio do app (a cada minuto, mesmo com a janela escondida): sync do Google,
-     tarefas periódicas e notificações do Windows.
+     tarefas periódicas e avisos (balão do Windows + push nos celulares assinados).
 """
 
 import ctypes
@@ -273,7 +273,7 @@ class App:
         close_old_connections()
         resumo = resumo_do_dia()
         if resumo:
-            self.notificar(resumo.titulo, resumo.texto, resumo.url)
+            self.avisar(resumo)
         while not self.parar.is_set():
             try:
                 self.ciclo()
@@ -292,8 +292,18 @@ class App:
         sincronizar_tudo(motivo="auto")
         rodar_periodicos()
         for aviso in verificar():
-            self.notificar(aviso.titulo, aviso.texto, aviso.url)
+            self.avisar(aviso)
             time.sleep(1)  # vários avisos em sequência: um de cada vez
+
+    def avisar(self, aviso):
+        """Mesmo aviso em dois lugares: balão do Windows e push nos aparelhos assinados."""
+        from tarefas.push import enviar_para_todos
+
+        self.notificar(aviso.titulo, aviso.texto, aviso.url)
+        try:
+            enviar_para_todos(aviso.titulo, aviso.texto, aviso.url)
+        except Exception:
+            log.exception("Falha ao enviar push")  # o aviso do Windows já saiu; não derruba o relógio
 
     def sincronizar_agora(self):
         from django.db import close_old_connections
