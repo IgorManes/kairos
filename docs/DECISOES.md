@@ -285,3 +285,16 @@ Problemas que só apareceram com testes, prints ou dados reais — e o que cada 
 - **Ícones do app** → gerados pelo mesmo script do `.ico`, com **fundo sólido** e logo com margem → o iPhone pinta transparência de preto e arredonda os cantos; o Android corta em círculo (zona segura de 80%).
 - **Áreas seguras** → `viewport-fit=cover` + `env(safe-area-inset-*)` só nas barras e na folha de baixo → em tela cheia o conteúdo não fica sob o relógio nem a barra de gestos; fora do iPhone o valor é 0.
 - **Ícone do "Hoje"** → calendário com o dia marcado, no lugar do sol → o botão de tema usa sol/lua (convenção conhecida) e os dois ficavam iguais no modo escuro.
+
+## Etapa 9: Notificações no iPhone (2026-10-31)
+
+- **Como avisar no iPhone** → **Web Push** no app instalado (iOS 16.4+) → o PC manda o aviso criptografado ao serviço de push da Apple, que entrega mesmo com o app fechado; sem app nativo, sem conta de desenvolvedor.
+- **Biblioteca x código próprio** → **código próprio** (`tarefas/push.py`, ~150 linhas) com `cryptography` e `requests`, já presentes → o `pywebpush` traria 11 pacotes (aiohttp e outros). Não é "criptografia inventada": são as primitivas prontas (ECDH, HKDF, AES-GCM, ECDSA) montadas como mandam as RFCs 8291/8292, e um teste compara o resultado **byte a byte** com o exemplo oficial da RFC 8291.
+- **Mesmos avisos, duas saídas** → `notificacoes.verificar()` continua sem saber quem mostra; o relógio do app manda cada aviso para o balão do Windows **e** para os aparelhos assinados → a regra de "nunca repetir" vale para os dois de graça.
+- **Chave VAPID** → gerada sozinha em `%LOCALAPPDATA%\Kairos\vapid.pem` no 1º uso → nada para o dono configurar; fora do repositório (e `*.pem` no `.gitignore` por garantia).
+- **Assinatura morta x erro temporário** → 404/410 apaga a assinatura; sem conexão ou outro erro mantém e registra no log → senão o Kairos tentaria para sempre um endereço morto, ou perderia um aparelho por uma queda de internet.
+- **Service worker sem cache** → só recebe o push e abre a tela do aviso; servido em `/sw.js` (raiz) porque ele só vale para as páginas abaixo do próprio endereço → continua sem modo offline.
+- **Permissão só após um toque** → o JS pede a permissão antes de qualquer `await` → o iOS ignora pedidos que não venham direto de um toque do usuário.
+- **Validação da assinatura recebida** → só `https://` e chaves com o tamanho certo (65 e 16 bytes) → o servidor faz POST para esse endereço; dado torto quebraria o envio para todos.
+- **Testes nunca tocam a pasta real** → executor de testes próprio (`config/test_runner.py`) aponta a chave VAPID para uma pasta temporária → sem isso, abrir a tela de Configurações num teste criaria o `vapid.pem` de verdade.
+
