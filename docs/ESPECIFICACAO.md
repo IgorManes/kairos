@@ -187,6 +187,7 @@ Interações importantes:
 6. Janela pywebview, atalho, backup.
 6.1. Bandeja do sistema, iniciar com o Windows e notificações.
 7. Acabamento: README completo com prints, `docs/DECISOES.md` revisado, limpeza.
+8. Acesso remoto (aprovado em 2026-10-30): um Kairos só, no PC de casa, acessado pelo notebook e pelo iPhone via Tailscale. Ver seção 11.
 
 ## 9. Testes
 - Testes do Django (`python manage.py test`) para as regras de validação e para a sincronização (respostas do Google simuladas; nunca chamar a API real nos testes).
@@ -195,7 +196,19 @@ Interações importantes:
 ## 10. Fora do escopo (por enquanto)
 Multiusuário, cadastro público, escrever no Google.
 
-## 11. Futuro: acesso pelo celular (NÃO implementar agora, mas não bloquear)
+## 11. Acesso pelo notebook e pelo celular (etapa 8, aprovada em 2026-10-30)
+
+Decidido com o dono:
+- **Um Kairos só, no PC de casa** (a máquina onde o código também é desenvolvido). Instalações separadas NÃO sincronizam dados (cada uma tem o seu SQLite; o Git sincroniza só o código). Sincronizar o arquivo do banco por OneDrive/Dropbox é inseguro.
+- **No PC de casa, app e desenvolvimento convivem:** o `iniciar.pyw` usa sempre o banco real `kairos.sqlite3` (independente do `.env`); `runserver`/testes continuam no `dev.sqlite3`. O banco real começa como cópia do `dev.sqlite3`, que já estava só com dados reais (dados de exemplo e "Reuniao teste" removidos).
+- **Tailscale** (plano Personal: grátis, aparelhos ilimitados, até 6 usuários, uso não comercial) no PC, no notebook e no iPhone. **Tailscale Serve** com HTTPS: `tailscale serve --bg 8765` publica `https://<pc>.<tailnet>.ts.net` só dentro da rede privada (Funnel = público, NÃO usar). Antes: no painel do Tailscale, ativar MagicDNS e "HTTPS Certificates" (os nomes das máquinas ficam num registro público de certificados: não usar nome sensível). `--bg` persiste após reiniciar; desligar com `tailscale serve reset`. O Serve só faz proxy para `http://127.0.0.1`.
+- **Django para acesso remoto:** domínio `.ts.net` em `ALLOWED_HOSTS` e `CSRF_TRUSTED_ORIGINS` (via `.env`, ex.: `KAIROS_DOMINIO_REMOTO`). A documentação do Serve NÃO garante `X-Forwarded-Proto`/`X-Forwarded-For` (só cabeçalhos de identidade `Tailscale-User-Login`): conferir na prática antes de confiar neles (axes e cookies seguros).
+- **iPhone = PWA:** manifesto, ícones (apple-touch-icon 180 px, fundo sólido), tela cheia, áreas seguras do iPhone (`viewport-fit=cover`); instalar pelo Safari → "Adicionar à Tela de Início". Exige HTTPS.
+- **Notebook:** só acessa o endereço `.ts.net` (Edge → "Instalar como aplicativo"); para desenvolver, mantém a própria instalação com `dev.sqlite3`.
+- **Depois (opcional):** notificações no iPhone (Web Push em PWA instalado, iOS 16.4+).
+- Limitação: o PC de casa precisa estar ligado (Kairos na bandeja + "Iniciar com o Windows"; Windows sem suspender).
+
+Decisões anteriores que continuam valendo:
 Plano previsto: transformar o app web em **PWA** (instalável na tela inicial do celular) acessado pelo **Tailscale**, com o PC de casa como servidor. Sem app nativo e sem segunda linguagem.
 Decisões que já devem ser respeitadas desde o início para isso ser possível depois:
 - Todas as telas **responsivas de verdade** (funcionar bem com 380px de largura), não só "mínimo responsivo".
