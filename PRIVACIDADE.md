@@ -29,4 +29,4 @@ O uso das informações recebidas das APIs do Google segue a [Política de Dados
 
 ## Contato
 
-Dúvidas: abra uma *issue* em <https://github.com/IgorManes/gerenciador-tarefas/issues>.
+Dúvidas: abra uma *issue* em <https://github.com/IgorManes/kairos/issues>.
