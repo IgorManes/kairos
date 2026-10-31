@@ -270,3 +270,13 @@ Problemas que só apareceram com testes, prints ou dados reais — e o que cada 
 - **Dados de exemplo no banco de desenvolvimento** → removidos só os registros criados pelo `dados_exemplo` (por nome/título exato), com backup antes → o dono passou a ver só dados reais; o banco do PC de uso nunca teve exemplos.
 - **Textos de tempo** → filtro `ha_quanto` ("agora", "há 5 min") em vez do `timesince` do Django ("há 0 minuto"); contador de reuniões diz "em andamento agora" quando a reunião já começou (antes contradizia o topo).
 - **DECISOES.md** → resumo, lições aprendidas e índice no topo, histórico intacto → porta de entrada para quem chega pelo GitHub.
+
+## Etapa 8: Acesso pelo notebook e pelo iPhone (2026-10-31)
+
+- **Usar o Kairos em vários aparelhos** → **um servidor só (PC de casa) acessado pela rede privada do Tailscale**, e não uma instalação por aparelho → cada instalação teria o próprio SQLite e os dados divergiriam (o Git sincroniza código, não dados); sincronizar o arquivo do banco por nuvem pode corrompê-lo.
+- **HTTPS** → **Tailscale Serve** (`tailscale serve --bg 8765`), só dentro da rede privada (nunca o Funnel, que é público) → certificado válido de graça, sem abrir porta no roteador; o app continua escutando só em `127.0.0.1`.
+- **Banco do app x banco de desenvolvimento no mesmo PC** → `iniciar.pyw` força `kairos.sqlite3`; `runserver`/testes ficam no `dev.sqlite3` → desenvolver não mexe nos dados reais. O banco real nasceu como cópia (API de backup do SQLite, segura com o app aberto).
+- **Domínio remoto** → `KAIROS_DOMINIO_REMOTO` no `.env` entra em `ALLOWED_HOSTS` e `CSRF_TRUSTED_ORIGINS` → sem a variável, nada muda (o repositório público não carrega o endereço).
+- **Conferir na prática, não supor** → um servidor de "eco" temporário mostrou o que o Serve repassa: `X-Forwarded-For` (IP do aparelho), `X-Forwarded-Proto: https` e `Tailscale-User-Login` → a documentação não garantia os dois primeiros.
+- **Bloqueio por senha errada com proxy** → função própria `ip_do_aparelho` (`AXES_CLIENT_IP_CALLABLE`), usando o **último** item do `X-Forwarded-For` → sem isso todo acesso parecia vir de `127.0.0.1` e 5 erros no celular trancariam a janela do PC. O último item é o que o Tailscale escreveu; os anteriores podem ser falsos. A configuração "oficial" do axes exigia um pacote extra (`django-ipware`) e era ignorada em silêncio sem ele: o teste automático pegou.
+- **HTTPS reconhecido pelo Django** → `SECURE_PROXY_SSL_HEADER` com `X-Forwarded-Proto` → seguro aqui porque só o Serve e o próprio PC alcançam o app. Cookies "só HTTPS" ficaram de fora: quebrariam a janela local, que usa http em `127.0.0.1`.

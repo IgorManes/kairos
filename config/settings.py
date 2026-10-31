@@ -40,11 +40,20 @@ except KeyError:
 # Padrão False: se esquecer de configurar, fica no modo seguro.
 DEBUG = env_bool("DJANGO_DEBUG", padrao=False)
 
-# Endereço onde o app escuta. Hoje 127.0.0.1; no futuro, o IP do Tailscale.
+# Endereço onde o app escuta. Fica em 127.0.0.1 mesmo com acesso remoto:
+# o Tailscale Serve recebe o HTTPS e repassa para cá.
 KAIROS_HOST = os.environ.get("KAIROS_HOST", "127.0.0.1")
 KAIROS_PORT = int(os.environ.get("KAIROS_PORT", "8765"))
 
 ALLOWED_HOSTS = list(dict.fromkeys([KAIROS_HOST, "127.0.0.1", "localhost"]))
+
+# Acesso pelo notebook/iPhone via Tailscale (ex.: kairos.tailXXXX.ts.net). Vazio = só local.
+KAIROS_DOMINIO_REMOTO = os.environ.get("KAIROS_DOMINIO_REMOTO", "").strip()
+CSRF_TRUSTED_ORIGINS = []
+if KAIROS_DOMINIO_REMOTO:
+    ALLOWED_HOSTS.append(KAIROS_DOMINIO_REMOTO)
+    # O Django vê o acesso como http (o HTTPS termina no Tailscale); a origem https precisa ser liberada.
+    CSRF_TRUSTED_ORIGINS.append(f"https://{KAIROS_DOMINIO_REMOTO}")
 
 
 # --- Pasta de dados (fora do código) ---------------------------------------
@@ -149,6 +158,12 @@ AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = 1  # horas
 AXES_RESET_ON_SUCCESS = True
 AXES_LOCKOUT_PARAMETERS = ["ip_address"]
+# Pelo Tailscale Serve todo acesso chega de 127.0.0.1; o IP real do aparelho vem no
+# X-Forwarded-For (ver tarefas/seguranca.py).
+AXES_CLIENT_IP_CALLABLE = "tarefas.seguranca.ip_do_aparelho"
+
+# O HTTPS termina no Tailscale; ele avisa por cabeçalho que o acesso original era https.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
 # --- Idioma e fuso ---------------------------------------------------------
