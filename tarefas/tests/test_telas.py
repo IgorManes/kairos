@@ -69,3 +69,18 @@ class TextosDeTempoTests(TestCase):
         if timezone.localtime(agora - timedelta(minutes=10)).date() != timezone.localdate(agora):
             self.skipTest("logo após a meia-noite a reunião começou 'ontem'")
         self.assertIn("em andamento agora", self.client.get("/").content.decode())
+
+
+class TemplatesTests(TestCase):
+    def test_comentarios_curtos_fecham_na_mesma_linha(self):
+        # {# ... #} só vale numa linha; quebrado em duas, aparece como texto na tela.
+        from pathlib import Path
+
+        from django.conf import settings
+
+        problemas = []
+        for arquivo in Path(settings.BASE_DIR, "templates").rglob("*.html"):
+            for numero, linha in enumerate(arquivo.read_text(encoding="utf-8").splitlines(), 1):
+                if linha.count("{#") > linha.count("#}"):
+                    problemas.append(f"{arquivo.name}:{numero}")
+        self.assertEqual(problemas, [], "use {% comment %} para comentários de várias linhas")

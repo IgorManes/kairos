@@ -52,9 +52,11 @@
   </div>
 </div>
 
-{# Relógio do app: 3 s após abrir, a cada 60 s e ao voltar para o app. Sincroniza o Google
-   (se conectado) e roda as tarefas periódicas (foto semanal, backup diário).
-   Fica separado do indicador (#sync-status) para a resposta não recriar o relógio. #}
+{% comment %}
+  Relógio do app: 3 s após abrir, a cada 60 s e ao voltar para o app. Sincroniza o Google
+  (se conectado) e roda as tarefas periódicas (foto semanal, backup diário).
+  Fica separado do indicador (#sync-status) para a resposta não recriar o relógio.
+{% endcomment %}
 <div hidden hx-post="{% url 'sincronizar' %}" hx-target="#sync-status" hx-swap="outerHTML"
      hx-trigger="load delay:3s, every 60s" hx-vals='{"motivo": "auto"}'></div>
 <div hidden hx-post="{% url 'sincronizar' %}" hx-target="#sync-status" hx-swap="outerHTML"
