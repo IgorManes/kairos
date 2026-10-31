@@ -18,6 +18,7 @@
 - **Google Classroom:** atividades viram tarefas da faculdade; entregar no Classroom conclui a tarefa.
 - **Relatórios semanais em PDF:** uma "foto" de cada semana guardada toda segunda, com recortes (só trabalho para o gestor, só uma disciplina…).
 - **Aplicativo do Windows:** janela própria, bandeja do sistema, iniciar com o Windows, notificações (reunião em 10 min, prazos do dia, atividade nova) e backup diário.
+- **No notebook e no iPhone:** o mesmo Kairos, acessado pela rede privada do Tailscale e instalado como app (PWA).
 - **Responsivo de verdade** e com **modo escuro** como padrão.
 
 | | |
@@ -43,7 +44,7 @@
 
 - **O servidor é a fonte da verdade:** o HTMX pede ao Django o HTML já pronto; nenhuma regra de negócio é duplicada em JavaScript.
 - **Ações desacopladas das telas:** cada ação só avisa "os dados mudaram" e cada tela se recarrega sozinha com os próprios filtros.
-- **A janela é só uma moldura:** nada depende do pywebview; o mesmo site funciona no navegador (e, no futuro, no celular via Tailscale).
+- **A janela é só uma moldura:** nada depende do pywebview; o mesmo site funciona no navegador do notebook e no iPhone (veja abaixo).
 
 ## Decisões que valem destacar
 
@@ -64,7 +65,7 @@ Python 3.13 · Django 5.2 LTS · SQLite · HTMX 2 · Tailwind CSS 4 (executável
 ## Testes
 
 ```powershell
-venv\Scripts\python manage.py test     # 196 testes; o Google é simulado, nunca chamado de verdade
+venv\Scripts\python manage.py test     # 202 testes; o Google é simulado, nunca chamado de verdade
 venv\Scripts\ruff check .              # verificador de código (pip install -r requirements-dev.txt)
 ```
 
@@ -115,6 +116,23 @@ powershell -ExecutionPolicy Bypass -File .\criar_atalho.ps1
 
 Ao abrir, o Kairos faz backup do banco antes de aplicar migrations, guarda um backup por dia (últimos 14, em `%LOCALAPPDATA%\Kairos\backups\`) e registra erros em `%LOCALAPPDATA%\Kairos\kairos.log`. Fechar a janela só a esconde na bandeja; para sair, use **Sair** no ícone da bandeja.
 
+## Acesso pelo notebook e pelo iPhone
+
+Um Kairos só (no PC de casa), para os dados nunca divergirem. Os outros aparelhos chegam até ele pela rede privada do [Tailscale](https://tailscale.com) (plano gratuito):
+
+```
+ iPhone (app na Tela de Início) ─┐   rede privada do Tailscale    ┌─ PC de casa
+ notebook (app do Edge) ─────────┴── https://kairos.<rede>.ts.net ─┴─ Tailscale Serve ──► Kairos (127.0.0.1:8765)
+```
+
+- O Kairos continua escutando só em `127.0.0.1`; o **Tailscale Serve** recebe o HTTPS (certificado válido, sem abrir porta no roteador) e repassa. Nada fica exposto na internet.
+- `KAIROS_DOMINIO_REMOTO` no `.env` libera o endereço no Django; o bloqueio por senha errada usa o IP real de cada aparelho (`tarefas/seguranca.py`).
+- É um **PWA**: manifesto, ícones e áreas seguras do iPhone. No Safari: Compartilhar → Adicionar à Tela de Início. No Edge: Aplicativos → Instalar este site como um aplicativo.
+
+```powershell
+tailscale serve --bg 8765     # uma vez, no PC de casa (fica ligado após reiniciar)
+```
+
 ## Estrutura
 
 ```
@@ -127,7 +145,7 @@ tarefas/
   relatorios.py, pdf.py relatórios semanais e PDF pelo Edge
   notificacoes.py       o que avisar (sem saber nada de Windows)
   backup.py, windows.py backup do SQLite e integração com o Registro do Windows
-  tests/                196 testes
+  tests/                202 testes
 templates/, static/     HTML, CSS (Tailwind), HTMX, JS, fonte e ícone
 iniciar.pyw             abre o app (servidor + janela + bandeja + relógio)
 ferramentas/            gerar o ícone e os prints do README
