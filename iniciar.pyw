@@ -7,7 +7,7 @@ Abre o Kairos como aplicativo (sem janela de terminal: é para isso o .pyw).
 Ordem:
   1. Instância única: se o Kairos já está aberto, avisa o que está aberto para se mostrar.
   2. Erros vão para %LOCALAPPDATA%\\Kairos\\kairos.log (e erro fatal vira caixa de mensagem).
-  3. Modo produção (DEBUG=False), independente do .env.
+  3. Modo produção (DEBUG=False) e banco real (kairos.sqlite3), independente do .env.
   4. Migrations pendentes: backup ANTES, migrate depois.
   5. Backup diário, fotos dos relatórios e CSS (gera se ainda não existe).
   6. Servidor waitress numa thread; espera responder.
@@ -32,6 +32,7 @@ os.chdir(RAIZ)
 sys.path.insert(0, str(RAIZ))
 os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings"
 os.environ["DJANGO_DEBUG"] = "False"  # o app é sempre produção (vence o .env)
+os.environ["KAIROS_DB_NAME"] = "kairos.sqlite3"  # o app usa sempre o banco real; dev.sqlite3 é do runserver
 
 TITULO = "Kairos"
 NOME_TRAVA = "Local\\Kairos.InstanciaUnica"
