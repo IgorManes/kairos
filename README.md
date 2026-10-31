@@ -19,6 +19,7 @@
 - **Relatórios semanais em PDF:** uma "foto" de cada semana guardada toda segunda, com recortes (só trabalho para o gestor, só uma disciplina…).
 - **Aplicativo do Windows:** janela própria, bandeja do sistema, iniciar com o Windows, notificações (reunião em 10 min, prazos do dia, atividade nova) e backup diário.
 - **No notebook e no iPhone:** o mesmo Kairos, acessado pela rede privada do Tailscale e instalado como app (PWA).
+- **Avisos no iPhone:** os mesmos avisos do Windows chegam por Web Push, mesmo com o app fechado.
 - **Responsivo de verdade** e com **modo escuro** como padrão.
 
 | | |
@@ -39,7 +40,7 @@
    Relógio do app (a cada minuto, mesmo com a janela fechada) ───────┘
      ├─ sync Google Agenda (incremental) e Classroom (a cada 5 min) — somente leitura
      ├─ foto semanal dos relatórios e backup diário
-     └─ avisos (reunião, prazos, atrasadas, Classroom), sem repetir
+     └─ avisos (reunião, prazos, atrasadas, Classroom), sem repetir: balão do Windows + Web Push no iPhone
 ```
 
 - **O servidor é a fonte da verdade:** o HTMX pede ao Django o HTML já pronto; nenhuma regra de negócio é duplicada em JavaScript.
@@ -55,6 +56,7 @@ Todas estão em [docs/DECISOES.md](docs/DECISOES.md), cada uma com contexto, esc
 - **Desfazer exclusão sem "lixo" no banco:** a tarefa vira um texto assinado com a `SECRET_KEY` dentro do próprio botão "Desfazer" e é recriada idêntica.
 - **Relatórios como foto congelada:** o que foi enviado ao gestor nunca muda, mesmo se eu editar ou excluir tarefas depois.
 - **PDF e ícone sem pacote novo:** o Edge (que já vem no Windows) gera os PDFs e desenha o ícone; bandeja e notificações usam o `NotifyIcon` do próprio Windows.
+- **Web Push sem biblioteca:** a criptografia (RFC 8291) e a assinatura VAPID (RFC 8292) foram montadas com as primitivas do `cryptography` (ECDH, HKDF, AES-GCM, ECDSA), em vez de um pacote que traria outros 11. Um teste compara o resultado **byte a byte** com o exemplo oficial da RFC.
 - **Busca em português:** uma função Python registrada no SQLite faz "relatorio" achar "Relatório".
 - **Segurança desde o início:** login obrigatório por middleware, proteção contra força bruta (django-axes), segredos no `.env`, dados fora da pasta do código, Google somente leitura.
 
@@ -65,7 +67,7 @@ Python 3.13 · Django 5.2 LTS · SQLite · HTMX 2 · Tailwind CSS 4 (executável
 ## Testes
 
 ```powershell
-venv\Scripts\python manage.py test     # 202 testes; o Google é simulado, nunca chamado de verdade
+venv\Scripts\python manage.py test     # 215 testes; o Google é simulado, nunca chamado de verdade
 venv\Scripts\ruff check .              # verificador de código (pip install -r requirements-dev.txt)
 ```
 
@@ -128,6 +130,7 @@ Um Kairos só (no PC de casa), para os dados nunca divergirem. Os outros aparelh
 - O Kairos continua escutando só em `127.0.0.1`; o **Tailscale Serve** recebe o HTTPS (certificado válido, sem abrir porta no roteador) e repassa. Nada fica exposto na internet.
 - `KAIROS_DOMINIO_REMOTO` no `.env` libera o endereço no Django; o bloqueio por senha errada usa o IP real de cada aparelho (`tarefas/seguranca.py`).
 - É um **PWA**: manifesto, ícones e áreas seguras do iPhone. No Safari: Compartilhar → Adicionar à Tela de Início. No Edge: Aplicativos → Instalar este site como um aplicativo.
+- **Avisos no iPhone:** no app instalado, Configurações → Notificações no celular → Ativar neste aparelho. O PC manda cada aviso criptografado ao serviço de push da Apple (que não consegue ler o conteúdo); a chave VAPID é criada sozinha em `%LOCALAPPDATA%\Kairos\vapid.pem`.
 
 ```powershell
 tailscale serve --bg 8765     # uma vez, no PC de casa (fica ligado após reiniciar)
@@ -144,8 +147,9 @@ tarefas/
   google/               sync da Agenda e do Classroom (somente leitura)
   relatorios.py, pdf.py relatórios semanais e PDF pelo Edge
   notificacoes.py       o que avisar (sem saber nada de Windows)
+  push.py               Web Push: criptografia, assinatura VAPID e envio
   backup.py, windows.py backup do SQLite e integração com o Registro do Windows
-  tests/                202 testes
+  tests/                215 testes
 templates/, static/     HTML, CSS (Tailwind), HTMX, JS, fonte e ícone
 iniciar.pyw             abre o app (servidor + janela + bandeja + relógio)
 ferramentas/            gerar o ícone e os prints do README
