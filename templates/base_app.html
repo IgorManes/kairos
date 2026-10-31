@@ -8,7 +8,7 @@
     <nav class="sidebar" aria-label="Principal">
       <a class="logo px-2.5 pt-1 pb-4" href="{% url 'hoje' %}"><svg><use href="#i-logo"/></svg>Kairos</a>
       <button class="btn btn-primary mb-3.5" hx-get="{% url 'nova_tarefa' %}" hx-target="#drawer-conteudo"><svg class="icon icon-sm"><use href="#i-plus"/></svg>Nova tarefa</button>
-      <a class="nav-item" href="{% url 'hoje' %}" {% if atual == 'hoje' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-sun"/></svg>Hoje</a>
+      <a class="nav-item" href="{% url 'hoje' %}" {% if atual == 'hoje' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-hoje"/></svg>Hoje</a>
       <a class="nav-item" href="{% url 'tarefas' %}" {% if atual == 'tarefas' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-list"/></svg>Tarefas</a>
       <a class="nav-item" href="{% url 'quadro' %}" {% if atual == 'quadro' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-board"/></svg>Quadro</a>
       <a class="nav-item" href="{% url 'pessoas' %}" {% if atual == 'pessoas' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-users"/></svg>Pessoas</a>
@@ -44,7 +44,7 @@
     </main>
 
     <nav class="bottomnav" aria-label="Principal">
-      <a href="{% url 'hoje' %}" {% if atual == 'hoje' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-sun"/></svg>Hoje</a>
+      <a href="{% url 'hoje' %}" {% if atual == 'hoje' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-hoje"/></svg>Hoje</a>
       <a href="{% url 'tarefas' %}" {% if atual == 'tarefas' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-list"/></svg>Tarefas</a>
       <a href="{% url 'quadro' %}" {% if atual == 'quadro' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-board"/></svg>Quadro</a>
       <a href="{% url 'mais' %}" {% if atual == 'mais' or atual == 'pessoas' or atual == 'projetos' %}aria-current="page"{% endif %}><svg class="icon"><use href="#i-more"/></svg>Mais</a>
