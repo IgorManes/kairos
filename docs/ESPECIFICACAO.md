@@ -188,6 +188,7 @@ Interações importantes:
 6.1. Bandeja do sistema, iniciar com o Windows e notificações.
 7. Acabamento: README completo com prints, `docs/DECISOES.md` revisado, limpeza.
 8. Acesso remoto (aprovado em 2026-10-30): um Kairos só, no PC de casa, acessado pelo notebook e pelo iPhone via Tailscale. Ver seção 11.
+9. Notificações no iPhone (aprovado em 2026-10-31): Web Push no app instalado. Ver seção 12.
 
 ## 9. Testes
 - Testes do Django (`python manage.py test`) para as regras de validação e para a sincronização (respostas do Google simuladas; nunca chamar a API real nos testes).
@@ -205,7 +206,7 @@ Decidido com o dono:
 - **Django para acesso remoto:** domínio `.ts.net` em `ALLOWED_HOSTS` e `CSRF_TRUSTED_ORIGINS` (via `.env`, ex.: `KAIROS_DOMINIO_REMOTO`). A documentação do Serve NÃO garante `X-Forwarded-Proto`/`X-Forwarded-For` (só cabeçalhos de identidade `Tailscale-User-Login`): conferir na prática antes de confiar neles (axes e cookies seguros).
 - **iPhone = PWA:** manifesto, ícones (apple-touch-icon 180 px, fundo sólido), tela cheia, áreas seguras do iPhone (`viewport-fit=cover`); instalar pelo Safari → "Adicionar à Tela de Início". Exige HTTPS.
 - **Notebook:** só acessa o endereço `.ts.net` (Edge → "Instalar como aplicativo"); para desenvolver, mantém a própria instalação com `dev.sqlite3`.
-- **Depois (opcional):** notificações no iPhone (Web Push em PWA instalado, iOS 16.4+).
+- **Notificações no iPhone:** etapa 9, ver seção 12.
 - Limitação: o PC de casa precisa estar ligado (Kairos na bandeja + "Iniciar com o Windows"; Windows sem suspender).
 
 Decisões anteriores que continuam valendo:
@@ -216,3 +217,14 @@ Decisões que já devem ser respeitadas desde o início para isso ser possível 
 - Login e sessão feitos direito (senha forte, proteção contra força bruta como `django-axes`, CSRF), porque no futuro o app ficará acessível pela rede.
 - Host/porta configuráveis no `.env` (hoje `127.0.0.1`; no futuro o IP do Tailscale).
 Limitações conhecidas desse plano: só funciona com o PC ligado; notificação push no celular exige HTTPS (Tailscale Serve resolve) e, no iPhone, o PWA instalado na tela inicial.
+
+## 12. Notificações no iPhone (etapa 9, aprovada em 2026-10-31)
+
+Decidido com o dono:
+- **Web Push** no app instalado na Tela de Início (iOS 16.4+). O PC envia o aviso **criptografado** ao serviço de push da Apple, que entrega no iPhone mesmo com o app fechado. O envio sai pela internet normal (não pelo Tailscale); a Apple não lê o conteúdo.
+- **Os mesmos avisos do Windows** (`notificacoes.verificar()` e o resumo do dia), com as mesmas preferências e sem repetir. **Sempre os dois**: balão no Windows e push nos aparelhos assinados.
+- **Sem pacote novo:** criptografia (RFC 8291, `aes128gcm`) e assinatura VAPID (RFC 8292, JWT ES256) em código próprio com `cryptography` e `requests` (já instalados como dependências; passam a constar no `requirements.txt`). Testado contra o exemplo do apêndice A da RFC 8291.
+- **Chave privada VAPID** gerada sozinha em `%LOCALAPPDATA%\Kairos\vapid.pem` (fora do repositório, como o token do Google).
+- **Modelo novo `AssinaturaPush`:** endpoint (único), chaves `p256dh` e `auth`, nome do aparelho, criada em. Nada existente muda. Resposta 404/410 do serviço de push = assinatura morta, apagada; outros erros = mantém e registra no log.
+- **Service worker** (`/sw.js`, servido na raiz para valer no app inteiro): só recebe o push e, no toque, abre o Kairos na tela do aviso. **Sem cache** (continua sem modo offline).
+- **Configurações:** botão "Ativar neste aparelho" (o iOS só pede permissão a partir de um toque), lista de aparelhos com "Remover" e "Enviar teste". No PC (127.0.0.1) o botão não aparece: lá os avisos já vêm do Windows.
