@@ -84,3 +84,28 @@ class TemplatesTests(TestCase):
                 if linha.count("{#") > linha.count("#}"):
                     problemas.append(f"{arquivo.name}:{numero}")
         self.assertEqual(problemas, [], "use {% comment %} para comentários de várias linhas")
+
+
+class AppInstalavelTests(TestCase):
+    """Manifesto e ícones para instalar o Kairos no iPhone e no Edge."""
+
+    def test_manifesto_valido_com_icones_que_existem(self):
+        import json
+        from pathlib import Path
+
+        from django.contrib.staticfiles import finders
+
+        manifesto = json.loads(Path(finders.find("manifest.webmanifest")).read_text(encoding="utf-8"))
+        self.assertEqual(manifesto["display"], "standalone")
+        self.assertEqual(manifesto["start_url"], "/")
+        tamanhos = {icone["sizes"] for icone in manifesto["icons"]}
+        self.assertTrue({"192x192", "512x512"} <= tamanhos)
+        for icone in manifesto["icons"]:
+            caminho = icone["src"].removeprefix("/static/")
+            self.assertIsNotNone(finders.find(caminho), icone["src"])
+
+    def test_paginas_apontam_para_manifesto_e_icone_do_iphone(self):
+        html = self.client.get("/entrar/").content.decode()
+        self.assertIn('rel="manifest"', html)
+        self.assertIn("kairos-app-180.png", html)
+        self.assertIn("viewport-fit=cover", html)

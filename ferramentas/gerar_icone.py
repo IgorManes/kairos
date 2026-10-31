@@ -2,6 +2,7 @@ r"""
 Gera static/img/kairos.ico a partir de static/img/kairos.svg, sem instalar nada:
 o Edge desenha o SVG em PNG (fundo transparente) em vários tamanhos e este script
 junta os PNGs num .ico (o formato .ico aceita PNGs dentro dele).
+Também gera os ícones do app instalado (iPhone e Edge): kairos-app-180/192/512.png.
 
     venv\Scripts\python ferramentas\gerar_icone.py
 """
@@ -17,16 +18,22 @@ sys.path.insert(0, str(RAIZ))
 from tarefas.pdf import caminho_edge  # noqa: E402
 
 TAMANHOS = [16, 24, 32, 48, 64, 128, 256]
+TAMANHOS_APP = [180, 192, 512]  # 180 = iPhone (apple-touch-icon); 192 e 512 = manifesto
+FUNDO_APP = "#07080f"  # mesmo fundo do tema escuro
 
 
-def png_do_svg(edge, svg, tamanho, pasta):
-    html = pasta / f"icone-{tamanho}.html"
+def png_do_svg(edge, svg, tamanho, pasta, fundo=None, logo=1.0):
+    """PNG quadrado do SVG. fundo=None deixa transparente; logo = fração do lado ocupada pelo logo."""
+    nome = f"icone-{tamanho}-{'app' if fundo else 'ico'}"
+    lado_logo = round(tamanho * logo)
+    html = pasta / f"{nome}.html"
     html.write_text(
-        f'<html><body style="margin:0;background:transparent">'
-        f'<img src="{svg.as_uri()}" width="{tamanho}" height="{tamanho}" style="display:block"></body></html>',
+        f'<html><body style="margin:0;background:{fundo or "transparent"};width:{tamanho}px;height:{tamanho}px;'
+        f'display:grid;place-items:center">'
+        f'<img src="{svg.as_uri()}" width="{lado_logo}" height="{lado_logo}" style="display:block"></body></html>',
         encoding="utf-8",
     )
-    png = pasta / f"icone-{tamanho}.png"
+    png = pasta / f"{nome}.png"
     subprocess.run(
         [
             edge,
@@ -34,7 +41,7 @@ def png_do_svg(edge, svg, tamanho, pasta):
             "--disable-gpu",
             "--hide-scrollbars",
             f"--user-data-dir={pasta / 'perfil'}",
-            "--default-background-color=00000000",
+            "--default-background-color=00000000",  # transparente onde a página não pinta
             f"--window-size={tamanho},{tamanho}",
             f"--screenshot={png}",
             html.as_uri(),
@@ -63,10 +70,15 @@ def main():
     svg = RAIZ / "static" / "img" / "kairos.svg"
     with tempfile.TemporaryDirectory() as pasta:
         pngs = [(t, png_do_svg(caminho_edge(), svg, t, Path(pasta))) for t in TAMANHOS]
+        # Ícones do app no celular/Edge: fundo sólido (o iPhone pinta transparência de preto e
+        # arredonda os cantos sozinho) e logo com margem (Android corta em círculo: zona segura de 80%).
+        apps = {t: png_do_svg(caminho_edge(), svg, t, Path(pasta), fundo=FUNDO_APP, logo=0.8) for t in TAMANHOS_APP}
     destino = RAIZ / "static" / "img" / "kairos.ico"
     destino.write_bytes(montar_ico(pngs))
     (RAIZ / "static" / "img" / "kairos-256.png").write_bytes(dict(pngs)[256])
-    print(f"Gerado {destino} ({len(pngs)} tamanhos)")
+    for tamanho, png in apps.items():
+        (RAIZ / "static" / "img" / f"kairos-app-{tamanho}.png").write_bytes(png)
+    print(f"Gerado {destino} ({len(pngs)} tamanhos) e ícones do app {list(apps)}")
 
 
 if __name__ == "__main__":

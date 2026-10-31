@@ -2,9 +2,17 @@
 <html lang="pt-br" data-theme="dark">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# viewport-fit=cover: no iPhone instalado, o app ocupa a tela toda (áreas seguras no CSS). #}
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block titulo %}Kairos{% endblock %} · Kairos</title>
   <link rel="icon" href="{% static 'img/kairos.svg' %}" type="image/svg+xml">
+  {# App instalável (iPhone: Safari → Adicionar à Tela de Início; Edge: Instalar como aplicativo). #}
+  <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+  <link rel="apple-touch-icon" href="{% static 'img/kairos-app-180.png' %}">
+  <meta name="theme-color" content="#07080f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Kairos">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   {# Aplica o tema salvo antes de desenhar a página (evita "piscar" claro/escuro). #}
   <script>try{var t=localStorage.getItem("kairos-tema");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
   {% tailwind_css %}

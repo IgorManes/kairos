@@ -270,7 +270,7 @@
   .empty span { font-size: 13px; color: var(--text-3); }
 
   /* --- Toast --- */
-  .toast-area { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  .toast-area { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%);
                 display: grid; gap: 8px; z-index: 50; width: max-content; max-width: calc(100vw - 32px); }
   .toast {
     position: relative; overflow: hidden; display: flex; align-items: center; gap: 12px;
@@ -287,14 +287,20 @@
   .shell { container: app / inline-size; }
   .app { display: flex; flex-direction: column; min-height: 100vh; }
   .sidebar { display: none; }
+  /* env(safe-area-inset-*): faixa do relógio/ilha e da barra de gestos do iPhone com o app
+     instalado em tela cheia; vale 0 em qualquer outro lugar. */
   .topbar-m {
     position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 6px;
-    padding: 10px 12px 10px 16px; background: color-mix(in srgb, var(--bg) 75%, transparent);
+    padding: calc(10px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right))
+             10px calc(16px + env(safe-area-inset-left));
+    background: color-mix(in srgb, var(--bg) 75%, transparent);
     backdrop-filter: blur(14px); border-bottom: 1px solid var(--border);
   }
   .bottomnav {
     position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr);
-    padding: 6px 8px 8px; background: color-mix(in srgb, var(--bg) 78%, transparent);
+    padding: 6px calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom))
+             calc(8px + env(safe-area-inset-left));
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
     backdrop-filter: blur(14px); border-top: 1px solid var(--border); margin-top: auto;
   }
   .bottomnav a { position: relative; display: grid; justify-items: center; gap: 2px; padding: 6px 0; font-size: 11px;
@@ -560,7 +566,8 @@
   .drawer[open] { animation: drawer-in .32s cubic-bezier(.2, .8, .2, 1); }
   .drawer::backdrop { background: rgb(4 5 14 / .55); backdrop-filter: blur(4px); }
   @media (max-width: 560px) {
-    .drawer { margin: auto 0 0; width: 100vw; height: 90dvh; border: 1px solid var(--border-strong); border-radius: 22px 22px 0 0; }
+    .drawer { margin: auto 0 0; width: 100vw; height: 90dvh; border: 1px solid var(--border-strong); border-radius: 22px 22px 0 0;
+              padding-bottom: env(safe-area-inset-bottom); }
     .drawer[open] { animation-name: sheet-in; }
   }
   .drawer-form { display: flex; flex-direction: column; height: 100%; }
