@@ -298,3 +298,13 @@ Problemas que só apareceram com testes, prints ou dados reais — e o que cada 
 - **Validação da assinatura recebida** → só `https://` e chaves com o tamanho certo (65 e 16 bytes) → o servidor faz POST para esse endereço; dado torto quebraria o envio para todos.
 - **Testes nunca tocam a pasta real** → executor de testes próprio (`config/test_runner.py`) aponta a chave VAPID para uma pasta temporária → sem isso, abrir a tela de Configurações num teste criaria o `vapid.pem` de verdade.
 
+## Etapa 10: Acesso web do gestor (2026-11-03)
+
+- **Gestor quer ver a carga de trabalho do dono** → **página web só de leitura**, em vez do PDF semanal (que não mostra o que está por vir) ou de ele instalar o Tailscale (ele prefere só um link).
+- **Expor na internet sem expor o Kairos** → **mini-site separado** numa porta local própria (8766), publicado pelo **Tailscale Funnel na porta 8443**; o Kairos completo continua privado na 443 → o Funnel decide o público **por porta** (documentação). No mini-site só existem login, painel e sair: qualquer outro endereço é 404.
+- **Como o app sabe que o pedido veio do mini-site** → o próprio servidor daquela porta marca o pedido no WSGI (`kairos.site_gestor`) → cabeçalhos HTTP viram chaves `HTTP_...`: ninguém de fora forja a marca.
+- **Sessões separadas** → login do gestor por **cookie assinado próprio**, com a "impressão" da senha dentro; no mini-site a sessão do dono é ignorada → cookies valem por endereço, não por porta: o navegador do dono mandaria a sessão dele para o mini-site. Trocar a senha ou desligar o acesso derruba o gestor na hora.
+- **A conta do dono é recusada no mini-site** (a senha nem é conferida) e **o gestor é recusado no Kairos completo** → a senha do dono nunca é digitada nem testada na internet.
+- **Bloqueio por senha errada no mini-site** → todas as tentativas contam como um endereço reservado ("internet"), não pelo `X-Forwarded-For` → a documentação do Funnel não diz se ele acrescenta ou repassa o cabeçalho; um IP inventado a cada tentativa driblaria o bloqueio. No pior caso trava só o login do gestor, nunca a janela do PC (127.0.0.1).
+- **O que ele vê** → projetos marcados "visível ao gestor" (campo novo), com observações, abertas (inclusive futuras) e concluídas nos últimos 30 dias, mais as reuniões da agenda da empresa → escolha do dono; faculdade, pessoal e projetos não marcados nunca entram na consulta.
+- **Testes de segurança conferidos por "mutação"** → desliguei proteções de propósito para ver se os testes quebravam → um teste quebrou como devia; outro continuou passando porque a tela do gestor nem olha a sessão (a proteção é uma segunda camada).
