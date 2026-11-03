@@ -189,13 +189,14 @@ Interações importantes:
 7. Acabamento: README completo com prints, `docs/DECISOES.md` revisado, limpeza.
 8. Acesso remoto (aprovado em 2026-10-30): um Kairos só, no PC de casa, acessado pelo notebook e pelo iPhone via Tailscale. Ver seção 11.
 9. Notificações no iPhone (aprovado em 2026-10-31): Web Push no app instalado. Ver seção 12.
+10. Acesso web do gestor (aprovado em 2026-11-03): página pública só de leitura, com os projetos liberados e as reuniões da empresa. Ver seção 13.
 
 ## 9. Testes
 - Testes do Django (`python manage.py test`) para as regras de validação e para a sincronização (respostas do Google simuladas; nunca chamar a API real nos testes).
 - Rodar os testes antes de propor cada commit.
 
 ## 10. Fora do escopo (por enquanto)
-Multiusuário, cadastro público, escrever no Google.
+Multiusuário, cadastro público, escrever no Google. Única exceção: o usuário **gestor**, somente leitura, da seção 13.
 
 ## 11. Acesso pelo notebook e pelo celular (etapa 8, aprovada em 2026-10-30)
 
@@ -228,3 +229,16 @@ Decidido com o dono:
 - **Modelo novo `AssinaturaPush`:** endpoint (único), chaves `p256dh` e `auth`, nome do aparelho, criada em. Nada existente muda. Resposta 404/410 do serviço de push = assinatura morta, apagada; outros erros = mantém e registra no log.
 - **Service worker** (`/sw.js`, servido na raiz para valer no app inteiro): só recebe o push e, no toque, abre o Kairos na tela do aviso. **Sem cache** (continua sem modo offline).
 - **Configurações:** botão "Ativar neste aparelho" (o iOS só pede permissão a partir de um toque), lista de aparelhos com "Remover" e "Enviar teste". No PC (127.0.0.1) o botão não aparece: lá os avisos já vêm do Windows.
+
+## 13. Acesso web do gestor (etapa 10, aprovada em 2026-11-03)
+
+O gestor do dono quer ver quantas e quais demandas já estão com ele, para não sobrecarregá-lo. Decidido com o dono:
+- **Acesso pelo navegador, sem instalar nada:** um **mini-site separado**, exposto na internet pelo **Tailscale Funnel na porta 8443** (`https://<pc>.<tailnet>.ts.net:8443`). O Funnel decide o que é público **por porta**: a 443 continua privada (Serve, o Kairos completo, como hoje). O Funnel só pode usar as portas 443, 8443 e 10000; o Tailscale não lê o conteúdo; plano gratuito.
+- **O mini-site é o mesmo app e o mesmo banco, mas outra porta local (`KAIROS_PORTA_GESTOR`, padrão 8766) com outra lista de endereços:** só login, a tela "Carga de trabalho" e sair. Nenhuma outra tela existe nesse endereço. A marca de "veio pelo mini-site" é colocada pelo próprio servidor (não por cabeçalho, que poderia ser falsificado).
+- **Um único usuário extra, `gestor`, somente leitura.** A conta do dono é recusada no mini-site (a senha dele nunca é digitada nem testada na internet) e o gestor é recusado no Kairos completo.
+- **Login do gestor separado da sessão do dono:** cookie assinado próprio (os cookies valem por endereço, não por porta; a sessão do dono não pode valer no mini-site). Trocar a senha ou desativar o gestor derruba o acesso na hora.
+- **Bloqueio por senha errada no mini-site** nunca usa `127.0.0.1` (o que trancaria a janela do PC): usa o IP público repassado pelo Funnel, se houver, ou um endereço reservado que representa "internet".
+- **O que o gestor vê:** tarefas dos projetos marcados como **"visível ao gestor"** (campo novo `Projeto.visivel_gestor`): abertas (inclusive futuras) e concluídas nos últimos 30 dias, **com observações**; e as **reuniões da agenda da empresa** (as agendas extras de `GOOGLE_AGENDAS_EXTRAS`). Resumo: abertas, atrasadas, prazo nesta semana, concluídas no mês. Nada de faculdade, pessoal ou projetos não liberados.
+- **Configurações:** definir/trocar a senha do gestor, ativar/desativar o acesso, marcar os projetos visíveis.
+- **Ligar/desligar:** `tailscale funnel --bg --https=8443 8766` / `tailscale funnel --https=8443 off`. Só ligar depois que o gestor confirmar que a empresa aceita os dados num endereço com senha.
+- Limitação: o PC precisa estar ligado com o Kairos aberto.
