@@ -86,6 +86,13 @@ class TelaTarefasTests(TestCase):
             with self.subTest(url=url):
                 self.assertIn("dadosMudaram from:body", self.client.get(url).content.decode())
 
+    def test_editar_do_menu_coloca_o_formulario_no_painel(self):
+        # O menu ⋯ tem hx-swap="none"; o Editar precisa do próprio hx-swap, senão herda o
+        # "none", o formulário é descartado e o painel abre vazio (ou com um formulário antigo).
+        tarefa = nova("Contrato")
+        html = self.client.get("/tarefas/").content.decode()
+        self.assertIn(f'hx-get="/tarefas/{tarefa.pk}/editar/" hx-target="#drawer-conteudo" hx-swap="innerHTML"', html)
+
 
 class ReunioesPassadasTests(TestCase):
     def test_reuniao_que_ja_terminou_sai_das_abertas_mas_aparece_em_todas(self):

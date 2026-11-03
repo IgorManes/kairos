@@ -48,7 +48,8 @@
     <button class="task-menu" popovertarget="menu-{{ t.pk }}" style="anchor-name: --menu-{{ t.pk }}" aria-label="Mais ações"><svg class="icon"><use href="#i-more"/></svg></button>
   </div>
   <div class="menu" id="menu-{{ t.pk }}" popover style="position-anchor: --menu-{{ t.pk }}" hx-swap="none">
-    <button hx-get="{% url 'editar_tarefa' t.pk %}" hx-target="#drawer-conteudo"><svg class="icon"><use href="#i-pencil"/></svg>Editar</button>
+    {# hx-swap="innerHTML": sem ele, herdaria o "none" do menu e o formulário seria descartado. #}
+    <button hx-get="{% url 'editar_tarefa' t.pk %}" hx-target="#drawer-conteudo" hx-swap="innerHTML"><svg class="icon"><use href="#i-pencil"/></svg>Editar</button>
     {% for valor, rotulo, icone in status_menu %}{% if valor != t.status %}
       <button hx-post="{% url 'mudar_status' t.pk %}" hx-vals='{"status": "{{ valor }}"}'><svg class="icon"><use href="#i-{{ icone }}"/></svg>{{ rotulo }}</button>
     {% endif %}{% endfor %}

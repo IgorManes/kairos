@@ -105,6 +105,8 @@ const painelLateral = () => document.getElementById("drawer");
 document.addEventListener("htmx:afterSwap", evento => {
   if (evento.detail.target.id !== "drawer-conteudo") return;
   const dialogo = painelLateral();
+  // O HTMX avisa "trocou" mesmo quando nada foi trocado (hx-swap="none"): sem formulário, não abre.
+  if (!dialogo.querySelector("form")) return;
   if (!dialogo.open) dialogo.showModal();
   const titulo = dialogo.querySelector('input[name="titulo"]:not(:disabled)');
   if (titulo && !dialogo.querySelector(".erro")) titulo.focus();
@@ -112,6 +114,10 @@ document.addEventListener("htmx:afterSwap", evento => {
 });
 // O servidor avisa "fecharPainel" quando salvou com sucesso.
 document.body.addEventListener("fecharPainel", () => painelLateral()?.close());
+// Fechou (salvou, ✕, Esc ou clique fora): esvazia, para nunca reabrir um formulário antigo.
+document.addEventListener("close", evento => {
+  if (evento.target === painelLateral()) document.getElementById("drawer-conteudo").replaceChildren();
+}, true);  // "close" não sobe pela página: escuta na descida (captura)
 document.addEventListener("click", evento => {
   if (evento.target.closest("[data-fechar-painel]")) painelLateral()?.close();
   if (evento.target === painelLateral()) painelLateral().close();  // clique fora (no fundo escuro)
