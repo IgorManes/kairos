@@ -6,7 +6,7 @@
 {# ===== Topo ===== #}
 <section class="hero borda-gradiente relative mb-4 min-h-[148px] rounded-[20px] border border-border p-5 sm:px-7 sm:py-6">
   <p class="grad-text text-[11.5px] font-semibold uppercase tracking-[.09em]">Hoje · {{ hoje|date:"l, j \d\e F" }}</p>
-  <h1 class="mt-1.5 mb-1 text-2xl font-semibold tracking-tight sm:text-3xl">{{ saudacao }}, {{ user.get_username }}</h1>
+  <h1 class="mt-1.5 mb-1 text-2xl font-semibold tracking-tight sm:text-3xl">{{ saudacao }}, {{ user.first_name|default:user.get_username }}</h1>
   <p class="hero-resumo max-w-[44ch] text-sm text-text-2" id="hero-resumo">
     Você tem
     {% if total_atrasadas %}<b class="hot">{{ total_atrasadas }} atrasada{{ total_atrasadas|pluralize }}</b>,{% endif %}
