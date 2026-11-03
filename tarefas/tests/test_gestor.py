@@ -146,9 +146,25 @@ class IsolamentoTests(Base):
 
 
 class BloqueioTests(Base):
-    def test_internet_nunca_usa_o_ip_da_janela_do_pc(self):
-        pedido = RequestFactory().get("/", HTTP_X_FORWARDED_FOR="1.2.3.4", **SITE)
-        self.assertEqual(ip_do_aparelho(pedido), gestor.IP_INTERNET)
+    def test_ip_do_visitante_vem_do_funnel(self):
+        pedido = RequestFactory().get("/", HTTP_X_FORWARDED_FOR="179.249.68.245", **SITE)
+        self.assertEqual(ip_do_aparelho(pedido), "179.249.68.245")
+
+    def test_sem_ip_valido_conta_como_internet_e_nunca_como_o_pc(self):
+        for valor in ("", "lixo", "127.0.0.1"):
+            with self.subTest(valor=valor):
+                pedido = RequestFactory().get("/", HTTP_X_FORWARDED_FOR=valor, **SITE)
+                self.assertEqual(ip_do_aparelho(pedido), gestor.IP_INTERNET)
+
+    def test_atacante_bloqueado_nao_trava_o_gestor(self):
+        atacante = {**SITE, "HTTP_X_FORWARDED_FOR": "6.6.6.6"}
+        for _ in range(5):
+            self.client.post("/entrar/", {"username": "gestor", "password": "errada"}, **atacante)
+        resposta = self.client.post("/entrar/", {"username": "gestor", "password": SENHA_GESTOR}, **atacante)
+        self.assertEqual(resposta.status_code, 429)  # o atacante ficou bloqueado
+        do_gestor = {**SITE, "HTTP_X_FORWARDED_FOR": "179.249.68.245"}
+        resposta = self.client.post("/entrar/", {"username": "gestor", "password": SENHA_GESTOR}, **do_gestor)
+        self.assertRedirects(resposta, "/", fetch_redirect_response=False)  # o gestor entra
 
     def test_senhas_erradas_no_mini_site_nao_trancam_o_dono(self):
         for _ in range(5):

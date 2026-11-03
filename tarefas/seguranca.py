@@ -1,16 +1,31 @@
 """Qual aparelho está acessando, para o bloqueio por senha errada (django-axes)."""
 
+import ipaddress
+
 from .gestor import IP_INTERNET, no_site_gestor
 
 
 def ip_do_aparelho(request):
     if no_site_gestor(request):
-        # Mini-site do gestor (internet, via Funnel): a documentação não garante como o Funnel
-        # trata o X-Forwarded-For, e um IP inventado a cada tentativa driblaria o bloqueio.
-        # Todas as tentativas contam como "internet": no pior caso trava só o login do gestor,
-        # nunca o 127.0.0.1 da janela do PC.
-        return IP_INTERNET
+        return _ip_pelo_funnel(request)
     return _ip_pelo_serve(request)
+
+
+def _ip_pelo_funnel(request):
+    """IP de quem acessa o mini-site do gestor pela internet.
+
+    Testado em 2026-11-03: o Funnel SUBSTITUI o X-Forwarded-For pelo IP real (um cabeçalho
+    falso mandado pelo visitante é descartado). Então cada IP tem o seu bloqueio e um
+    atacante não trava o gestor. Sem o cabeçalho, ou com algo que não é IP, todas as
+    tentativas contam juntas como "internet" (mais seguro). Nunca devolve 127.0.0.1:
+    erros aqui não trancam a janela do PC.
+    """
+    candidato = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[-1].strip()
+    try:
+        ip = ipaddress.ip_address(candidato)
+    except ValueError:
+        return IP_INTERNET
+    return IP_INTERNET if ip.is_loopback else str(ip)
 
 
 def _ip_pelo_serve(request):
