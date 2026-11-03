@@ -1,0 +1,32 @@
+{# Tarefa só para leitura (página do gestor): sem concluir, editar nem menu. Espera `t`; `concluida` nas concluídas. #}
+<article class="task{% if t.atrasada %} is-late{% endif %}" data-cat="{{ t.categoria }}">
+  <div class="task-body">
+    <p class="task-title">{{ t.titulo }}</p>
+    <div class="task-meta">
+      <span class="cat"><i class="dot"></i>{{ t.projeto.nome }}</span>
+      {% if t.solicitante %}
+        <span class="person"><span class="avatar" style="--p:{{ t.solicitante.cor|default:'#94a3b8' }}">{{ t.solicitante.nome|slice:":2"|upper }}</span>{{ t.solicitante.nome }}</span>
+      {% endif %}
+      {% if concluida %}
+        <span class="time num"><svg class="icon icon-sm"><use href="#i-check"/></svg>Concluída {{ t.concluida_em|date:"d/m" }}</span>
+      {% else %}
+        {% if t.prazo %}<span class="time num"><svg class="icon icon-sm"><use href="#i-calendar"/></svg>{{ t.prazo|date:"d/m" }}{% if t.prazo_hora %} {{ t.prazo_hora|time:"H:i" }}{% endif %}</span>{% else %}<span class="time">Sem prazo</span>{% endif %}
+        {% if t.atrasada %}<span class="chip chip-late"><svg class="icon icon-sm"><use href="#i-clock"/></svg>Atrasada · {{ t.dias_atraso }} dia{{ t.dias_atraso|pluralize }}</span>{% endif %}
+        {% if t.status == 'em_andamento' %}<span class="chip chip-progress"><i></i>Em andamento</span>
+        {% elif t.status == 'aguardando' %}<span class="chip chip-wait"><svg class="icon icon-sm"><use href="#i-hourglass"/></svg>Aguardando</span>
+        {% else %}<span class="time">A fazer</span>{% endif %}
+      {% endif %}
+    </div>
+    {% if t.observacoes %}
+      <details class="mt-2 text-[13px] text-text-2">
+        <summary class="cursor-pointer text-text-3">Observações</summary>
+        <p class="mt-1 whitespace-pre-line [overflow-wrap:anywhere]">{{ t.observacoes }}</p>
+      </details>
+    {% endif %}
+  </div>
+  {% if t.prioridade == 'urgente' or t.prioridade == 'alta' %}
+    <div class="task-side">
+      <span class="prio prio-{{ t.prioridade }}" title="Prioridade {{ t.get_prioridade_display }}"><svg class="icon icon-sm"><use href="#i-flag"/></svg><span class="prio-texto">{{ t.get_prioridade_display }}</span></span>
+    </div>
+  {% endif %}
+</article>

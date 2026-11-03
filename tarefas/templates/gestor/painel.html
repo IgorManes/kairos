@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block titulo %}Carga de trabalho{% endblock %}
+{% block corpo %}
+{% with nome=dono.first_name|default:dono.username|default:"" %}
+<div class="shell ambiente">
+  <div class="flex min-h-screen flex-col">{# sem a moldura do app: aqui não há barra lateral #}
+    <header class="sticky top-0 z-[5] flex items-center gap-2 border-b border-border bg-[color-mix(in_srgb,var(--bg)_78%,transparent)] px-4 pb-2.5 pt-[calc(10px+env(safe-area-inset-top))] backdrop-blur-[14px] sm:px-6">
+      <span class="logo"><svg><use href="#i-logo"/></svg>Kairos</span>
+      <span class="flex-1"></span>
+      <button class="btn btn-ghost btn-icon" data-action="tema" aria-label="Alternar tema"><svg class="icon"><use href="#i-sun"/></svg></button>
+      <form method="post" action="{% url 'gestor_sair' %}">
+        {% csrf_token %}
+        <button class="btn btn-ghost btn-icon" aria-label="Sair" title="Sair"><svg class="icon"><use href="#i-logout"/></svg></button>
+      </form>
+    </header>
+
+    <main class="main mx-auto w-full">
+      {# Atualiza sozinha a cada 2 minutos (só leitura: nada aqui altera dados). #}
+      <div id="painel-gestor" hx-get="{{ request.get_full_path }}" hx-trigger="every 120s" hx-select="#painel-gestor" hx-swap="outerHTML">
+        <section class="hero borda-gradiente relative mb-4 rounded-[20px] border border-border p-5 sm:px-7 sm:py-6">
+          <p class="grad-text text-[11.5px] font-semibold uppercase tracking-[.09em]">Carga de trabalho · {{ hoje|date:"l, j \d\e F" }}</p>
+          <h1 class="mt-1.5 mb-1 text-2xl font-semibold tracking-tight sm:text-3xl">Demandas de {{ nome }}</h1>
+          <p class="max-w-[52ch] text-sm text-text-2">
+            Projetos compartilhados com você e reuniões da {{ empresa }}. Atualizado às {% now "H:i" %}.
+          </p>
+        </section>
+
+        {# Clicar num contador filtra (?ver=...); clicar de novo volta a mostrar tudo. Como na tela Hoje. #}
+        <div class="counters">
+          <a class="counter" data-cat="trabalho" href="{% if ver == 'abertas' %}?{% else %}?ver=abertas{% endif %}"{% if ver == 'abertas' %} aria-current="true"{% endif %}>
+            <span class="cat"><i class="dot"></i>Em aberto</span>
+            <b class="num">{{ resumo.abertas }}</b>
+            <small>inclui as futuras</small>
+          </a>
+          <a class="counter" style="--c: var(--danger)" href="{% if ver == 'atrasadas' %}?{% else %}?ver=atrasadas{% endif %}"{% if ver == 'atrasadas' %} aria-current="true"{% endif %}>
+            <span class="cat"><i class="dot" style="background: var(--danger)"></i>Atrasadas</span>
+            <b class="num">{{ resumo.atrasadas }}</b>
+            <small{% if resumo.atrasadas %} class="hot"{% endif %}>{% if resumo.atrasadas %}prazo já passou{% else %}nenhuma{% endif %}</small>
+          </a>
+          <a class="counter" data-cat="faculdade" href="{% if ver == 'semana' %}?{% else %}?ver=semana{% endif %}"{% if ver == 'semana' %} aria-current="true"{% endif %}>
+            <span class="cat"><i class="dot"></i>Prazo nesta semana</span>
+            <b class="num">{{ resumo.semana }}</b>
+            <small>até domingo</small>
+          </a>
+          <a class="counter" data-cat="pessoal" href="{% if ver == 'concluidas' %}?{% else %}?ver=concluidas{% endif %}"{% if ver == 'concluidas' %} aria-current="true"{% endif %}>
+            <span class="cat"><i class="dot"></i>Concluídas</span>
+            <b class="num">{{ resumo.concluidas }}</b>
+            <small>últimos {{ dias_concluidas }} dias</small>
+          </a>
+        </div>
+        {% if ver %}
+          <div class="filter-info">Mostrando só <b>{{ ver_rotulo }}</b> <a class="btn btn-ghost btn-sm" href="?">Limpar</a></div>
+        {% endif %}
+
+        <div class="content{% if ver %} grid-cols-1{% endif %}">{# com filtro não há coluna de reuniões #}
+          <div class="stack">
+            {% if abertas is not None %}
+              <section>
+                <h2 class="section-head">{{ ver_rotulo|default:"Em aberto" }} <span class="count num">{{ abertas|length|default:"" }}</span></h2>
+                <div class="grid gap-2">
+                  {% for t in abertas %}
+                    {% include "gestor/_tarefa.html" %}
+                  {% empty %}
+                    <div class="empty"><div class="big">✓</div><strong>{% if ver == 'atrasadas' %}Nenhuma atrasada{% elif ver == 'semana' %}Nenhum prazo nesta semana{% else %}Nada em aberto{% endif %}</strong><span>Nos projetos compartilhados com você.</span></div>
+                  {% endfor %}
+                </div>
+              </section>
+            {% endif %}
+
+            {% if concluidas is not None %}
+              <section>
+                <h2 class="section-head">Concluídas nos últimos {{ dias_concluidas }} dias <span class="count num">{{ concluidas|length|default:"" }}</span></h2>
+                <div class="grid gap-2">
+                  {% for t in concluidas %}
+                    {% include "gestor/_tarefa.html" with concluida=True %}
+                  {% empty %}
+                    <div class="empty"><strong>Nenhuma concluída no período</strong></div>
+                  {% endfor %}
+                </div>
+              </section>
+            {% endif %}
+          </div>
+
+          {% if reunioes is not None %}
+          <aside>
+            <h2 class="section-head"><svg class="icon icon-sm"><use href="#i-calendar"/></svg>Reuniões · próximos {{ dias_reunioes }} dias <span class="count num">{{ reunioes|length|default:"" }}</span></h2>
+            {% regroup reunioes by dia as dias %}
+            <div class="grid gap-4">
+              {% for dia in dias %}
+                <div>
+                  <p class="mb-1.5 text-[12.5px] font-semibold text-text-2">{% if dia.grouper == hoje %}Hoje{% else %}{{ dia.grouper|date:"D, d/m" }}{% endif %}</p>
+                  <div class="grid gap-1.5">
+                    {% for r in dia.list %}
+                      <div class="task py-2.5" data-cat="reuniao">
+                        <div class="task-body">
+                          <p class="task-title text-[14px]">{{ r.titulo }}</p>
+                          <div class="task-meta mt-1"><span class="time num"><svg class="icon icon-sm"><use href="#i-clock"/></svg>{{ r.inicio|time:"H:i" }}{% if r.fim %} – {{ r.fim|time:"H:i" }}{% endif %}</span></div>
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% empty %}
+                <div class="empty"><strong>Nenhuma reunião marcada</strong></div>
+              {% endfor %}
+            </div>
+          </aside>
+          {% endif %}
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+{% endwith %}
+{% endblock %}

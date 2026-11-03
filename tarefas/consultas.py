@@ -6,6 +6,7 @@ nos próximos 7 dias") fica num lugar só, para as telas e os testes usarem igua
 from datetime import timedelta
 from itertools import groupby
 
+from django.conf import settings
 from django.db.models import Case, Count, F, Func, IntegerField, Q, TextField, Value, When
 from django.db.models.functions import Concat
 from django.utils import timezone
@@ -230,4 +231,92 @@ def linha_do_tempo(reunioes, agora):
         "agora": _css(hora_agora - h0) if h0 <= hora_agora <= h1 else None,
         "proxima": next((e["tarefa"] for e in eventos if e["ini"] > hora_agora), None),
         "restantes": sum(1 for e in eventos if not e["passada"]),
+    }
+
+
+# ===== Página do gestor (somente leitura) =====
+
+DIAS_CONCLUIDAS_GESTOR = 30
+DIAS_REUNIOES_GESTOR = 14
+
+
+def agendas_da_empresa():
+    """As agendas extras do .env (GOOGLE_AGENDAS_EXTRAS); a principal é a pessoal."""
+    return [a for a in settings.GOOGLE_AGENDAS if a["id"] != "primary"]
+
+
+# Filtros da página do gestor (?ver=...): clicar num contador mostra só aquela lista.
+FILTROS_GESTOR = {
+    "abertas": "Em aberto",
+    "atrasadas": "Atrasadas",
+    "semana": "Prazo nesta semana",
+    "concluidas": "Concluídas",
+}
+
+
+def carga_gestor(agora=None, ver=None):
+    """
+    O que o gestor vê: tarefas dos projetos marcados como "visível ao gestor" (abertas,
+    inclusive futuras, e concluídas nos últimos 30 dias) e as reuniões da agenda da empresa.
+    Nada de faculdade, pessoal ou projeto não liberado.
+    `ver` (um dos FILTROS_GESTOR) escolhe as listas; os totais do resumo continuam sobre tudo.
+    """
+    ver = ver if ver in FILTROS_GESTOR else None  # valor inválido = sem filtro
+    agora = agora or timezone.now()
+    hoje = timezone.localdate(agora)
+    fim_semana = hoje + timedelta(days=6 - hoje.weekday())  # domingo
+
+    visiveis = (
+        Tarefa.objects.filter(projeto__visivel_gestor=True)
+        .exclude(status=Status.CANCELADA)
+        .select_related("projeto", "solicitante")
+    )
+    abertas = list(
+        visiveis.exclude(status=Status.CONCLUIDA).order_by(
+            F("prazo").asc(nulls_last=True), F("prazo_hora").asc(nulls_last=True), "titulo"
+        )
+    )
+    concluidas = list(
+        visiveis.filter(
+            status=Status.CONCLUIDA, concluida_em__gte=agora - timedelta(days=DIAS_CONCLUIDAS_GESTOR)
+        ).order_by("-concluida_em")
+    )
+
+    agendas = agendas_da_empresa()
+    reunioes = list(
+        Tarefa.objects.filter(
+            categoria=Categoria.REUNIAO,
+            agenda_id__in=[a["id"] for a in agendas],
+            inicio__date__gte=hoje,
+            inicio__date__lt=hoje + timedelta(days=DIAS_REUNIOES_GESTOR),
+        )
+        .exclude(status=Status.CANCELADA)
+        .order_by("inicio")
+    )
+    for reuniao in reunioes:
+        reuniao.dia = timezone.localtime(reuniao.inicio).date()  # para agrupar por dia no fuso local
+
+    atrasadas = [t for t in abertas if t.atrasada]
+    da_semana = [t for t in abertas if t.prazo and hoje <= t.prazo <= fim_semana]
+    lista_abertas = {"atrasadas": atrasadas, "semana": da_semana}.get(ver, abertas)
+
+    return {
+        "hoje": hoje,
+        "ver": ver,
+        "ver_rotulo": FILTROS_GESTOR.get(ver, ""),
+        "filtros": FILTROS_GESTOR,
+        # Com filtro, só a lista escolhida aparece (None = seção escondida).
+        "abertas": lista_abertas if ver != "concluidas" else None,
+        "concluidas": concluidas if ver in (None, "concluidas") else None,
+        "reunioes": reunioes if ver is None else None,
+        "empresa": ", ".join(a["nome"] for a in agendas) or "empresa",
+        "resumo": {
+            "abertas": len(abertas),
+            "atrasadas": len(atrasadas),
+            "semana": len(da_semana),
+            "concluidas": len(concluidas),
+            "reunioes_semana": sum(1 for r in reunioes if r.dia <= fim_semana),
+        },
+        "dias_concluidas": DIAS_CONCLUIDAS_GESTOR,
+        "dias_reunioes": DIAS_REUNIOES_GESTOR,
     }

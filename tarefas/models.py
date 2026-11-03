@@ -68,6 +68,8 @@ class Projeto(models.Model):
     nome = models.CharField(max_length=100)
     categoria = models.CharField(max_length=20, choices=CATEGORIAS_PROJETO)
     ativo = models.BooleanField(default=True)
+    # As tarefas deste projeto aparecem para o gestor (página web somente leitura).
+    visivel_gestor = models.BooleanField("visível ao gestor", default=False)
 
     class Meta:
         ordering = ["nome"]

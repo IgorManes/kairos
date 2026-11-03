@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.forms import AuthenticationForm
 from django.db.models import Q
 
 from .models import Categoria, Disciplina, Origem, Pessoa, Preferencias, Prioridade, Projeto, Status, Tarefa
@@ -190,3 +191,19 @@ class PreferenciasNotificacaoForm(forms.ModelForm):
         self.fields["minutos_antes_reuniao"].max_value = 120
         self.fields["minutos_antes_reuniao"].widget.attrs.update({"class": "input input-sm w-20", "min": 1, "max": 120})
         self.fields["hora_aviso_prazos"].widget.attrs["class"] = "input input-sm w-28"
+
+
+class LoginDonoForm(AuthenticationForm):
+    """Login do Kairos completo: o usuário gestor é recusado (ele só usa o mini-site)."""
+
+    def confirm_login_allowed(self, user):
+        super().confirm_login_allowed(user)
+        from .gestor import e_gestor
+
+        if e_gestor(user):
+            # Mesma mensagem de senha errada: não revela que o usuário existe.
+            raise forms.ValidationError(
+                self.error_messages["invalid_login"],
+                code="invalid_login",
+                params={"username": self.username_field.verbose_name},
+            )

@@ -138,4 +138,61 @@
     </div>
   {% endif %}
 </section>
+
+{% comment %}
+  Acesso do gestor (página web só de leitura, no mini-site exposto pelo Funnel).
+  Ele vê só os projetos marcados aqui (com observações) e as reuniões da agenda da empresa.
+{% endcomment %}
+<section id="config-gestor" class="config-secao mt-5" hx-get="{% url 'configuracoes' %}" hx-trigger="dadosMudaram from:body delay:300ms"
+         hx-select="#config-gestor" hx-swap="outerHTML" hx-disinherit="*">
+  <div>
+    <h2 class="text-lg font-semibold">Acesso do gestor</h2>
+    <p class="text-sm text-text-3">Uma página só de leitura, pelo navegador, com as tarefas dos projetos marcados abaixo (inclusive observações e concluídas dos últimos 30 dias){% if agendas_empresa %} e as reuniões da agenda {{ agendas_empresa|join:", " }}{% endif %}. Faculdade, pessoal e os outros projetos nunca aparecem.</p>
+  </div>
+
+  <div class="config-tabela">
+    <div class="config-linha">
+      <div>
+        <b>Usuário: gestor</b>
+        <small>{% if not conta_gestor %}Ainda sem senha: defina uma para criar o acesso.{% elif conta_gestor.is_active %}Acesso ligado.{% else %}Acesso desligado: ele não consegue entrar.{% endif %}</small>
+      </div>
+      {% if conta_gestor %}
+        <label class="check-linha">
+          <input type="checkbox" name="valor" {% if conta_gestor.is_active %}checked{% endif %}
+                 hx-post="{% url 'gestor_acesso' %}" hx-trigger="change" hx-swap="none">
+          <span>Ligado</span>
+        </label>
+      {% endif %}
+    </div>
+  </div>
+
+  <form class="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end" hx-post="{% url 'gestor_senha' %}" hx-swap="none"
+        hx-on::after-request="if (event.detail.successful) this.reset()">
+    <label class="field"><span>{% if conta_gestor %}Nova senha{% else %}Senha{% endif %}</span>
+      <input class="input" name="senha" type="password" autocomplete="new-password" required></label>
+    <label class="field"><span>Confirmar</span>
+      <input class="input" name="confirmacao" type="password" autocomplete="new-password" required></label>
+    <button class="btn btn-secondary">{% if conta_gestor %}Trocar senha{% else %}Criar acesso{% endif %}</button>
+  </form>
+
+  <div>
+    <p class="mb-2 text-sm font-medium">Projetos visíveis ao gestor</p>
+    {% for projeto in projetos %}
+      <label class="check-linha py-1">
+        <input type="checkbox" name="valor" {% if projeto.visivel_gestor %}checked{% endif %}
+               hx-post="{% url 'gestor_projeto' projeto.pk %}" hx-trigger="change" hx-swap="none">
+        <span>{{ projeto.nome }}{% if not projeto.ativo %} <small class="text-text-3">(inativo)</small>{% endif %}</span>
+      </label>
+    {% empty %}
+      <p class="text-sm text-text-3">Nenhum projeto cadastrado ainda (Projetos → Novo projeto).</p>
+    {% endfor %}
+  </div>
+
+  <div class="border-t border-border pt-4 text-sm text-text-2">
+    {% if link_gestor %}
+      <p>Link para ele: <code class="[overflow-wrap:anywhere]">{{ link_gestor }}</code></p>
+    {% endif %}
+    <p class="mt-1 text-text-3">Só funciona na internet depois de ligar o Funnel no PC (PowerShell): <code>tailscale funnel --bg --https=8443 {{ porta_gestor }}</code>. Para desligar: <code>tailscale funnel --https=8443 off</code>.</p>
+  </div>
+</section>
 {% endblock %}

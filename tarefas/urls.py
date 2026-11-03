@@ -1,6 +1,6 @@
 from django.urls import path, re_path
 
-from . import views, views_google, views_push, views_relatorios
+from . import views, views_gestor, views_google, views_push, views_relatorios
 from . import views_cadastros as cad
 
 urlpatterns = [
@@ -30,6 +30,9 @@ urlpatterns = [
     path("push/assinar/", views_push.assinar, name="push_assinar"),
     path("push/<int:pk>/remover/", views_push.remover, name="push_remover"),
     path("push/testar/", views_push.testar, name="push_testar"),
+    path("gestor/senha/", views_gestor.definir_senha, name="gestor_senha"),
+    path("gestor/acesso/", views_gestor.alternar_acesso, name="gestor_acesso"),
+    path("gestor/projeto/<int:pk>/", views_gestor.alternar_projeto, name="gestor_projeto"),
     # Só "pessoa" ou "projeto"; qualquer outra coisa é 404.
     re_path(r"^(?P<tipo>pessoa|projeto)/novo/$", cad.formulario, name="novo_cadastro"),
     re_path(r"^(?P<tipo>pessoa|projeto)/(?P<pk>\d+)/editar/$", cad.formulario, name="editar_cadastro"),

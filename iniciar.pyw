@@ -125,9 +125,16 @@ def iniciar_servidor(settings):
     from waitress import create_server
 
     from config.wsgi import application
+    from tarefas.gestor import app_do_gestor
 
     servidor = create_server(application, host=settings.KAIROS_HOST, port=settings.KAIROS_PORT, threads=8)
     threading.Thread(target=servidor.run, daemon=True, name="waitress").start()
+    # Mini-site do gestor: mesmo app, outra porta, sempre em 127.0.0.1. Só fica na internet
+    # se o dono ligar o Funnel nesta porta (tailscale funnel --bg --https=8443 8766).
+    mini_site = create_server(
+        app_do_gestor(application), host="127.0.0.1", port=settings.KAIROS_PORTA_GESTOR, threads=4
+    )
+    threading.Thread(target=mini_site.run, daemon=True, name="waitress-gestor").start()
 
     endereco = f"http://{settings.KAIROS_HOST}:{settings.KAIROS_PORT}/"
     for _ in range(50):  # até ~10 s

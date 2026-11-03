@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titulo %}Entrar{% endblock %}
+{% block corpo %}
+<main class="ambiente grid min-h-screen place-items-center px-4 py-10">
+  <div class="w-full max-w-[380px]">
+    <section class="vidro borda-gradiente rounded-[20px] p-6 shadow-[var(--shadow-md)] sm:p-8">
+      <div class="mb-6 text-center">
+        <span class="logo justify-center text-xl"><svg><use href="#i-logo"/></svg>Kairos</span>
+        <p class="mt-1.5 text-sm text-text-3">Carga de trabalho · acesso do gestor</p>
+      </div>
+
+      {% if erro %}
+        <p role="alert" class="chip chip-late mb-4 h-auto w-full justify-center py-2 text-[13px]">{{ erro }}</p>
+      {% endif %}
+
+      <form method="post" class="grid gap-4">
+        {% csrf_token %}
+        <label class="field">
+          <span>Usuário</span>
+          <input class="input" name="username" value="{{ usuario }}" autocomplete="username" required autofocus>
+        </label>
+        <label class="field">
+          <span>Senha</span>
+          <input class="input" name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit" class="btn btn-primary mt-2 h-11 w-full">Entrar</button>
+      </form>
+    </section>
+  </div>
+</main>
+{% endblock %}

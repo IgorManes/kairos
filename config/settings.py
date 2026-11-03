@@ -55,6 +55,13 @@ if KAIROS_DOMINIO_REMOTO:
     # O Django vê o acesso como http (o HTTPS termina no Tailscale); a origem https precisa ser liberada.
     CSRF_TRUSTED_ORIGINS.append(f"https://{KAIROS_DOMINIO_REMOTO}")
 
+# Mini-site do gestor (só leitura): outra porta local, exposta na internet pelo Funnel
+# na porta pública 8443 (ver tarefas/gestor.py). O Kairos completo continua privado.
+KAIROS_PORTA_GESTOR = int(os.environ.get("KAIROS_PORTA_GESTOR", "8766"))
+KAIROS_PORTA_PUBLICA_GESTOR = 8443  # o Funnel só aceita 443, 8443 e 10000; a 443 é do Kairos privado
+if KAIROS_DOMINIO_REMOTO:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{KAIROS_DOMINIO_REMOTO}:{KAIROS_PORTA_PUBLICA_GESTOR}")
+
 
 # --- Pasta de dados (fora do código) ---------------------------------------
 
@@ -88,6 +95,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Separa o mini-site do gestor do Kairos completo (antes do login obrigatório).
+    "tarefas.gestor.SiteGestorMiddleware",
     # Toda tela exige login, exceto as marcadas como públicas (ex.: login).
     "django.contrib.auth.middleware.LoginRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
