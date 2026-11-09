@@ -72,15 +72,15 @@ class AplicarTests(TestCase):
         self.assertFalse(Disciplina.objects.get(classroom_id="T2").ativo)
 
     def test_atividade_vira_tarefa_de_faculdade(self):
-        aplicar(
-            [turma("T1")],
-            {"T1": [atividade("A1", prazo={"year": 2026, "month": 11, "day": 6}, hora={"hours": 2, "minutes": 59})]},
-        )
+        # Prazo relativo a hoje: com data fixa, o teste quebrava quando ela ficava no passado.
+        em_utc = timezone.localdate() + timedelta(days=8)  # 02:59 em UTC = 23:59 da véspera em Brasília
+        prazo = {"year": em_utc.year, "month": em_utc.month, "day": em_utc.day}
+        aplicar([turma("T1")], {"T1": [atividade("A1", prazo=prazo, hora={"hours": 2, "minutes": 59})]})
         t = Tarefa.objects.get()
         self.assertEqual(
             (t.categoria, t.origem, t.disciplina.nome), ("faculdade", Origem.GOOGLE_CLASSROOM, "Cálculo II")
         )
-        self.assertEqual((t.prazo, t.prazo_hora), (date(2026, 11, 5), time(23, 59)))
+        self.assertEqual((t.prazo, t.prazo_hora), (em_utc - timedelta(days=1), time(23, 59)))
 
     def test_primeira_importacao_de_atividade_ja_entregue_chega_concluida(self):
         aplicar([turma("T1")], {"T1": [atividade("A1")]}, {"A1": "TURNED_IN"})
