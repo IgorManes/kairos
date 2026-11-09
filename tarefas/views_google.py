@@ -71,6 +71,8 @@ def sincronizar(request):
         }
         html += render_to_string("tarefas/_resposta_acao.html", {"toast": {"mensagem": mensagens.get(r.situacao, "")}})
     resposta = HttpResponse(html)
+    # A página compara com o dia em que foi aberta e se recarrega na virada (kairos.js).
+    resposta["X-Kairos-Dia"] = timezone.localdate().isoformat()
     if r.mudou or motivo == "botao":
         resposta["HX-Trigger"] = "dadosMudaram"  # as telas abertas se atualizam
     return resposta

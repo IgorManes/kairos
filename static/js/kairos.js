@@ -126,6 +126,18 @@ document.addEventListener("click", evento => {
   if (opcao) opcao.closest("[popover]").hidePopover();
 });
 
+/* ===== Virada do dia: a janela pode ficar aberta por dias ===== */
+// Cada sincronização (a cada minuto) traz o dia do servidor. Se mudou desde que a página
+// abriu, recarrega para refazer datas, "Hoje" e saudação. No meio de uma edição, espera:
+// a próxima sincronização tenta de novo.
+document.addEventListener("htmx:afterRequest", evento => {
+  const dia = evento.detail.xhr?.getResponseHeader("X-Kairos-Dia");
+  if (!dia || dia === document.body.dataset.dia) return;
+  const digitando = document.activeElement?.closest?.("input, textarea, select") && document.activeElement.value;
+  if (painelLateral()?.open || digitando) return;
+  location.reload();
+});
+
 /* ===== Atalhos: N = nova tarefa rápida, Ctrl+Z = desfazer ===== */
 document.addEventListener("keydown", evento => {
   const digitando = evento.target.closest?.("input, textarea, select, [contenteditable]");

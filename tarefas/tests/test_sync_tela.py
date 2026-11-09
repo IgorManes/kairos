@@ -86,6 +86,18 @@ class TelaTests(ComTokenFalso):
         html = self.client.post("/sincronizar/", {"motivo": "botao"}, **HTMX).content.decode()
         self.assertIn("nada novo", html)
 
+    @mock.patch("tarefas.google.agenda.sincronizar_agenda", return_value=RESUMO_SEM_MUDANCA)
+    def test_virada_do_dia_pagina_e_sync_informam_o_mesmo_dia(self, _):
+        # A janela fica aberta por dias: o kairos.js compara os dois e recarrega quando diferem.
+        hoje = timezone.localdate().isoformat()
+        self.assertIn(f'data-dia="{hoje}"', self.client.get("/").content.decode())
+        resposta = self.client.post("/sincronizar/", {"motivo": "auto"}, **HTMX)
+        self.assertEqual(resposta["X-Kairos-Dia"], hoje)
+        amanha = timezone.now() + timedelta(days=1)
+        with mock.patch("django.utils.timezone.now", return_value=amanha):
+            resposta = self.client.post("/sincronizar/", {"motivo": "auto"}, **HTMX)
+        self.assertEqual(resposta["X-Kairos-Dia"], timezone.localdate(amanha).isoformat())
+
     def test_paginas_tem_o_relogio_do_sync_quando_conectado(self):
         html = self.client.get("/").content.decode()
         self.assertIn("every 60s", html)
